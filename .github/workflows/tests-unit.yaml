@@ -1,0 +1,48 @@
+name: Unit tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+env:
+  BOA_FORK_RPC_URL: "https://eth-mainnet.g.alchemy.com/${{ secrets.ALCHEMY_KEY }}"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.11"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install coverage
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+  
+    - name: Run project unit tests 
+      run: |
+        coverage run -m pytest tests/unit --durations=0
+        coverage report -m | tee coverage.txt
+        sed -i '1s/^/coverage: platform marker \n/' coverage.txt
+        coverage xml
+
+    - name: Create coverage comment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./coverage.txt
+      if: github.event_name == 'pull_request'

@@ -1,0 +1,16 @@
+__pycache__
+.idea/
+.env*
+.local*
+.build
+.history
+.hypothesis/
+build/
+abi/
+bytecode/
+reports/
+.DS_Store
+.venv
+.vscode
+.cache
+.tool-versions
