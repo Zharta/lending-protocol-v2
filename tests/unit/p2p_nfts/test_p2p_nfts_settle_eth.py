@@ -282,6 +282,16 @@ def test_settle_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, weth):
     assert event.paid_broker_fees == broker_fee_amount
 
 
+def test_settle_loan_transfers_excess_amount_to_borrower(p2p_nfts_eth, ongoing_loan_bayc, weth):
+    interest = ongoing_loan_bayc.interest
+    amount_to_settle = ongoing_loan_bayc.amount + interest
+    initial_borrower_balance = boa.env.get_balance(ongoing_loan_bayc.borrower)
+
+    p2p_nfts_eth.settle_loan(ongoing_loan_bayc, sender=ongoing_loan_bayc.borrower, value=amount_to_settle + 1)
+    assert boa.env.get_balance(p2p_nfts_eth.address) == 0
+    assert boa.env.get_balance(ongoing_loan_bayc.borrower) == initial_borrower_balance - amount_to_settle
+
+
 def test_settle_loan_transfers_collateral_to_borrower_erc721(p2p_nfts_eth, ongoing_loan_bayc, weth, bayc):
     loan = ongoing_loan_bayc
     amount_to_settle = loan.amount + loan.interest

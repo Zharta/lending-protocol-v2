@@ -17,12 +17,12 @@ def max_protocol_fee():
     return 500
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def bayc(erc721_contract_def, owner):
     return erc721_contract_def.deploy()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def p2p_control(p2p_lending_control_contract_def, cryptopunks, bayc, max_lock_expiration, owner):
     p2p_control = p2p_lending_control_contract_def.deploy(cryptopunks, max_lock_expiration)
     p2p_control.change_whitelisted_collections([WhitelistRecord(cryptopunks.address, True)])
@@ -30,7 +30,7 @@ def p2p_control(p2p_lending_control_contract_def, cryptopunks, bayc, max_lock_ex
     return p2p_control
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def usdc(weth9_contract_def, owner):
     return weth9_contract_def.deploy("USDC", "USDC", 9, 10**20)
 
@@ -83,6 +83,6 @@ def p2p_nfts_usdc(
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def now():
     return boa.eval("block.timestamp")

@@ -466,7 +466,7 @@ def test_replace_loan_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_bayc,
     new_lender = offer.lender
     borrower = ongoing_loan_bayc.borrower
     principal = offer.principal
-    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
+    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest - (offer.principal - offer.origination_fee_amount)
     weth.deposit(value=principal, sender=new_lender)
     weth.approve(p2p_nfts_eth.address, principal, sender=new_lender)
 
@@ -693,6 +693,31 @@ def test_replace_loan_pays_lender(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, 
     assert boa.env.get_balance(loan.lender) == initial_lender_balance + amount_to_receive
 
 
+def test_replace_loan_pays_borrower_if_amount_to_settle_negative(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc, weth, lender, lender_key):
+    loan = ongoing_loan_bayc
+    offer = Offer(**offer_bayc.offer._asdict() | {"principal": loan.amount * 2})
+    borrower = ongoing_loan_bayc.borrower
+    lender = ongoing_loan_bayc.lender
+    new_lender = offer.lender
+    principal = offer.principal
+    interest = loan.interest
+    protocol_fee_amount = interest * loan.protocol_fee_bps // 10000
+    broker_fee_amount = interest * loan.broker_fee_bps // 10000
+    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest - (offer.principal - offer.origination_fee_amount)
+    amount_to_receive = loan.amount + interest - protocol_fee_amount - broker_fee_amount
+
+    initial_lender_balance = boa.env.get_balance(lender)
+    initial_borrower_balance = boa.env.get_balance(borrower)
+
+    weth.deposit(value=principal, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, principal, sender=new_lender)
+
+    p2p_nfts_eth.replace_loan(ongoing_loan_bayc, sign_offer(offer, lender_key, p2p_nfts_eth.address), sender=borrower)
+
+    assert amount_to_settle < 0
+    assert boa.env.get_balance(loan.borrower) == initial_borrower_balance - amount_to_settle
+
+
 def test_replace_loan_pays_broker_fees(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, weth):
     loan = ongoing_loan_bayc
     borrower = ongoing_loan_bayc.borrower
@@ -733,7 +758,7 @@ def test_replace_loan_prorata_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_lo
     loan = ongoing_loan_prorata
     loan_duration = loan.maturity - loan.start_time
     actual_duration = loan_duration * 2 // 3
-    amount = loan.amount * actual_duration // loan_duration
+    amount = loan.amount
     interest = loan.interest * actual_duration // loan_duration
     amount_to_settle = amount + interest
 
@@ -858,3 +883,129 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_pror
     p2p_nfts_eth.replace_loan(loan, offer_bayc2, sender=borrower, value=amount_to_settle)
 
     assert boa.env.get_balance(p2p_nfts_eth.protocol_wallet()) == initial_protocol_wallet_balance + protocol_fee_amount
+
+
+@pytest.mark.parametrize("pro_rata", [True, False])
+@pytest.mark.parametrize("same_lender", [True, False])
+@pytest.mark.parametrize("principal_loan1", [100000, 200000])
+@pytest.mark.parametrize("principal_loan2", [100000, 200000])
+def test_replace_loan_settles_amounts(  # noqa: PLR0914
+    p2p_nfts_eth,
+    offer_bayc,
+    bayc,
+    weth,
+    borrower,
+    lender,
+    lender_key,
+    lender2,
+    lender2_key,
+    now,
+    pro_rata,
+    same_lender,
+    principal_loan1,
+    principal_loan2,
+    debug_precompile
+):
+
+    p2p_nfts_eth.set_protocol_fee(300)
+    offer = Offer(**offer_bayc.offer._asdict() | {
+        "principal": principal_loan1,
+        "interest": principal_loan1 // 10,
+        "pro_rata": pro_rata,
+        "lender": lender
+    })
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
+    token_id = offer.collateral_min_token_id
+    origination_fee = offer.origination_fee_amount
+
+    bayc.mint(borrower, token_id)
+    bayc.approve(p2p_nfts_eth.address, token_id, sender=borrower)
+    weth.deposit(value=principal_loan1 - origination_fee, sender=lender)
+    weth.approve(p2p_nfts_eth.address, principal_loan1, sender=lender)
+
+    loan_id = p2p_nfts_eth.create_loan(signed_offer, token_id, borrower, sender=borrower)
+
+    loan1 = Loan(
+        id=loan_id,
+        amount=offer.principal,
+        interest=offer.interest,
+        payment_token=offer.payment_token,
+        maturity=now + offer.duration,
+        start_time=now,
+        borrower=borrower,
+        lender=lender,
+        collateral_contract=bayc.address,
+        collateral_token_id=token_id,
+        origination_fee_amount=offer.origination_fee_amount,
+        broker_fee_bps=offer.broker_fee_bps,
+        broker_address=offer.broker_address,
+        protocol_fee_bps=p2p_nfts_eth.protocol_fee(),
+        pro_rata=offer.pro_rata
+    )
+    assert compute_loan_hash(loan1) == p2p_nfts_eth.loans(loan_id)
+
+    loan_duration = loan1.maturity - loan1.start_time
+    actual_duration = loan_duration * 2 // 3
+    interest = (loan1.interest * actual_duration // loan_duration) if offer.pro_rata else loan1.interest
+    protocol_fee_amount = interest * loan1.protocol_fee_bps // 10000
+    broker_fee_amount = interest * loan1.broker_fee_bps // 10000
+
+    lender2, key2 = (lender, lender_key) if same_lender else (lender2, lender2_key)
+    offer2 = Offer(**offer_bayc.offer._asdict() | {
+        "principal": principal_loan2,
+        "interest": principal_loan2 // 10,
+        "lender": lender2,
+        "expiration": offer.expiration + actual_duration
+    })
+    signed_offer2 = sign_offer(offer2, key2, p2p_nfts_eth.address)
+
+    borrower_delta = offer2.principal - loan1.amount - offer2.origination_fee_amount - interest
+    current_lender_delta = loan1.amount + interest - protocol_fee_amount - broker_fee_amount
+    new_lender_delta = offer2.origination_fee_amount - offer2.principal
+
+    print(f"{borrower=}, {lender=}, {lender2=}")
+    print(f"{loan1.amount=}, {loan1.interest=}, {loan1.protocol_fee_bps=}, {loan1.broker_fee_bps=}")
+    print(f"{offer2.principal=}, {offer2.origination_fee_amount=}")
+    print(f"{actual_duration=}, {interest=}, {protocol_fee_amount=}, {broker_fee_amount=}")
+    print(f"{borrower_delta=}, {current_lender_delta=}, {new_lender_delta=}")
+
+    initial_borrower_balance = boa.env.get_balance(borrower)
+    initial_lender_balance = boa.env.get_balance(lender)
+    initial_lender2_balance = boa.env.get_balance(lender2)
+
+    if lender != lender2:
+        weth.deposit(value=-new_lender_delta, sender=lender2)
+        weth.approve(p2p_nfts_eth.address, -new_lender_delta, sender=lender2)
+    elif current_lender_delta + new_lender_delta < 0:
+        lender_delta = current_lender_delta + new_lender_delta
+        weth.deposit(value=-lender_delta, sender=lender)
+        weth.approve(p2p_nfts_eth.address, -lender_delta, sender=lender)
+
+    boa.env.time_travel(seconds=actual_duration)
+    loan2_id = p2p_nfts_eth.replace_loan(loan1, signed_offer2, sender=borrower, value=max(0, -borrower_delta))
+
+    loan2 = Loan(
+        id=loan2_id,
+        amount=offer2.principal,
+        interest=offer2.interest,
+        payment_token=offer2.payment_token,
+        maturity=now + actual_duration + offer2.duration,
+        start_time=now + actual_duration,
+        borrower=borrower,
+        lender=lender2,
+        collateral_contract=bayc.address,
+        collateral_token_id=token_id,
+        origination_fee_amount=offer2.origination_fee_amount,
+        broker_fee_bps=offer2.broker_fee_bps,
+        broker_address=offer2.broker_address,
+        protocol_fee_bps=p2p_nfts_eth.protocol_fee(),
+        pro_rata=offer2.pro_rata
+    )
+    assert compute_loan_hash(loan2) == p2p_nfts_eth.loans(loan2_id)
+
+    assert boa.env.get_balance(borrower) == initial_borrower_balance + borrower_delta
+    if lender != lender2:
+        assert boa.env.get_balance(lender) == initial_lender_balance + current_lender_delta
+        assert boa.env.get_balance(lender2) == initial_lender2_balance + new_lender_delta
+    else:
+        assert boa.env.get_balance(lender) == initial_lender_balance + new_lender_delta + current_lender_delta

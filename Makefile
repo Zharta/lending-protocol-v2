@@ -33,6 +33,10 @@ coverage:
 	${VENV}/bin/coverage run -m pytest tests/unit -s
 	${VENV}/bin/coverage report
 
+branch-coverage:
+	${VENV}/bin/coverage run --branch -m pytest tests/unit -s
+	${VENV}/bin/coverage report
+
 unit-tests:
 	${VENV}/bin/pytest tests/unit --durations=0 -n auto --dist loadscope
 

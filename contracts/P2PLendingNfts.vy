@@ -179,6 +179,8 @@ event ProtocolWalletChanged:
 
 # Global variables
 
+DEBUG: constant(address) = 0x0000000000000000000000000000000000011111
+
 owner: public(address)
 proposed_owner: public(address)
 
@@ -469,20 +471,37 @@ def replace_loan(loan: Loan, offer: SignedOffer) -> bytes32:
 
     self._check_and_update_offer_state(offer)
 
+    principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
     interest: uint256 = self._compute_settle_interest(loan)
     protocol_fee_amount: uint256 = interest * loan.protocol_fee_bps / 10000
     broker_fee_amount: uint256 = interest * loan.broker_fee_bps / 10000
+    settlement_fees: uint256 = protocol_fee_amount + broker_fee_amount
+    new_loan_upfront_fees: uint256 = offer.offer.origination_fee_amount
 
     self.loans[loan.id] = empty(bytes32)
 
-    self._receive_funds_from_borrower(loan.borrower, loan.amount + interest)
+    borrower_delta: int256 = principal_delta - convert(new_loan_upfront_fees, int256) - convert(interest, int256)
+    current_lender_delta: uint256 = loan.amount + interest - settlement_fees
+    new_lender_delta_abs: uint256 = offer.offer.principal - new_loan_upfront_fees
 
-    self._send_funds(loan.lender, loan.amount + interest - protocol_fee_amount - broker_fee_amount)
+    if borrower_delta < 0:
+        self._receive_funds_from_borrower(loan.borrower, convert(-1 * borrower_delta, uint256))
+
+    if loan.lender != offer.offer.lender:
+        self._receive_funds_from_lender(offer.offer.lender, new_lender_delta_abs)
+        self._send_funds(loan.lender, current_lender_delta)
+    elif current_lender_delta > new_lender_delta_abs:
+        self._send_funds(loan.lender, current_lender_delta - new_lender_delta_abs)
+    elif current_lender_delta < new_lender_delta_abs:
+        self._receive_funds_from_lender(loan.lender, new_lender_delta_abs - current_lender_delta)
+
+    if borrower_delta > 0:
+        self._send_funds(loan.borrower, convert(borrower_delta, uint256))
+
     if protocol_fee_amount > 0:
         self._send_funds(self.protocol_wallet, protocol_fee_amount)
     if broker_fee_amount > 0:
         self._send_funds(loan.broker_address, broker_fee_amount)
-
 
     new_loan: Loan = Loan({
         id: empty(bytes32),
@@ -505,8 +524,6 @@ def replace_loan(loan: Loan, offer: SignedOffer) -> bytes32:
 
     assert self.loans[new_loan.id] == empty(bytes32), "loan already exists"
     self.loans[new_loan.id] = self._loan_state_hash(new_loan)
-
-    self._transfer_funds_from_lender_to_borrower(new_loan.lender, loan.borrower, new_loan.amount - new_loan.origination_fee_amount)
 
     log LoanReplaced(
         new_loan.id,
@@ -704,10 +721,8 @@ def _transfer_collateral(wallet: address, collateral_contract: address, token_id
 
     if self._is_punk(collateral_contract):
         self._transfer_punk(wallet, collateral_contract, token_id)
-    elif self._is_erc721(collateral_contract):
-        self._transfer_erc721(wallet, collateral_contract, token_id)
     else:
-        raise "collateral not supported"
+        self._transfer_erc721(wallet, collateral_contract, token_id)
 
 
 @internal
@@ -735,13 +750,13 @@ def _receive_funds_from_borrower(_from: address, _amount: uint256):
 
 
 @internal
-@payable
 def _receive_funds_from_lender(_from: address, _amount: uint256):
 
     if payment_token == empty(address):
         assert weth9.transferFrom(_from, self, _amount), "transferFrom failed"
     else:
         assert IERC20(payment_token).transferFrom(_from, self, _amount), "transferFrom failed"
+
 
 @internal
 @payable
@@ -758,13 +773,6 @@ def _transfer_funds_from_lender_to_borrower(_from: address, _to: address, _amoun
 @internal
 def _is_punk(_collateralAddress: address) -> bool:
     return _collateralAddress == cryptopunks.address
-
-
-@view
-@internal
-def _is_erc721(_collateralAddress: address) -> bool:
-    return IERC165(_collateralAddress).supportsInterface(0x80ac58cd)
-    # TODO change to support renting quasi erc721 implementation
 
 
 @view
@@ -808,11 +816,8 @@ def _store_collateral(wallet: address, collateral_contract: address, token_id: u
         assert self._is_punk_approved_for_vault(wallet, collateral_contract, token_id), "transfer is not approved"
         self._store_punk(wallet, collateral_contract, token_id)
 
-    elif  self._is_erc721(collateral_contract):
+    else:
         assert self._erc721_owner(collateral_contract, token_id) == wallet, "collateral not owned by wallet"
         assert self._is_erc721_approved_for_vault(wallet, collateral_contract, token_id), "transfer is not approved"
         self._store_erc721(wallet, collateral_contract, token_id)
-
-    else:
-        raise "collateral not supported"
 

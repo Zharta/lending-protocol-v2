@@ -91,12 +91,12 @@ def protocol_wallet(accounts):
 
 
 @pytest.fixture(scope="session")
-def erc721_contract_def():
+def erc721_contract_def(boa_env):
     return boa.load_partial("contracts/auxiliary/ERC721.vy")
 
 
 @pytest.fixture(scope="session")
-def weth9_contract_def():
+def weth9_contract_def(boa_env):
     return boa.load_partial("contracts/auxiliary/WETH9Mock.vy")
 
 
@@ -106,7 +106,7 @@ def weth(weth9_contract_def, owner):
 
 
 @pytest.fixture(scope="session")
-def cryptopunks_contract_def():
+def cryptopunks_contract_def(boa_env):
     return boa.load_partial("contracts/auxiliary/CryptoPunksMarketMock.vy")
 
 
@@ -116,22 +116,22 @@ def cryptopunks(cryptopunks_contract_def, owner):
 
 
 @pytest.fixture(scope="session")
-def delegation_registry_contract_def():
+def delegation_registry_contract_def(boa_env):
     return boa.load_partial("contracts/auxiliary/DelegationRegistryMock.vy")
 
 
 @pytest.fixture(scope="session")
-def p2p_lending_control_contract_def():
+def p2p_lending_control_contract_def(boa_env):
     return boa.load_partial("contracts/P2PLendingControl.vy")
 
 
 @pytest.fixture(scope="session")
-def p2p_lending_nfts_contract_def():
+def p2p_lending_nfts_contract_def(boa_env):
     return boa.load_partial("contracts/P2PLendingNfts.vy")
 
 
 @pytest.fixture(scope="module")
-def empty_contract_def():
+def empty_contract_def(boa_env):
     return boa.loads_partial(
         dedent(
             """
@@ -147,7 +147,7 @@ def debug_bytes32(data: bytes):
 
 
 @pytest.fixture(scope="session")
-def debug_precompile():
-    register_raw_precompile("0x00000000000000000000000000000000000000ff", debug_bytes32)
+def debug_precompile(boa_env):
+    register_raw_precompile("0x0000000000000000000000000000000000011111", debug_bytes32)
     yield
 
