@@ -1,16 +1,15 @@
-from functools import cached_property
-from itertools import starmap
-
-import boa
-import vyper
-
-
 import contextlib
 from collections import namedtuple
-from typing import NamedTuple
 from dataclasses import dataclass, field
+from enum import IntEnum
+from functools import cached_property
+from itertools import starmap
 from textwrap import dedent
+from typing import NamedTuple
 
+import eth_abi
+import boa
+import vyper
 from boa.contracts.vyper.event import Event
 from boa.contracts.vyper.vyper_contract import VyperContract
 from eth.exceptions import Revert
@@ -19,7 +18,6 @@ from eth_account import Account
 from eth_account.messages import encode_intended_validator, encode_structured_data
 from eth_utils import encode_hex, keccak
 from web3 import Web3
-
 
 ZERO_ADDRESS = boa.eval("empty(address)")
 ZERO_BYTES32 = boa.eval("empty(bytes32)")
@@ -72,27 +70,6 @@ class EventWrapper:
         return f"<EventWrapper {self.event_name} {self.args_dict}>"
 
 
-# TODO: find a better way to do this. also would be useful to get structs attrs by name
-def checksummed(obj, vyper_type=None):
-    if vyper_type is None and hasattr(obj, "_vyper_type"):
-        vyper_type = obj._vyper_type
-    print(f"checksummed {obj=} {vyper_type=} {type(obj).__name__=} {type(vyper_type)=}")
-
-    if isinstance(vyper_type, vyper.codegen.types.types.DArrayType):
-        return [checksummed(x, vyper_type.subtype) for x in obj]
-
-    if isinstance(vyper_type, vyper.codegen.types.types.StructType):
-        return tuple(starmap(checksummed, zip(obj, vyper_type.tuple_members())))
-
-    if isinstance(vyper_type, vyper.codegen.types.types.BaseType):
-        if vyper_type.typ == "address":
-            return Web3.toChecksumAddress(obj)
-        if vyper_type.typ == "bytes32":
-            return f"0x{obj.hex()}"
-
-    return obj
-
-
 @contextlib.contextmanager
 def deploy_reverts():
     try:
@@ -123,47 +100,51 @@ Offer = namedtuple(
     defaults=[0, 0, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, False, 0]
 )
 
+class FeeType(IntEnum):
+    PROTOCOL = 1 << 0
+    ORIGINATION = 1 << 1
+    LENDER_BROKER = 1 << 2
+    BORROWER_BROKER = 1 << 3
+
 Signature = namedtuple("Signature", ["v", "r", "s"], defaults=[0, ZERO_BYTES32, ZERO_BYTES32])
+
 
 SignedOffer = namedtuple("SignedOffer", ["offer", "signature"], defaults=[Offer(), Signature()])
 
-Loan = namedtuple(
-    "Loan",
-    [
-        "id",
-        "amount",
-        "interest",
-        "payment_token",
-        "maturity",
-        "start_time",
-        "borrower",
-        "lender",
-        "collateral_contract",
-        "collateral_token_id",
-        "origination_fee_amount",
-        "broker_fee_bps",
-        "broker_address",
-        "protocol_fee_bps",
-        "pro_rata",
-    ],
-    defaults=[
-        ZERO_BYTES32,
-        0,
-        0,
-        ZERO_ADDRESS,
-        0,
-        0,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        0,
-        0,
-        0,
-        ZERO_ADDRESS,
-        0,
-        False
-    ]
-)
+
+Fee = namedtuple("Fee", ["type", "upfront_amount", "interest_bps", "wallet"], defaults=[0, 0, 0, ZERO_ADDRESS])
+
+
+FeeAmount = namedtuple("FeeAmount", ["type", "amount", "wallet"], defaults=[0, 0, ZERO_ADDRESS])
+
+
+class Loan(NamedTuple):
+    id: bytes = ZERO_BYTES32
+    amount: int = 0
+    interest: int = 0
+    payment_token: str = ZERO_ADDRESS
+    maturity: int = 0
+    start_time: int = 0
+    borrower: str = ZERO_ADDRESS
+    lender: str = ZERO_ADDRESS
+    collateral_contract: str = ZERO_ADDRESS
+    collateral_token_id: int = 0
+    fees: list[Fee] = field(default_factory=list)
+    pro_rata: bool = False
+
+    def get_protocol_fee(self):
+        return next((f for f in self.fees if f.type == FeeType.PROTOCOL), None)
+
+    def get_lender_broker_fee(self):
+        return next((f for f in self.fees if f.type == FeeType.LENDER_BROKER), None)
+
+    def get_borrower_broker_fee(self):
+        return next((f for f in self.fees if f.type == FeeType.BORROWER_BROKER), None)
+
+    def get_origination_fee(self):
+        return next((f for f in self.fees if f.type == FeeType.ORIGINATION), None)
+
+
 
 BrokerLock = namedtuple("BrokerLock", ["broker", "expiration"], defaults=[ZERO_ADDRESS, 0])
 
@@ -189,28 +170,12 @@ WhitelistRecord = namedtuple("WhitelistRecord", ["collection", "whitelisted"], d
 
 
 def compute_loan_hash(loan: Loan):
-    return boa.eval(
-        dedent(
-            f"""keccak256(
-            concat(
-                {loan.id},
-                convert({loan.amount}, bytes32),
-                convert({loan.interest}, bytes32),
-                convert({loan.payment_token}, bytes32),
-                convert({loan.maturity}, bytes32),
-                convert({loan.start_time}, bytes32),
-                convert({loan.borrower}, bytes32),
-                convert({loan.lender}, bytes32),
-                convert({loan.collateral_contract}, bytes32),
-                convert({loan.collateral_token_id}, bytes32),
-                convert({loan.origination_fee_amount}, bytes32),
-                convert({loan.broker_fee_bps}, bytes32),
-                convert({loan.broker_address}, bytes32),
-                convert({loan.protocol_fee_bps}, bytes32),
-                convert({loan.pro_rata}, bytes32),
-            ))"""
-        )
+    print(f"compute_loan_hash {loan=}")
+    encoded = eth_abi.encode(
+        ["(bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"],
+        [loan],
     )
+    return boa.eval(f"""keccak256({encoded})""")
 
 
 def compute_signed_offer_id(offer: SignedOffer):
@@ -266,3 +231,50 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
     lender_signature = Signature(signed_msg.v, signed_msg.r, signed_msg.s)
 
     return SignedOffer(offer, lender_signature)
+
+
+def replace_namedtuple_field(namedtuple, **kwargs):
+    return namedtuple.__class__(**namedtuple._asdict() | kwargs)
+
+
+def replace_list_element(lst, index, value):
+    return lst[:index] + [value] + lst[index + 1:]
+
+
+def get_loan_mutations(loan):
+    random_address = boa.env.generate_address("random")
+
+    yield replace_namedtuple_field(loan, id=ZERO_BYTES32)
+    yield replace_namedtuple_field(loan, amount=loan.amount + 1)
+    yield replace_namedtuple_field(loan, interest=loan.interest + 1)
+    yield replace_namedtuple_field(loan, payment_token=random_address)
+    yield replace_namedtuple_field(loan, maturity=loan.maturity - 1)
+    yield replace_namedtuple_field(loan, start_time=loan.start_time - 1)
+    yield replace_namedtuple_field(loan, borrower=random_address)
+    yield replace_namedtuple_field(loan, lender=random_address)
+    yield replace_namedtuple_field(loan, collateral_contract=random_address)
+    yield replace_namedtuple_field(loan, collateral_token_id=loan.collateral_token_id + 1)
+    yield replace_namedtuple_field(loan, pro_rata=not loan.pro_rata)
+
+    fees = loan.fees
+    if len(fees) < 4:
+        yield replace_namedtuple_field(loan, fees=[*fees, Fee(FeeType.PROTOCOL, 0, 0, random_address)])
+
+    for i, fee in enumerate(fees):
+        yield replace_namedtuple_field(loan, fees=fees[:i] + fees[i + 1:])
+        yield replace_namedtuple_field(
+            loan,
+            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, type=next(t for t in FeeType if t != fee.type)))
+        )
+        yield replace_namedtuple_field(
+            loan,
+            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, upfront_amount=fee.upfront_amount + 1))
+        )
+        yield replace_namedtuple_field(
+            loan,
+            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, interest_bps=fee.interest_bps + 1))
+        )
+        yield replace_namedtuple_field(
+            loan,
+            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, wallet=random_address))
+        )

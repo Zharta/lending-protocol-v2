@@ -380,6 +380,7 @@ def create_loan(offer: SignedOffer, collateral_token_id: uint256, delegate: addr
     self._store_collateral(msg.sender, loan.collateral_contract, loan.collateral_token_id)
     self._transfer_funds_from_lender_to_borrower(loan.lender, loan.borrower, loan.amount - offer.offer.origination_fee_amount)
 
+    # only upfront fee atm is the origination fee, remove this?
     for fee in fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._send_funds(fee.wallet, fee.upfront_amount)
@@ -413,7 +414,7 @@ def settle_loan(loan: Loan):
     assert self._is_loan_valid(loan), "invalid loan"
     assert block.timestamp <= loan.maturity, "loan defaulted"
 
-    interest: uint256 = self._compute_settle_interest(loan)
+    interest: uint256 = self._compute_settlement_interest(loan)
     settlement_fees_total: uint256 = 0
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
     settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
@@ -493,20 +494,17 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_fee_bps: uint25
     self._check_and_update_offer_state(offer)
 
     principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
-    interest: uint256 = self._compute_settle_interest(loan)
-    # protocol_fee_amount: uint256 = interest * loan.protocol_fee_bps / 10000
-    # broker_fee_amount: uint256 = interest * loan.broker_fee_bps / 10000
-    # settlement_fees: uint256 = protocol_fee_amount + broker_fee_amount
+    interest: uint256 = self._compute_settlement_interest(loan)
+
     settlement_fees_total: uint256 = 0
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
     settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
-    new_loan_upfront_fees: uint256 = offer.offer.origination_fee_amount
 
     self.loans[loan.id] = empty(bytes32)
 
-    borrower_delta: int256 = principal_delta - convert(new_loan_upfront_fees, int256) - convert(interest, int256)
+    borrower_delta: int256 = principal_delta - convert(offer.offer.origination_fee_amount, int256) - convert(interest, int256)
     current_lender_delta: uint256 = loan.amount + interest - settlement_fees_total
-    new_lender_delta_abs: uint256 = offer.offer.principal - new_loan_upfront_fees
+    new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
 
     if borrower_delta < 0:
         self._receive_funds_from_borrower(loan.borrower, convert(-1 * borrower_delta, uint256))
@@ -524,11 +522,6 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_fee_bps: uint25
 
     for fee in settlement_fees:
         self._send_funds(fee.wallet, fee.amount)
-
-    # if protocol_fee_amount > 0:
-    #     self._send_funds(self.protocol_wallet, protocol_fee_amount)
-    # if broker_fee_amount > 0:
-    #     self._send_funds(loan.broker_address, broker_fee_amount)
 
     new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_fee_bps, borrower_broker)
     for fee in new_loan_fees:
@@ -682,17 +675,16 @@ def _is_offer_signed_by_lender(signed_offer: SignedOffer, lender: address) -> bo
 @internal
 def _get_loan_fees(offer: Offer, borrower_broker_fee_bps: uint256, borrower_broker: address) -> DynArray[Fee, MAX_FEES]:
     fees: DynArray[Fee, MAX_FEES] = []
-    if self.protocol_fee > 0:
-        fees.append(Fee({type: FeeType.PROTOCOL_FEE, upfront_amount: 0, interest_bps: self.protocol_fee, wallet: self.protocol_wallet}))
     if offer.origination_fee_amount > 0:
         assert offer.origination_fee_amount <= offer.principal, "origination fee gt principal"
-        fees.append(Fee({type: FeeType.ORIGINATION_FEE, upfront_amount: offer.origination_fee_amount, interest_bps: 0, wallet: offer.lender}))
     if offer.broker_fee_bps > 0:
         assert offer.broker_address != empty(address), "broker fee without address"
-        fees.append(Fee({type: FeeType.LENDER_BROKER_FEE, upfront_amount: 0, interest_bps: offer.broker_fee_bps, wallet: offer.broker_address}))
     if borrower_broker_fee_bps > 0:
         assert borrower_broker != empty(address), "broker fee without address"
-        fees.append(Fee({type: FeeType.BORROWER_BROKER_FEE, upfront_amount: 0, interest_bps: borrower_broker_fee_bps, wallet: borrower_broker}))
+    fees.append(Fee({type: FeeType.PROTOCOL_FEE, upfront_amount: 0, interest_bps: self.protocol_fee, wallet: self.protocol_wallet}))
+    fees.append(Fee({type: FeeType.ORIGINATION_FEE, upfront_amount: offer.origination_fee_amount, interest_bps: 0, wallet: offer.lender}))
+    fees.append(Fee({type: FeeType.LENDER_BROKER_FEE, upfront_amount: 0, interest_bps: offer.broker_fee_bps, wallet: offer.broker_address}))
+    fees.append(Fee({type: FeeType.BORROWER_BROKER_FEE, upfront_amount: 0, interest_bps: borrower_broker_fee_bps, wallet: borrower_broker}))
     return fees
 
 @internal
@@ -709,7 +701,7 @@ def _get_settlement_fees(loan: Loan, settlement_interest: uint256) -> (DynArray[
 
 
 @internal
-def _compute_settle_interest(loan: Loan) -> uint256:
+def _compute_settlement_interest(loan: Loan) -> uint256:
     if loan.pro_rata:
         return loan.interest * (block.timestamp - loan.start_time) / (loan.maturity - loan.start_time)
     else:
