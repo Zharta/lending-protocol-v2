@@ -595,3 +595,82 @@ def test_settle_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pror
 def test_settle_loan_reverts_if_native_payment_for_erc20(p2p_nfts_usdc, ongoing_loan_bayc):
     with boa.reverts("native payment not allowed"):
         p2p_nfts_usdc.settle_loan(ongoing_loan_bayc, value=1)
+
+
+
+def test_settle_loan_fails_on_erc20_transfer_fail(
+    p2p_lending_nfts_contract_def,
+    weth,
+    bayc,
+    delegation_registry,
+    cryptopunks,
+    p2p_control,
+    owner,
+    borrower,
+    lender,
+    lender_key,
+    now,
+):
+    failing_erc20_code = dedent("""
+
+            @external
+            def transfer(_to : address, _value : uint256) -> bool:
+                return False
+
+            @external
+            def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
+                return True
+
+            """)
+    erc20 = boa.loads(failing_erc20_code)
+    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, 0, delegation_registry, weth, cryptopunks, p2p_control)
+
+    token_id = 1
+    offer = Offer(
+        principal=1000,
+        interest=100,
+        payment_token=erc20.address,
+        duration=100,
+        origination_fee_amount=10,
+        broker_fee_bps=0,
+        broker_address=ZERO_ADDRESS,
+        collateral_contract=bayc.address,
+        collateral_min_token_id=token_id,
+        collateral_max_token_id=token_id,
+        expiration=now + 100,
+        lender=lender,
+        pro_rata=False,
+        size=1
+    )
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_erc20.address)
+
+    bayc.mint(borrower, token_id)
+    bayc.approve(p2p_nfts_erc20.address, token_id, sender=borrower)
+
+    loan_id = p2p_nfts_erc20.create_loan(signed_offer, token_id, borrower, 0, ZERO_ADDRESS, sender=borrower)
+    loan = Loan(
+        id=loan_id,
+        amount=offer.principal,
+        interest=offer.interest,
+        payment_token=offer.payment_token,
+        maturity=now + offer.duration,
+        start_time=now,
+        borrower=borrower,
+        lender=lender,
+        collateral_contract=bayc.address,
+        collateral_token_id=token_id,
+        fees=[
+            Fee(FeeType.PROTOCOL, 0, p2p_nfts_erc20.protocol_fee(), p2p_nfts_erc20.protocol_wallet()),
+            Fee(FeeType.ORIGINATION, offer.origination_fee_amount, 0, lender),
+            Fee(FeeType.LENDER_BROKER, 0, 0, ZERO_ADDRESS),
+            Fee(FeeType.BORROWER_BROKER, 0, 0, ZERO_ADDRESS),
+        ],
+        pro_rata=offer.pro_rata
+    )
+    assert compute_loan_hash(loan) == p2p_nfts_erc20.loans(loan_id)
+
+    with boa.reverts("error sending funds"):
+        p2p_nfts_erc20.settle_loan(loan, sender=loan.borrower)
+
+
+

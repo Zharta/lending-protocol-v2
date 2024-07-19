@@ -93,10 +93,6 @@ struct Loan:
     collateral_contract: address
     collateral_token_id: uint256
     fees: DynArray[Fee, MAX_FEES]
-    #origination_fee_amount: uint256
-    #broker_fee_bps: uint256
-    #broker_address: address
-    #protocol_fee_bps: uint256
     pro_rata: bool
 
 
@@ -127,10 +123,6 @@ event LoanCreated:
     collateral_contract: address
     collateral_token_id: uint256
     fees: DynArray[Fee, MAX_FEES]
-    # origination_fee_amount: uint256
-    # broker_fee: uint256
-    # broker_address: address
-    # protocol_fee: uint256
     pro_rata: bool
 
 event LoanReplaced:
@@ -144,18 +136,12 @@ event LoanReplaced:
     collateral_token_id: uint256
     borrower: address
     lender: address
-    # origination_fee_amount: uint256
-    # broker_fee: uint256
-    # broker_address: address
-    # protocol_fee: uint256
     fees: DynArray[Fee, MAX_FEES]
     pro_rata: bool
     original_loan_id: bytes32
     paid_principal: uint256
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
-    #paid_protocol_fees: uint256
-    #paid_broker_fees: uint256
 
 event LoanPaid:
     id: bytes32
@@ -165,8 +151,6 @@ event LoanPaid:
     paid_principal: uint256
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
-    #paid_protocol_fees: uint256
-    #paid_broker_fees: uint256
 
 event LoanCollateralClaimed:
     id: bytes32
@@ -524,6 +508,7 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_fee_bps: uint25
         self._send_funds(fee.wallet, fee.amount)
 
     new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_fee_bps, borrower_broker)
+    # only upfront fee atm is the origination fee, remove this?
     for fee in new_loan_fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._send_funds(fee.wallet, fee.upfront_amount)
