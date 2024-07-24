@@ -87,7 +87,8 @@ Offer = namedtuple(
         "payment_token",
         "duration",
         "origination_fee_amount",
-        "broker_fee_bps",
+        "broker_upfront_fee_amount",
+        "broker_settlement_fee_bps",
         "broker_address",
         "collateral_contract",
         "collateral_min_token_id",
@@ -97,7 +98,7 @@ Offer = namedtuple(
         "pro_rata",
         "size"
     ],
-    defaults=[0, 0, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, False, 0]
+    defaults=[0, 0, ZERO_ADDRESS, 0, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, False, 0]
 )
 
 class FeeType(IntEnum):
@@ -112,7 +113,39 @@ Signature = namedtuple("Signature", ["v", "r", "s"], defaults=[0, ZERO_BYTES32, 
 SignedOffer = namedtuple("SignedOffer", ["offer", "signature"], defaults=[Offer(), Signature()])
 
 
-Fee = namedtuple("Fee", ["type", "upfront_amount", "interest_bps", "wallet"], defaults=[0, 0, 0, ZERO_ADDRESS])
+# Fee = namedtuple("Fee", ["type", "upfront_amount", "settlement_bps", "wallet"], defaults=[0, 0, 0, ZERO_ADDRESS])
+
+class Fee(NamedTuple):
+    type: FeeType = FeeType.PROTOCOL
+    upfront_amount: int = 0
+    settlement_bps: int = 0
+    wallet: str = ZERO_ADDRESS
+
+    @classmethod
+    def protocol(cls, contract):
+        return cls(
+            FeeType.PROTOCOL,
+            contract.protocol_upfront_fee(),
+            contract.protocol_settlement_fee(),
+            contract.protocol_wallet()
+        )
+
+    @classmethod
+    def origination(cls, offer):
+        return cls(FeeType.ORIGINATION, offer.origination_fee_amount, 0, offer.lender)
+
+    @classmethod
+    def lender_broker(cls, offer):
+        return cls(
+            FeeType.LENDER_BROKER,
+            offer.broker_upfront_fee_amount,
+            offer.broker_settlement_fee_bps,
+            offer.broker_address
+        )
+
+    @classmethod
+    def borrower_broker(cls, broker, upfront_amount=0, settlement_bps=0):
+        return cls(FeeType.BORROWER_BROKER, upfront_amount, settlement_bps, broker)
 
 
 FeeAmount = namedtuple("FeeAmount", ["type", "amount", "wallet"], defaults=[0, 0, ZERO_ADDRESS])
@@ -206,7 +239,8 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
                 {"name": "payment_token", "type": "address"},
                 {"name": "duration", "type": "uint256"},
                 {"name": "origination_fee_amount", "type": "uint256"},
-                {"name": "broker_fee_bps", "type": "uint256"},
+                {"name": "broker_upfront_fee_amount", "type": "uint256"},
+                {"name": "broker_settlement_fee_bps", "type": "uint256"},
                 {"name": "broker_address", "type": "address"},
                 {"name": "collateral_contract", "type": "address"},
                 {"name": "collateral_min_token_id", "type": "uint256"},
@@ -272,7 +306,7 @@ def get_loan_mutations(loan):
         )
         yield replace_namedtuple_field(
             loan,
-            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, interest_bps=fee.interest_bps + 1))
+            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, settlement_bps=fee.settlement_bps + 1))
         )
         yield replace_namedtuple_field(
             loan,

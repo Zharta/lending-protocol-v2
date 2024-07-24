@@ -61,7 +61,8 @@ struct Offer:
     payment_token: address
     duration: uint256
     origination_fee_amount: uint256
-    broker_fee_bps: uint256
+    broker_upfront_fee_amount: uint256
+    broker_settlement_fee_bps: uint256
     broker_address: address
     collateral_contract: address
     collateral_min_token_id: uint256
@@ -179,8 +180,10 @@ event OwnershipTransferred:
     new_owner: address
 
 event ProtocolFeeSet:
-    old_fee: uint256
-    new_fee: uint256
+    old_upfront_fee: uint256
+    old_settlement_fee: uint256
+    new_upfront_fee: uint256
+    new_settlement_fee: uint256
 
 event ProtocolWalletChanged:
     old_wallet: address
@@ -194,7 +197,7 @@ owner: public(address)
 proposed_owner: public(address)
 
 payment_token: public(immutable(address))
-max_protocol_fee: public(immutable(uint256))
+max_protocol_settlement_fee: public(immutable(uint256))
 loans: public(HashMap[bytes32, bytes32])
 delegation_registry: public(immutable(DelegationRegistry))
 weth9: public(immutable(WETH))
@@ -202,7 +205,8 @@ cryptopunks: public(immutable(CryptoPunksMarket))
 controller: public(immutable(P2PLendingControl))
 
 protocol_wallet: public(address)
-protocol_fee: public(uint256)
+protocol_upfront_fee: public(uint256)
+protocol_settlement_fee: public(uint256)
 offer_count: public(HashMap[bytes32, uint256])
 revoked_offers: public(HashMap[bytes32, bool])
 
@@ -210,19 +214,19 @@ ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
 
 DOMAIN_TYPE_HASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-OFFER_TYPE_DEF: constant(String[314]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
-                                        "uint256 broker_fee_bps,address broker_address,address collateral_contract,uint256 collateral_min_token_id," \
-                                        "uint256 collateral_max_token_id,uint256 expiration,address lender,bool pro_rata,uint256 size)"
+OFFER_TYPE_DEF: constant(String[355]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
+                                        "uint256 broker_upfront_fee_amount,uint256 broker_settlement_fee_bps,address broker_address,address collateral_contract," \
+                                        "uint256 collateral_min_token_id,uint256 collateral_max_token_id,uint256 expiration,address lender,bool pro_rata,uint256 size)"
 OFFER_TYPE_HASH: constant(bytes32) = keccak256(OFFER_TYPE_DEF)
 
 offer_sig_domain_separator: immutable(bytes32)
 
 
 @external
-def __init__(_payment_token: address, _max_protocol_fee: uint256, _delegation_registry: address, _weth9: address, _cryptopunks: address, _controller: address):
+def __init__(_payment_token: address, _max_protocol_settlement_fee: uint256, _delegation_registry: address, _weth9: address, _cryptopunks: address, _controller: address):
     self.owner = msg.sender
     payment_token = _payment_token
-    max_protocol_fee = _max_protocol_fee
+    max_protocol_settlement_fee = _max_protocol_settlement_fee
     delegation_registry = DelegationRegistry(_delegation_registry)
     weth9 = WETH(_weth9)
     cryptopunks = CryptoPunksMarket(_cryptopunks)
@@ -249,19 +253,21 @@ def __default__():
 
 
 @external
-def set_protocol_fee(protocol_fee: uint256):
+def set_protocol_fee(protocol_upfront_fee: uint256, protocol_settlement_fee: uint256):
 
     """
     @notice Set the protocol fee
     @dev Sets the protocol fee to the given value and logs the event. Admin function.
-    @param protocol_fee The new protocol fee.
+    @param protocol_upfront_fee The new protocol upfront fee.
+    @param protocol_settlement_fee The new protocol settlement fee.
     """
 
     assert msg.sender == self.owner, "not owner"
-    assert protocol_fee <= max_protocol_fee, "protocol fee > max fee"
+    assert protocol_settlement_fee <= max_protocol_settlement_fee, "protocol fee > max fee"
 
-    log ProtocolFeeSet(self.protocol_fee, protocol_fee)
-    self.protocol_fee = protocol_fee
+    log ProtocolFeeSet(self.protocol_upfront_fee, self.protocol_settlement_fee, protocol_upfront_fee, protocol_settlement_fee)
+    self.protocol_upfront_fee = protocol_upfront_fee
+    self.protocol_settlement_fee = protocol_settlement_fee
 
 
 @external
@@ -314,10 +320,17 @@ def claim_ownership():
 # Core functions
 
 @external
-def create_loan(offer: SignedOffer, collateral_token_id: uint256, delegate: address, borrower_broker_fee_bps: uint256, borrower_broker: address) -> bytes32:
+def create_loan(
+    offer: SignedOffer,
+    collateral_token_id: uint256,
+    delegate: address,
+    borrower_broker_upfront_fee_amount: uint256,
+    borrower_broker_settlement_fee_bps: uint256,
+    borrower_broker: address
+) -> bytes32:
     """
     @notice Create a loan
-    @param offer Offer
+    @param offer SignedOffer
     @param collateral_token_id uint256
     @param delegate address
     @return bytes32 loan id
@@ -335,12 +348,10 @@ def create_loan(offer: SignedOffer, collateral_token_id: uint256, delegate: addr
     assert offer.offer.collateral_min_token_id <= collateral_token_id, "tokenid below offer range"
     assert offer.offer.collateral_max_token_id >= collateral_token_id, "tokenid above offer range"
 
-    if offer.offer.broker_fee_bps != 0:
-        assert offer.offer.broker_address != empty(address), "broker fee without address"
-
-    self._check_and_update_offer_state(offer)
-
-    fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_fee_bps, borrower_broker)
+    fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_upfront_fee_amount, borrower_broker_settlement_fee_bps, borrower_broker)
+    total_upfront_fees: uint256 = 0
+    for fee in fees:
+        total_upfront_fees += fee.upfront_amount
 
     loan: Loan = Loan({
         id: empty(bytes32),
@@ -359,15 +370,15 @@ def create_loan(offer: SignedOffer, collateral_token_id: uint256, delegate: addr
     loan.id = self._compute_loan_id(loan)
 
     assert self.loans[loan.id] == empty(bytes32), "loan already exists"
+    self._check_and_update_offer_state(offer)
     self.loans[loan.id] = self._loan_state_hash(loan)
 
     self._store_collateral(msg.sender, loan.collateral_contract, loan.collateral_token_id)
-    self._transfer_funds_from_lender_to_borrower(loan.lender, loan.borrower, loan.amount - offer.offer.origination_fee_amount)
+    self._transfer_funds_from_lender(loan.lender, loan.borrower, loan.amount - total_upfront_fees)
 
-    # only upfront fee atm is the origination fee, remove this?
     for fee in fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
-            self._send_funds(fee.wallet, fee.upfront_amount)
+            self._transfer_funds_from_lender(loan.lender, fee.wallet, fee.upfront_amount)
 
     self._set_delegation(delegate, loan.collateral_contract, loan.collateral_token_id, delegate != empty(address))
 
@@ -447,7 +458,7 @@ def claim_defaulted_loan_collateral(loan: Loan):
 
 @external
 @payable
-def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_fee_bps: uint256, borrower_broker: address) -> bytes32:
+def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amount: uint256, borrower_broker_settlement_fee_bps: uint256, borrower_broker: address) -> bytes32:
     """
     @notice Replace a loan
     @param loan Loan
@@ -472,9 +483,6 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_fee_bps: uint25
     assert offer.offer.collateral_max_token_id >= loan.collateral_token_id, "tokenid above offer range"
     assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
 
-    if offer.offer.broker_fee_bps != 0:
-        assert offer.offer.broker_address != empty(address), "broker fee without address"
-
     self._check_and_update_offer_state(offer)
 
     principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
@@ -484,9 +492,14 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_fee_bps: uint25
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
     settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
 
+    new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_upfront_fee_amount, borrower_broker_settlement_fee_bps, borrower_broker)
+    total_upfront_fees: uint256 = 0
+    for fee in new_loan_fees:
+        total_upfront_fees += fee.upfront_amount
+
     self.loans[loan.id] = empty(bytes32)
 
-    borrower_delta: int256 = principal_delta - convert(offer.offer.origination_fee_amount, int256) - convert(interest, int256)
+    borrower_delta: int256 = principal_delta - convert(total_upfront_fees, int256) - convert(interest, int256)
     current_lender_delta: uint256 = loan.amount + interest - settlement_fees_total
     new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
 
@@ -507,8 +520,6 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_fee_bps: uint25
     for fee in settlement_fees:
         self._send_funds(fee.wallet, fee.amount)
 
-    new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_fee_bps, borrower_broker)
-    # only upfront fee atm is the origination fee, remove this?
     for fee in new_loan_fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._send_funds(fee.wallet, fee.upfront_amount)
@@ -658,18 +669,38 @@ def _is_offer_signed_by_lender(signed_offer: SignedOffer, lender: address) -> bo
 
 
 @internal
-def _get_loan_fees(offer: Offer, borrower_broker_fee_bps: uint256, borrower_broker: address) -> DynArray[Fee, MAX_FEES]:
+def _get_loan_fees(offer: Offer, borrower_broker_upfront_fee_amount: uint256, borrower_broker_settlement_fee_bps: uint256, borrower_broker: address) -> DynArray[Fee, MAX_FEES]:
     fees: DynArray[Fee, MAX_FEES] = []
     if offer.origination_fee_amount > 0:
         assert offer.origination_fee_amount <= offer.principal, "origination fee gt principal"
-    if offer.broker_fee_bps > 0:
+    if offer.broker_settlement_fee_bps > 0 or offer.broker_upfront_fee_amount > 0:
         assert offer.broker_address != empty(address), "broker fee without address"
-    if borrower_broker_fee_bps > 0:
+    if borrower_broker_upfront_fee_amount > 0 or borrower_broker_settlement_fee_bps > 0:
         assert borrower_broker != empty(address), "broker fee without address"
-    fees.append(Fee({type: FeeType.PROTOCOL_FEE, upfront_amount: 0, interest_bps: self.protocol_fee, wallet: self.protocol_wallet}))
-    fees.append(Fee({type: FeeType.ORIGINATION_FEE, upfront_amount: offer.origination_fee_amount, interest_bps: 0, wallet: offer.lender}))
-    fees.append(Fee({type: FeeType.LENDER_BROKER_FEE, upfront_amount: 0, interest_bps: offer.broker_fee_bps, wallet: offer.broker_address}))
-    fees.append(Fee({type: FeeType.BORROWER_BROKER_FEE, upfront_amount: 0, interest_bps: borrower_broker_fee_bps, wallet: borrower_broker}))
+    fees.append(Fee({
+        type: FeeType.PROTOCOL_FEE,
+        upfront_amount: self.protocol_upfront_fee,
+        interest_bps: self.protocol_settlement_fee,
+        wallet: self.protocol_wallet
+    }))
+    fees.append(Fee({
+        type: FeeType.ORIGINATION_FEE,
+        upfront_amount: offer.origination_fee_amount,
+        interest_bps: 0,
+        wallet: offer.lender
+    }))
+    fees.append(Fee({
+        type: FeeType.LENDER_BROKER_FEE,
+        upfront_amount: offer.broker_upfront_fee_amount,
+        interest_bps: offer.broker_settlement_fee_bps,
+        wallet: offer.broker_address
+    }))
+    fees.append(Fee({
+        type: FeeType.BORROWER_BROKER_FEE,
+        upfront_amount: borrower_broker_upfront_fee_amount,
+        interest_bps: borrower_broker_settlement_fee_bps,
+        wallet: borrower_broker
+    }))
     return fees
 
 @internal
@@ -772,7 +803,7 @@ def _receive_funds_from_lender(_from: address, _amount: uint256):
 
 @internal
 @payable
-def _transfer_funds_from_lender_to_borrower(_from: address, _to: address, _amount: uint256):
+def _transfer_funds_from_lender(_from: address, _to: address, _amount: uint256):
 
     if payment_token == empty(address):
         assert weth9.transferFrom(_from, self, _amount), "transferFrom failed"
