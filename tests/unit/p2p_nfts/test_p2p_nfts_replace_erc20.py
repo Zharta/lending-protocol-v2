@@ -934,6 +934,7 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pro
     assert usdc.balanceOf(p2p_nfts_usdc.protocol_wallet()) == initial_protocol_wallet_balance + protocol_fee_amount + p2p_nfts_usdc.protocol_upfront_fee()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("pro_rata", [True, False])
 @pytest.mark.parametrize("same_lender", [True, False])
 @pytest.mark.parametrize("principal_loan1", [100000, 200000])

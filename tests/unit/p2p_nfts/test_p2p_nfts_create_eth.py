@@ -24,6 +24,11 @@ from ...conftest_base import (
 FOREVER = 2**256 - 1
 
 
+@pytest.fixture
+def p2p_nfts_proxy(p2p_nfts_eth, p2p_lending_nfts_proxy_contract_def):
+    return p2p_lending_nfts_proxy_contract_def.deploy(p2p_nfts_eth.address)
+
+
 def test_create_loan_reverts_if_offer_not_signed_by_lender(p2p_nfts_eth, borrower, now, lender, borrower_key):
     offer = Offer(
         principal=1000,
@@ -468,7 +473,7 @@ def test_create_loan(p2p_nfts_eth, borrower, now, lender, lender_key, bayc, weth
         lender=lender,
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
-        fees = [
+        fees=[
             Fee.protocol(p2p_nfts_eth),
             Fee.origination(offer),
             Fee.lender_broker(offer),
@@ -720,3 +725,54 @@ def test_create_loan_updates_offer_usage_count(p2p_nfts_eth, borrower, now, lend
     p2p_nfts_eth.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert p2p_nfts_eth.offer_count(compute_signed_offer_id(signed_offer)) == 1
+
+
+def test_create_loan_works_with_proxy(p2p_nfts_eth, borrower, now, lender, lender_key, bayc, weth, p2p_nfts_proxy):
+    token_id = 1
+    principal = 1000
+    offer = Offer(
+        principal=principal,
+        interest=100,
+        payment_token=ZERO_ADDRESS,
+        duration=100,
+        origination_fee_amount=0,
+        broker_upfront_fee_amount=0,
+        broker_settlement_fee_bps=0,
+        broker_address=ZERO_ADDRESS,
+        collateral_contract=bayc.address,
+        collateral_min_token_id=token_id,
+        collateral_max_token_id=token_id,
+        expiration=now + 100,
+        lender=lender,
+        pro_rata=False
+    )
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
+
+    bayc.mint(borrower, token_id)
+    bayc.approve(p2p_nfts_eth.address, token_id, sender=borrower)
+    weth.deposit(value=principal, sender=lender)
+    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
+
+    loan_id = p2p_nfts_proxy.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+
+    loan = Loan(
+        id=loan_id,
+        amount=offer.principal,
+        interest=offer.interest,
+        payment_token=offer.payment_token,
+        maturity=now + offer.duration,
+        start_time=now,
+        borrower=borrower,
+        lender=lender,
+        collateral_contract=bayc.address,
+        collateral_token_id=token_id,
+        fees=[
+            Fee.protocol(p2p_nfts_eth),
+            Fee.origination(offer),
+            Fee.lender_broker(offer),
+            Fee.borrower_broker(ZERO_ADDRESS)
+        ],
+        pro_rata=offer.pro_rata
+    )
+    assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)

@@ -100,6 +100,31 @@ def test_change_protocol_wallet_logs_event(p2p_nfts_eth, owner):
     assert event.new_wallet == new_wallet
 
 
+def test_set_proxy_authorization_reverts_if_not_owner(p2p_nfts_eth):
+    proxy = boa.env.generate_address("proxy")
+    random = boa.env.generate_address("random")
+    with boa.reverts("not owner"):
+        p2p_nfts_eth.set_proxy_authorization(proxy, True, sender=random)
+
+
+def test_set_proxy_authorization(p2p_nfts_eth, owner):
+    proxy = boa.env.generate_address("proxy")
+    p2p_nfts_eth.set_proxy_authorization(proxy, True, sender=owner)
+    assert p2p_nfts_eth.authorized_proxies(proxy) == True
+
+    p2p_nfts_eth.set_proxy_authorization(proxy, False, sender=owner)
+    assert p2p_nfts_eth.authorized_proxies(proxy) == False
+
+
+def test_set_proxy_authorization_logs_event(p2p_nfts_eth, owner):
+    proxy = boa.env.generate_address("proxy")
+    p2p_nfts_eth.set_proxy_authorization(proxy, True, sender=owner)
+    event = get_last_event(p2p_nfts_eth, "ProxyAuthorizationChanged")
+
+    assert event.proxy == proxy
+    assert event.value == True
+
+
 def test_propose_owner_reverts_if_wrong_caller(p2p_nfts_eth):
     new_owner = boa.env.generate_address("new_owner")
     with boa.reverts("not owner"):

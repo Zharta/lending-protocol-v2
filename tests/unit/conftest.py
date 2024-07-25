@@ -6,6 +6,26 @@ from boa.vm.py_evm import register_raw_precompile
 from eth_account import Account
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--runslow", action="store_true", default=False, help="run slow tests"
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: mark test as slow to run")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--runslow"):
+        # --runslow given in cli: do not skip slow tests
+        return
+    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def boa_env():
     boa.interpret.set_cache_dir(cache_dir=".cache/titanoboa")
@@ -128,6 +148,11 @@ def p2p_lending_control_contract_def(boa_env):
 @pytest.fixture(scope="session")
 def p2p_lending_nfts_contract_def(boa_env):
     return boa.load_partial("contracts/P2PLendingNfts.vy")
+
+
+@pytest.fixture(scope="session")
+def p2p_lending_nfts_proxy_contract_def(boa_env):
+    return boa.load_partial("tests/stubs/P2PNftsProxy.vy")
 
 
 @pytest.fixture(scope="module")

@@ -27,18 +27,19 @@ requirements-dev.txt: pyproject.toml
 	uv pip compile -o requirements-dev.txt --extra dev pyproject.toml
 
 test: ${VENV}
-	${VENV}/bin/pytest tests/unit --durations=0
+	${VENV}/bin/pytest tests/unit --durations=0 -n auto --dist loadscope
+
 
 coverage:
-	${VENV}/bin/coverage run -m pytest tests/unit -s
+	${VENV}/bin/coverage run -m pytest tests/unit --runslow
 	${VENV}/bin/coverage report
 
 branch-coverage:
-	${VENV}/bin/coverage run --branch -m pytest tests/unit -s
+	${VENV}/bin/coverage run --branch -m pytest tests/unit --runslow
 	${VENV}/bin/coverage report
 
 unit-tests:
-	${VENV}/bin/pytest tests/unit --durations=0 -n auto --dist loadscope
+	${VENV}/bin/pytest tests/unit --runslow --durations=0 -n auto --dist loadscope
 
 integration-tests:
 	${VENV}/bin/pytest -n auto tests/integration --durations=0 --dist loadscope

@@ -189,6 +189,11 @@ event ProtocolWalletChanged:
     old_wallet: address
     new_wallet: address
 
+event ProxyAuthorizationChanged:
+    proxy: address
+    value: bool
+
+
 # Global variables
 
 DEBUG: constant(address) = 0x0000000000000000000000000000000000011111
@@ -209,6 +214,8 @@ protocol_upfront_fee: public(uint256)
 protocol_settlement_fee: public(uint256)
 offer_count: public(HashMap[bytes32, uint256])
 revoked_offers: public(HashMap[bytes32, bool])
+
+authorized_proxies: public(HashMap[address, bool])
 
 ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
@@ -287,6 +294,23 @@ def change_protocol_wallet(new_protocol_wallet: address):
 
 
 @external
+def set_proxy_authorization(_proxy: address, _value: bool):
+
+    """
+    @notice Set authorization
+    @dev Sets the authorization for the given proxy and logs the event. Admin function.
+    @param _proxy The address of the proxy.
+    @param _value The value of the authorization.
+    """
+
+    assert msg.sender == self.owner, "not owner"
+
+    self.authorized_proxies[_proxy] = _value
+
+    log ProxyAuthorizationChanged(_proxy, _value)
+
+
+@external
 def propose_owner(_address: address):
 
     """
@@ -360,7 +384,7 @@ def create_loan(
         payment_token: offer.offer.payment_token,
         maturity: block.timestamp + offer.offer.duration,
         start_time: block.timestamp,
-        borrower: msg.sender,
+        borrower: msg.sender if not self.authorized_proxies[msg.sender] else tx.origin,
         lender: offer.offer.lender,
         collateral_contract: offer.offer.collateral_contract,
         collateral_token_id: collateral_token_id,
@@ -373,7 +397,7 @@ def create_loan(
     self._check_and_update_offer_state(offer)
     self.loans[loan.id] = self._loan_state_hash(loan)
 
-    self._store_collateral(msg.sender, loan.collateral_contract, loan.collateral_token_id)
+    self._store_collateral(loan.borrower, loan.collateral_contract, loan.collateral_token_id)
     self._transfer_funds_from_lender(loan.lender, loan.borrower, loan.amount - total_upfront_fees)
 
     for fee in fees:
@@ -408,6 +432,7 @@ def settle_loan(loan: Loan):
     assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
     assert block.timestamp <= loan.maturity, "loan defaulted"
+    assert self._check_user(loan.borrower), "not borrower"
 
     interest: uint256 = self._compute_settlement_interest(loan)
     settlement_fees_total: uint256 = 0
@@ -442,7 +467,7 @@ def claim_defaulted_loan_collateral(loan: Loan):
     """
     assert self._is_loan_valid(loan), "invalid loan"
     assert block.timestamp > loan.maturity, "loan not defaulted"
-    assert loan.lender == msg.sender, "not lender"
+    assert self._check_user(loan.lender), "not lender"
 
     self.loans[loan.id] = empty(bytes32)
 
@@ -467,6 +492,7 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amo
     """
     assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
+    assert self._check_user(loan.borrower), "not borrower"
     assert block.timestamp <= loan.maturity, "loan defaulted"
 
     assert self._is_offer_signed_by_lender(offer, offer.offer.lender), "offer not signed by lender"
@@ -531,7 +557,7 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amo
         payment_token: offer.offer.payment_token,
         maturity: block.timestamp + offer.offer.duration,
         start_time: block.timestamp,
-        borrower: msg.sender,
+        borrower: loan.borrower,
         lender: offer.offer.lender,
         collateral_contract: offer.offer.collateral_contract,
         collateral_token_id: loan.collateral_token_id,
@@ -571,7 +597,7 @@ def revoke_offer(offer: SignedOffer):
     @notice Revoke an offer
     @param offer SignedOffer
     """
-    assert msg.sender == offer.offer.lender, "not lender"
+    assert self._check_user(offer.offer.lender), "not lender"
     assert offer.offer.expiration > block.timestamp, "offer expired"
     assert self._is_offer_signed_by_lender(offer, offer.offer.lender), "offer not signed by lender"
 
@@ -864,3 +890,7 @@ def _store_collateral(wallet: address, collateral_contract: address, token_id: u
         assert self._is_erc721_approved_for_vault(wallet, collateral_contract, token_id), "transfer is not approved"
         self._store_erc721(wallet, collateral_contract, token_id)
 
+
+@internal
+def _check_user(user: address) -> bool:
+    return msg.sender == user or (self.authorized_proxies[msg.sender] and user == tx.origin)

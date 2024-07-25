@@ -26,6 +26,11 @@ from ...conftest_base import (
 
 
 @pytest.fixture
+def p2p_nfts_proxy(p2p_nfts_eth, p2p_lending_nfts_proxy_contract_def):
+    return p2p_lending_nfts_proxy_contract_def.deploy(p2p_nfts_eth.address)
+
+
+@pytest.fixture
 def broker():
     return boa.env.generate_address()
 
@@ -184,6 +189,25 @@ def test_replace_loan_reverts_if_loan_invalid(p2p_nfts_eth, ongoing_loan_bayc, o
         print(f"{loan=}")
         with boa.reverts("invalid loan"):
             p2p_nfts_eth.replace_loan(loan, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+
+
+def test_replace_loan_reverts_if_not_borrower(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, p2p_nfts_proxy):
+
+    random = boa.env.generate_address("random")
+
+    with boa.reverts("not borrower"):
+        p2p_nfts_eth.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=random)
+
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
+    with boa.reverts("not borrower"):
+        p2p_nfts_proxy.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=random)
+
+
+def test_replace_loan_reverts_if_proxy_not_authorized(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, p2p_nfts_proxy):
+
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, False, sender=p2p_nfts_eth.owner())
+    with boa.reverts("not borrower"):
+        p2p_nfts_proxy.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_loan_defaulted(p2p_nfts_eth, ongoing_loan_bayc, now, offer_bayc2):
@@ -591,6 +615,39 @@ def test_replace_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, n
     ]
 
 
+def test_replace_loan_works_with_proxy(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, now, bayc, weth, p2p_nfts_proxy):
+    offer = offer_bayc2.offer
+    lender = offer.lender
+    borrower = ongoing_loan_bayc.borrower
+    principal = offer.principal
+    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
+    weth.deposit(value=principal, sender=lender)
+    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
+    loan_id = p2p_nfts_proxy.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower, value=amount_to_settle)
+
+    loan = Loan(
+        id=loan_id,
+        amount=offer.principal,
+        interest=offer.interest,
+        payment_token=offer.payment_token,
+        maturity=now + offer.duration,
+        start_time=now,
+        borrower=ongoing_loan_bayc.borrower,
+        lender=lender,
+        collateral_contract=bayc.address,
+        collateral_token_id=ongoing_loan_bayc.collateral_token_id,
+        fees=[
+            Fee.protocol(p2p_nfts_eth),
+            Fee.origination(offer),
+            Fee.lender_broker(offer),
+            Fee.borrower_broker(ZERO_ADDRESS)
+        ],
+        pro_rata=offer.pro_rata
+    )
+    assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)
+
 
 def test_replace_loan_succeeds_if_broker_matches_lock(p2p_nfts_eth, p2p_control, ongoing_loan_bayc, now, offer_bayc2, weth):
     token_id = ongoing_loan_bayc.collateral_token_id
@@ -929,6 +986,7 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_pror
 
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("pro_rata", [True, False])
 @pytest.mark.parametrize("same_lender", [True, False])
 @pytest.mark.parametrize("principal_loan1", [100000, 200000])

@@ -333,6 +333,7 @@ def test_settle_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, usdc):
     ]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("protocol_upfront_fee", [0, 3])
 @pytest.mark.parametrize("protocol_settlement_fee", [0, 100])
 @pytest.mark.parametrize("borrower_broker_upfront_fee", [0, 5])

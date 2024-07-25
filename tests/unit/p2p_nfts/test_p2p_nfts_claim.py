@@ -24,6 +24,11 @@ from ...conftest_base import (
 
 
 @pytest.fixture
+def p2p_nfts_proxy(p2p_nfts_eth, p2p_lending_nfts_proxy_contract_def):
+    return p2p_lending_nfts_proxy_contract_def.deploy(p2p_nfts_eth.address)
+
+
+@pytest.fixture
 def broker():
     return boa.env.generate_address()
 
@@ -190,12 +195,26 @@ def test_claim_defaulted_reverts_if_loan_not_defaulted(p2p_nfts_eth, ongoing_loa
         p2p_nfts_eth.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.lender)
 
 
-def test_claim_defaulted_reverts_if_not_lender(p2p_nfts_eth, ongoing_loan_bayc, now):
+def test_claim_defaulted_reverts_if_not_lender(p2p_nfts_eth, ongoing_loan_bayc, now, p2p_nfts_proxy):
     time_to_default = ongoing_loan_bayc.maturity - now
     boa.env.time_travel(seconds=time_to_default + 1)
 
     with boa.reverts("not lender"):
         p2p_nfts_eth.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.borrower)
+
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
+    with boa.reverts("not lender"):
+        p2p_nfts_proxy.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.borrower)
+
+
+def test_claim_defaulted_reverts_with_unauth_proxy(p2p_nfts_eth, ongoing_loan_bayc, now, weth, p2p_nfts_proxy):
+
+    time_to_default = ongoing_loan_bayc.maturity - now
+    boa.env.time_travel(seconds=time_to_default + 1)
+
+    with boa.reverts("not lender"):
+        p2p_nfts_proxy.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.lender)
+
 
 
 def test_claim_defaulted(p2p_nfts_eth, ongoing_loan_bayc, now, weth):
@@ -204,6 +223,20 @@ def test_claim_defaulted(p2p_nfts_eth, ongoing_loan_bayc, now, weth):
     boa.env.time_travel(seconds=time_to_default + 1)
 
     p2p_nfts_eth.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.lender)
+
+    assert p2p_nfts_eth.loans(ongoing_loan_bayc.id) == ZERO_BYTES32
+    assert boa.env.get_balance(p2p_nfts_eth.address) == 0
+
+
+def test_claim_defaulted_works_with_proxy(p2p_nfts_eth, ongoing_loan_bayc, now, weth, p2p_nfts_proxy):
+
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
+
+    time_to_default = ongoing_loan_bayc.maturity - now
+
+    boa.env.time_travel(seconds=time_to_default + 1)
+
+    p2p_nfts_proxy.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.lender)
 
     assert p2p_nfts_eth.loans(ongoing_loan_bayc.id) == ZERO_BYTES32
     assert boa.env.get_balance(p2p_nfts_eth.address) == 0

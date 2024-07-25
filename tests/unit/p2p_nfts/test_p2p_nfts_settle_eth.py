@@ -27,6 +27,11 @@ FOREVER = 2**256 - 1
 
 
 @pytest.fixture
+def p2p_nfts_proxy(p2p_nfts_eth, p2p_lending_nfts_proxy_contract_def):
+    return p2p_lending_nfts_proxy_contract_def.deploy(p2p_nfts_eth.address)
+
+
+@pytest.fixture
 def broker():
     return boa.env.generate_address()
 
@@ -250,6 +255,27 @@ def test_settle_loan_reverts_if_loan_defaulted(p2p_nfts_eth, ongoing_loan_bayc, 
         p2p_nfts_eth.settle_loan(ongoing_loan_bayc, sender=ongoing_loan_bayc.borrower)
 
 
+def test_settle_loan_reverts_if_not_borrower(p2p_nfts_eth, ongoing_loan_bayc):
+    loan = ongoing_loan_bayc
+    interest = loan.interest
+    amount_to_settle = loan.amount + interest
+    random = boa.env.generate_address("random")
+    boa.env.set_balance(random, amount_to_settle)
+
+    with boa.reverts("not borrower"):
+        p2p_nfts_eth.settle_loan(loan, sender=random, value=amount_to_settle)
+
+
+def test_settle_loan_reverts_if_proxy_not_auth(p2p_nfts_eth, ongoing_loan_bayc, p2p_nfts_proxy):
+    loan = ongoing_loan_bayc
+    interest = loan.interest
+    amount_to_settle = loan.amount + interest
+
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, False, sender=p2p_nfts_eth.owner())
+    with boa.reverts("not borrower"):
+        p2p_nfts_proxy.settle_loan(loan, sender=loan.borrower, value=amount_to_settle)
+
+
 def test_settle_loan_reverts_if_loan_already_settled(p2p_nfts_eth, ongoing_loan_bayc):
     loan = ongoing_loan_bayc
     interest = loan.interest
@@ -317,6 +343,7 @@ def test_settle_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, weth):
     ]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("protocol_upfront_fee", [0, 3])
 @pytest.mark.parametrize("protocol_settlement_fee", [0, 100])
 @pytest.mark.parametrize("borrower_broker_upfront_fee", [0, 5])
@@ -505,6 +532,19 @@ def test_settle_loan_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_bayc, weth):
     initial_protocol_wallet_balance = boa.env.get_balance(p2p_nfts_eth.protocol_wallet())
 
     p2p_nfts_eth.settle_loan(loan, sender=loan.borrower, value=amount_to_settle)
+
+    assert boa.env.get_balance(p2p_nfts_eth.protocol_wallet()) == initial_protocol_wallet_balance + protocol_fee_amount
+
+
+def test_settle_loan_works_with_proxy(p2p_nfts_eth, ongoing_loan_bayc, weth, p2p_nfts_proxy):
+    loan = ongoing_loan_bayc
+    interest = loan.interest
+    protocol_fee_amount = interest * loan.get_protocol_fee().settlement_bps // 10000
+    amount_to_settle = loan.amount + interest
+    initial_protocol_wallet_balance = boa.env.get_balance(p2p_nfts_eth.protocol_wallet())
+
+    p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
+    p2p_nfts_proxy.settle_loan(loan, sender=loan.borrower, value=amount_to_settle)
 
     assert boa.env.get_balance(p2p_nfts_eth.protocol_wallet()) == initial_protocol_wallet_balance + protocol_fee_amount
 
