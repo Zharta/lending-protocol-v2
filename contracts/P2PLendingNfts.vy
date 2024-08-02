@@ -144,6 +144,25 @@ event LoanReplaced:
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
 
+event LoanReplacedByLender:
+    id: bytes32
+    amount: uint256
+    interest: uint256
+    payment_token: address
+    maturity: uint256
+    start_time: uint256
+    collateral_contract: address
+    collateral_token_id: uint256
+    borrower: address
+    lender: address
+    fees: DynArray[Fee, MAX_FEES]
+    pro_rata: bool
+    original_loan_id: bytes32
+    paid_principal: uint256
+    paid_interest: uint256
+    paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
+    borrower_compensation: uint256
+
 event LoanPaid:
     id: bytes32
     borrower: address
@@ -441,7 +460,7 @@ def settle_loan(loan: Loan):
 
     self.loans[loan.id] = empty(bytes32)
 
-    self._receive_funds_from_borrower(loan.borrower, loan.amount + interest)
+    self._receive_funds_from_caller(loan.borrower, loan.amount + interest)
 
     self._send_funds(loan.lender, loan.amount + interest - settlement_fees_total)
     for fee in settlement_fees:
@@ -530,7 +549,7 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amo
     new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
 
     if borrower_delta < 0:
-        self._receive_funds_from_borrower(loan.borrower, convert(-1 * borrower_delta, uint256))
+        self._receive_funds_from_caller(loan.borrower, convert(-1 * borrower_delta, uint256))
 
     if loan.lender != offer.offer.lender:
         self._receive_funds_from_lender(offer.offer.lender, new_lender_delta_abs)
@@ -586,6 +605,128 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amo
         loan.amount,
         interest,
         settlement_fees
+    )
+
+    return new_loan.id
+
+
+@external
+@payable
+def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
+    """
+    @notice Replace a loan
+    @param loan Loan
+    @param offer Offer
+    @return bytes32 loan id
+    """
+    assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
+    assert self._is_loan_valid(loan), "invalid loan"
+    assert self._check_user(loan.lender), "not lender"
+    assert block.timestamp <= loan.maturity, "loan defaulted"
+
+    assert self._is_offer_signed_by_lender(offer, offer.offer.lender), "offer not signed by lender"
+    assert offer.offer.expiration > block.timestamp, "offer expired"
+    assert offer.offer.payment_token == payment_token, "invalid payment token"
+    assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
+    assert block.timestamp + offer.offer.duration >= loan.maturity, "maturity before loan maturity"
+
+    collateral_status: CollateralStatus = controller.get_collateral_status(offer.offer.collateral_contract, loan.collateral_token_id)
+    if collateral_status.broker_lock.broker != offer.offer.broker_address:
+        assert collateral_status.broker_lock.expiration < block.timestamp, "collateral locked"
+    assert collateral_status.whitelisted, "collateral not whitelisted"
+
+    assert offer.offer.collateral_min_token_id <= loan.collateral_token_id, "tokenid below offer range"
+    assert offer.offer.collateral_max_token_id >= loan.collateral_token_id, "tokenid above offer range"
+    assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
+
+    self._check_and_update_offer_state(offer)
+
+    principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
+    interest: uint256 = self._compute_settlement_interest(loan)
+
+    settlement_fees_total: uint256 = 0
+    settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
+    settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
+
+    new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, 0, 0, empty(address))
+    total_upfront_fees: uint256 = 0
+    for fee in new_loan_fees:
+        total_upfront_fees += fee.upfront_amount
+
+    self.loans[loan.id] = empty(bytes32)
+
+    borrower_compensation: uint256 = total_upfront_fees + self._compute_max_interest_delta(loan, offer.offer, interest) # + convert(max(-1 * principal_delta, 0), uint256)
+    borrower_delta: int256 = principal_delta - convert(total_upfront_fees, int256) - convert(interest, int256) + convert(borrower_compensation, int256)
+
+    if borrower_delta < 0:
+        borrower_compensation += convert(-1 * borrower_delta, uint256)
+        borrower_delta = 0
+
+    current_lender_delta: int256 = convert(loan.amount + interest - settlement_fees_total, int256) - convert(borrower_compensation, int256)
+    new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
+
+    assert borrower_delta >= 0, "borrower delta < 0"
+
+    if loan.lender != offer.offer.lender:
+        self._receive_funds_from_lender(offer.offer.lender, new_lender_delta_abs)
+        if current_lender_delta > 0:
+            self._send_funds(loan.lender, convert(current_lender_delta, uint256))
+        if current_lender_delta < 0:
+            self._receive_funds_from_caller(loan.lender, convert(-1 * current_lender_delta, uint256))
+    else:
+        lender_delta: int256 = current_lender_delta - convert(new_lender_delta_abs, int256)
+        if lender_delta > 0:
+            self._send_funds(loan.lender, convert(lender_delta, uint256))
+        if lender_delta < 0:
+            self._receive_funds_from_caller(loan.lender, convert(-1 * lender_delta, uint256))
+
+    if borrower_delta > 0:
+        self._send_funds(loan.borrower, convert(borrower_delta, uint256))
+
+    for fee in settlement_fees:
+        self._send_funds(fee.wallet, fee.amount)
+
+    for fee in new_loan_fees:
+        if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
+            self._send_funds(fee.wallet, fee.upfront_amount)
+
+    new_loan: Loan = Loan({
+        id: empty(bytes32),
+        amount: offer.offer.principal,
+        interest: offer.offer.interest,
+        payment_token: offer.offer.payment_token,
+        maturity: block.timestamp + offer.offer.duration,
+        start_time: block.timestamp,
+        borrower: loan.borrower,
+        lender: offer.offer.lender,
+        collateral_contract: offer.offer.collateral_contract,
+        collateral_token_id: loan.collateral_token_id,
+        fees: new_loan_fees,
+        pro_rata: offer.offer.pro_rata
+    })
+    new_loan.id = self._compute_loan_id(new_loan)
+
+    assert self.loans[new_loan.id] == empty(bytes32), "loan already exists"
+    self.loans[new_loan.id] = self._loan_state_hash(new_loan)
+
+    log LoanReplacedByLender(
+        new_loan.id,
+        new_loan.amount,
+        new_loan.interest,
+        new_loan.payment_token,
+        new_loan.maturity,
+        new_loan.start_time,
+        new_loan.collateral_contract,
+        new_loan.collateral_token_id,
+        new_loan.borrower,
+        new_loan.lender,
+        new_loan.fees,
+        new_loan.pro_rata,
+        loan.id,
+        loan.amount,
+        interest,
+        settlement_fees,
+        borrower_compensation
     )
 
     return new_loan.id
@@ -751,6 +892,23 @@ def _compute_settlement_interest(loan: Loan) -> uint256:
 
 
 @internal
+def _compute_max_interest_delta(loan: Loan, offer: Offer, interest: uint256) -> uint256:
+    """
+    Computes the maximum interest difference between the new offer and the current loan.
+    That max difference can be reached either at the refinance timestamp or at the original loan maturity.
+    The difference can never be negative because at the refinance timestamp the delta is just the offer interest.
+    """
+    delta_at_refinance: uint256 = 0 if offer.pro_rata else offer.interest
+    loan_interest_delta_at_maturity: uint256 = loan.interest - interest
+    offer_interest_at_loan_maturity: uint256 = offer.interest * (loan.maturity - block.timestamp) / offer.duration if offer.pro_rata else offer.interest
+
+    return convert(max(
+        convert(delta_at_refinance, int256),
+        convert(offer_interest_at_loan_maturity, int256) - convert(loan_interest_delta_at_maturity, int256)
+    ), uint256)
+
+
+@internal
 def _set_delegation(_wallet: address, _collateral_address: address, _token_id: uint256, _value: bool):
     delegation_registry.delegateERC721(_wallet, _collateral_address, _token_id, empty(bytes32), _value)
 
@@ -807,8 +965,9 @@ def _send_funds(_to: address, _amount: uint256):
 
 @internal
 @payable
-def _receive_funds_from_borrower(_from: address, _amount: uint256):
+def _receive_funds_from_caller(_from: address, _amount: uint256):
 
+    raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_amount))
     if payment_token == empty(address):
         assert msg.value >= _amount, "invalid sent value"
         weth9.deposit(value=_amount)

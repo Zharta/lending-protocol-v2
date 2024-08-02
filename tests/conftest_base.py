@@ -113,8 +113,6 @@ Signature = namedtuple("Signature", ["v", "r", "s"], defaults=[0, ZERO_BYTES32, 
 SignedOffer = namedtuple("SignedOffer", ["offer", "signature"], defaults=[Offer(), Signature()])
 
 
-# Fee = namedtuple("Fee", ["type", "upfront_amount", "settlement_bps", "wallet"], defaults=[0, 0, 0, ZERO_ADDRESS])
-
 class Fee(NamedTuple):
     type: FeeType = FeeType.PROTOCOL
     upfront_amount: int = 0
@@ -177,6 +175,14 @@ class Loan(NamedTuple):
     def get_origination_fee(self):
         return next((f for f in self.fees if f.type == FeeType.ORIGINATION), None)
 
+    def get_settlement_fees(self, timestamp=None):
+        interest = self.get_interest(timestamp) if timestamp else self.interest
+        return sum(f.settlement_bps * interest // 10000 for f in self.fees)
+
+    def get_interest(self, timestamp):
+        if self.pro_rata:
+            return self.interest * (timestamp - self.start_time) // (self.maturity - self.start_time)
+        return self.interest
 
 
 BrokerLock = namedtuple("BrokerLock", ["broker", "expiration"], defaults=[ZERO_ADDRESS, 0])
