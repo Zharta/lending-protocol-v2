@@ -655,24 +655,22 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
 
     self.loans[loan.id] = empty(bytes32)
 
-    borrower_compensation: uint256 = total_upfront_fees + self._compute_max_interest_delta(loan, offer.offer, interest) # + convert(max(-1 * principal_delta, 0), uint256)
-    borrower_delta: int256 = principal_delta - convert(total_upfront_fees, int256) - convert(interest, int256) + convert(borrower_compensation, int256)
+    max_interest_delta: uint256 = self._compute_max_interest_delta(loan, offer.offer, interest)
+    borrower_compensation: uint256 = convert(max(convert(max_interest_delta, int256), convert(interest, int256) - principal_delta), uint256)
 
-    if borrower_delta < 0:
-        borrower_compensation += convert(-1 * borrower_delta, uint256)
-        borrower_delta = 0
-
-    current_lender_delta: int256 = convert(loan.amount + interest - settlement_fees_total, int256) - convert(borrower_compensation, int256)
+    borrower_delta: int256 = principal_delta - convert(interest, int256) + convert(borrower_compensation, int256)
+    current_lender_delta: int256 = convert(loan.amount + interest + total_upfront_fees - settlement_fees_total, int256) - convert(borrower_compensation, int256)
     new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
 
     assert borrower_delta >= 0, "borrower delta < 0"
 
     if loan.lender != offer.offer.lender:
+        assert current_lender_delta >= 0, "lender delta < 0"
         self._receive_funds_from_lender(offer.offer.lender, new_lender_delta_abs)
         if current_lender_delta > 0:
             self._send_funds(loan.lender, convert(current_lender_delta, uint256))
-        if current_lender_delta < 0:
-            self._receive_funds_from_caller(loan.lender, convert(-1 * current_lender_delta, uint256))
+        #if current_lender_delta < 0:
+            #self._receive_funds_from_caller(loan.lender, convert(-1 * current_lender_delta, uint256))
     else:
         lender_delta: int256 = current_lender_delta - convert(new_lender_delta_abs, int256)
         if lender_delta > 0:
@@ -955,6 +953,8 @@ def _transfer_collateral(wallet: address, collateral_contract: address, token_id
 @internal
 def _send_funds(_to: address, _amount: uint256):
 
+    #raw_call(DEBUG, _abi_encode(_to))
+    #raw_call(DEBUG, _abi_encode(_amount))
     if payment_token == empty(address):
         weth9.withdraw(_amount)
         send(_to, _amount)
@@ -967,7 +967,7 @@ def _send_funds(_to: address, _amount: uint256):
 @payable
 def _receive_funds_from_caller(_from: address, _amount: uint256):
 
-    raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_amount))
+    #raw_call(DEBUG, _abi_encode(_amount))
     if payment_token == empty(address):
         assert msg.value >= _amount, "invalid sent value"
         weth9.deposit(value=_amount)
