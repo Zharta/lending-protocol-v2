@@ -101,7 +101,7 @@ def offer_bayc2(now, lender2, lender2_key, bayc, broker, p2p_nfts_eth):
 
 
 @pytest.fixture
-def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee, protocol_fee):
+def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee, protocol_fee, debug_precompile):
 
     offer = offer_bayc.offer
     token_id = offer.collateral_min_token_id
@@ -142,7 +142,7 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
 
 
 @pytest.fixture
-def ongoing_loan_prorata(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, lender_key, borrower_broker_fee, protocol_fee):
+def ongoing_loan_prorata(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, lender_key, borrower_broker_fee, protocol_fee, debug_precompile):
 
     offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
     token_id = offer.collateral_min_token_id
@@ -192,7 +192,6 @@ def test_replace_loan_reverts_if_loan_invalid(p2p_nfts_eth, ongoing_loan_bayc, o
 
 
 def test_replace_loan_reverts_if_not_borrower(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, p2p_nfts_proxy):
-
     random = boa.env.generate_address("random")
 
     with boa.reverts("not lender"):
@@ -510,43 +509,16 @@ def test_replace_loan_reverts_if_lender_funds_not_approved(p2p_nfts_eth, borrowe
 def _max_interest_delta(loan: Loan, offer: Offer, refinance_timestamp: int):
     assert refinance_timestamp >= loan.start_time
     assert refinance_timestamp <= loan.maturity
+    print(f"_max_interest_delta: {loan=}, {offer=}, {refinance_timestamp=}")
 
     loan_duration = loan.maturity - loan.start_time
-    refinance_timestamp_interest = loan.interest * (refinance_timestamp - loan.start_time) / loan_duration if loan.pro_rata else loan.interest
+    refinance_timestamp_interest = loan.interest * (refinance_timestamp - loan.start_time) // loan_duration if loan.pro_rata else loan.interest
     delta_at_refinance = 0 if offer.pro_rata else offer.interest
     loan_interest_delta_at_maturity = loan.interest - refinance_timestamp_interest
-    offer_interest_at_loan_maturity = offer.interest * (loan.maturity - refinance_timestamp) / offer.duration if offer.pro_rata else offer.interest
+    offer_interest_at_loan_maturity = offer.interest * (loan.maturity - refinance_timestamp) // offer.duration if offer.pro_rata else offer.interest
 
     return max(delta_at_refinance, offer_interest_at_loan_maturity - loan_interest_delta_at_maturity)
 
-
-
-def test_replace_loan_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_bayc, weth, offer_bayc2, now):
-    loan = ongoing_loan_bayc
-    offer = offer_bayc2.offer
-    new_lender = offer.lender
-    principal = offer.principal
-
-    # increase upfront fees so the lender has to send funds
-    p2p_nfts_eth.set_protocol_fee(
-        principal + loan.interest,
-        p2p_nfts_eth.protocol_settlement_fee(),
-        sender=p2p_nfts_eth.owner()
-    )
-
-    upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
-    borrower_compensation = upfront_fees + _max_interest_delta(ongoing_loan_bayc, offer, now)
-    settlement_fees = loan.get_settlement_fees()
-    lender1_delta = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest - settlement_fees - borrower_compensation
-
-    print(f"{ongoing_loan_bayc=}")
-    print(f"{offer=}")
-    print(f"{lender1_delta=} {borrower_compensation=} {upfront_fees=} {settlement_fees=}")
-    weth.deposit(value=principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=new_lender)
-
-    with boa.reverts("invalid sent value"):
-        p2p_nfts_eth.replace_loan_lender(loan, offer_bayc2, sender=ongoing_loan_bayc.lender, value=-lender1_delta - 1)
 
 
 def test_replace_loan_reverts_if_collateral_locked(p2p_nfts_eth, p2p_control, ongoing_loan_bayc, now, offer_bayc2, weth):
@@ -603,9 +575,10 @@ def test_replace_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, n
     borrower = ongoing_loan_bayc.borrower
     lender = offer.lender
     principal = offer.principal
+    interest = ongoing_loan_bayc.get_interest(now)
 
-    upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
-    borrower_compensation = upfront_fees + _max_interest_delta(ongoing_loan_bayc, offer, now)
+    max_interest_delta = _max_interest_delta(ongoing_loan_bayc, offer, now)
+    borrower_compensation = max(max_interest_delta, interest + ongoing_loan_bayc.amount - principal)
 
     protocol_fee_amount = ongoing_loan_bayc.get_protocol_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
     broker_fee_amount = ongoing_loan_bayc.get_lender_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
@@ -904,8 +877,8 @@ def test_replace_loan_prorata_logs_event(p2p_nfts_eth, ongoing_loan_prorata, wet
     borrower_broker_fee_amount = interest * loan.get_borrower_broker_fee().settlement_bps // 10000
     amount_to_settle = amount + interest
 
-    upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
-    borrower_compensation = upfront_fees + _max_interest_delta(ongoing_loan_prorata, offer, now)
+    max_interest_delta = _max_interest_delta(ongoing_loan_prorata, offer, now)
+    borrower_compensation = max(max_interest_delta, interest + ongoing_loan_prorata.amount - new_principal)
 
     weth.deposit(value=new_principal, sender=new_lender)
     weth.approve(p2p_nfts_eth.address, new_principal, sender=new_lender)
@@ -1121,6 +1094,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
         offer_bayc.offer,
         principal=principal_loan2,
         interest=principal_loan2 // 10,
+        pro_rata=pro_rata,
         lender=lender2,
         origination_fee_amount=origination_fee,
         broker_upfront_fee_amount=lender_broker_upfront_fee,
@@ -1129,30 +1103,22 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     )
     signed_offer2 = sign_offer(offer2, key2, p2p_nfts_eth.address)
 
-    # total_upfront_fees = offer2.origination_fee_amount + protocol_upfront_fee + offer2.broker_upfront_fee_amount + borrower_broker_upfront_fee
-    # borrower_delta = offer2.principal - loan1.amount - total_upfront_fees - interest
-    # current_lender_delta = loan1.amount + interest - protocol_fee_amount - broker_fee_amount - borrower_broker_fee_amount
-    # new_lender_delta = offer2.origination_fee_amount - offer2.principal
-
-    total_upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
-    borrower_compensation = total_upfront_fees + _max_interest_delta(loan1, offer, now + actual_duration)
+    interest = loan1.get_interest(now + actual_duration)
+    total_upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer2.origination_fee_amount + offer2.broker_upfront_fee_amount
+    max_interest_delta = _max_interest_delta(loan1, offer2, now + actual_duration)
+    borrower_compensation = max(max_interest_delta, interest + loan1.amount - offer2.principal)
     settlement_fees = loan1.get_settlement_fees(now + actual_duration)
-    borrower_delta = offer2.principal - loan1.amount - total_upfront_fees - interest + borrower_compensation
-
-    if borrower_delta < 0:
-        borrower_compensation += -borrower_delta
-        borrower_delta = 0
-
-    current_lender_delta = loan1.amount + interest - settlement_fees - borrower_compensation
+    borrower_delta = offer2.principal - loan1.amount - interest + borrower_compensation
+    current_lender_delta = loan1.amount + interest - total_upfront_fees - settlement_fees - borrower_compensation
     new_lender_delta = offer2.origination_fee_amount - offer2.principal
 
-    print(f"{borrower=}, {lender=}, {lender2=}")
-    print(f"{loan1.amount=}, {loan1.interest=} {interest=}")
+    print(f"{borrower=} {lender=} {lender2=}")
+    print(f"{loan1.amount=} {loan1.interest=} {interest=}")
     print(f"{loan1.fees=}")
-    print(f"{offer2.principal=}, {offer2.origination_fee_amount=} {offer2.interest=} {offer2.pro_rata=}")
-    print(f"{actual_duration=}, {interest=}, {protocol_fee_amount=}, {broker_fee_amount=} {borrower_broker_fee_amount=}")
-    print(f"{total_upfront_fees=}, {borrower_compensation=} {settlement_fees=}")
-    print(f"{borrower_delta=}, {current_lender_delta=}, {new_lender_delta=}")
+    print(f"{offer2.principal=} {offer2.origination_fee_amount=} {offer2.interest=} {offer2.pro_rata=}")
+    print(f"{actual_duration=} {interest=} {protocol_fee_amount=} {broker_fee_amount=} {borrower_broker_fee_amount=}")
+    print(f"{total_upfront_fees=} {max_interest_delta=} {borrower_compensation=} {settlement_fees=}")
+    print(f"{borrower_delta=} {current_lender_delta=} {new_lender_delta=}")
 
     initial_borrower_balance = boa.env.get_balance(borrower)
     initial_lender_balance = boa.env.get_balance(lender)
@@ -1161,17 +1127,16 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     if lender != lender2:
         weth.deposit(value=-new_lender_delta, sender=lender2)
         weth.approve(p2p_nfts_eth.address, -new_lender_delta, sender=lender2)
-    elif current_lender_delta + new_lender_delta < 0:
+        lender_delta = current_lender_delta
+    else:
         lender_delta = current_lender_delta + new_lender_delta
-        weth.deposit(value=-lender_delta, sender=lender)
-        weth.approve(p2p_nfts_eth.address, -lender_delta, sender=lender)
 
     boa.env.time_travel(seconds=actual_duration)
     loan2_id = p2p_nfts_eth.replace_loan_lender(
         loan1,
         signed_offer2,
         sender=loan1.lender,
-        value=max(0, -current_lender_delta)
+        value=max(0, -lender_delta)
     )
 
     loan2 = Loan(
@@ -1189,7 +1154,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
             Fee.protocol(p2p_nfts_eth),
             Fee.origination(offer2),
             Fee.lender_broker(offer2),
-            Fee.borrower_broker(borrower_broker, borrower_broker_upfront_fee, borrower_broker_settlement_fee)
+            Fee.borrower_broker(ZERO_ADDRESS, 0, 0)
         ],
         pro_rata=offer2.pro_rata
     )

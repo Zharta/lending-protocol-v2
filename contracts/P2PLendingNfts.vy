@@ -659,7 +659,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
     borrower_compensation: uint256 = convert(max(convert(max_interest_delta, int256), convert(interest, int256) - principal_delta), uint256)
 
     borrower_delta: int256 = principal_delta - convert(interest, int256) + convert(borrower_compensation, int256)
-    current_lender_delta: int256 = convert(loan.amount + interest + total_upfront_fees - settlement_fees_total, int256) - convert(borrower_compensation, int256)
+    current_lender_delta: int256 = convert(loan.amount + interest, int256) - convert(total_upfront_fees + settlement_fees_total + borrower_compensation, int256)
     new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
 
     assert borrower_delta >= 0, "borrower delta < 0"
@@ -669,8 +669,6 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         self._receive_funds_from_lender(offer.offer.lender, new_lender_delta_abs)
         if current_lender_delta > 0:
             self._send_funds(loan.lender, convert(current_lender_delta, uint256))
-        #if current_lender_delta < 0:
-            #self._receive_funds_from_caller(loan.lender, convert(-1 * current_lender_delta, uint256))
     else:
         lender_delta: int256 = current_lender_delta - convert(new_lender_delta_abs, int256)
         if lender_delta > 0:
@@ -967,7 +965,6 @@ def _send_funds(_to: address, _amount: uint256):
 @payable
 def _receive_funds_from_caller(_from: address, _amount: uint256):
 
-    #raw_call(DEBUG, _abi_encode(_amount))
     if payment_token == empty(address):
         assert msg.value >= _amount, "invalid sent value"
         weth9.deposit(value=_amount)
