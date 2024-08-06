@@ -387,7 +387,7 @@ def test_settle_loan_logs_fees(
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
-    usdc.approve(p2p_nfts_usdc.address, principal - origination_fee, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, principal - origination_fee + offer.broker_upfront_fee_amount, sender=lender)
 
     p2p_nfts_usdc.set_protocol_fee(protocol_upfront_fee, protocol_settlement_fee, sender=p2p_nfts_usdc.owner())
     p2p_nfts_usdc.change_protocol_wallet(p2p_nfts_usdc.owner(), sender=p2p_nfts_usdc.owner())

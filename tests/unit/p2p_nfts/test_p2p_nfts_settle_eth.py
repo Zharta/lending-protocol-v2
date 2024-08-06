@@ -26,6 +26,11 @@ from ...conftest_base import (
 FOREVER = 2**256 - 1
 
 
+def deposit_and_approve(erc20, amount, sender, spender):
+    erc20.deposit(value=amount, sender=sender)
+    erc20.approve(spender, amount, sender=sender)
+
+
 @pytest.fixture
 def p2p_nfts_proxy(p2p_nfts_eth, p2p_lending_nfts_proxy_contract_def):
     return p2p_lending_nfts_proxy_contract_def.deploy(p2p_nfts_eth.address)
@@ -397,8 +402,7 @@ def test_settle_loan_logs_fees(
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_eth.address, token_id, sender=borrower)
-    weth.deposit(value=principal - origination_fee, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    deposit_and_approve(weth, principal - origination_fee + offer.broker_upfront_fee_amount, lender, p2p_nfts_eth.address)
 
     p2p_nfts_eth.set_protocol_fee(protocol_upfront_fee, protocol_settlement_fee, sender=p2p_nfts_eth.owner())
     p2p_nfts_eth.change_protocol_wallet(p2p_nfts_eth.owner(), sender=p2p_nfts_eth.owner())
