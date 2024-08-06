@@ -417,7 +417,7 @@ def create_loan(
     self.loans[loan.id] = self._loan_state_hash(loan)
 
     self._store_collateral(loan.borrower, loan.collateral_contract, loan.collateral_token_id)
-    self._transfer_funds_from_lender(loan.lender, loan.borrower, loan.amount - total_upfront_fees)
+    self._transfer_funds_from_lender(loan.lender, loan.borrower, loan.amount - total_upfront_fees + offer.offer.broker_upfront_fee_amount)
 
     for fee in fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
@@ -544,9 +544,9 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amo
 
     self.loans[loan.id] = empty(bytes32)
 
-    borrower_delta: int256 = principal_delta - convert(total_upfront_fees, int256) - convert(interest, int256)
+    borrower_delta: int256 = principal_delta - convert(total_upfront_fees, int256) + convert(offer.offer.broker_upfront_fee_amount, int256) - convert(interest, int256)
     current_lender_delta: uint256 = loan.amount + interest - settlement_fees_total
-    new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
+    new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount + offer.offer.broker_upfront_fee_amount
 
     if borrower_delta < 0:
         self._receive_funds_from_caller(loan.borrower, convert(-1 * borrower_delta, uint256))
@@ -659,8 +659,8 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
     borrower_compensation: uint256 = convert(max(convert(max_interest_delta, int256), convert(interest, int256) - principal_delta), uint256)
 
     borrower_delta: int256 = principal_delta - convert(interest, int256) + convert(borrower_compensation, int256)
-    current_lender_delta: int256 = convert(loan.amount + interest, int256) - convert(total_upfront_fees + settlement_fees_total + borrower_compensation, int256)
-    new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount
+    current_lender_delta: int256 = convert(loan.amount + interest + offer.offer.broker_upfront_fee_amount, int256) - convert(total_upfront_fees + settlement_fees_total + borrower_compensation, int256)
+    new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount + offer.offer.broker_upfront_fee_amount
 
     assert borrower_delta >= 0, "borrower delta < 0"
 

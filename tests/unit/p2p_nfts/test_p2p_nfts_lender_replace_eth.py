@@ -110,8 +110,9 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_eth.address, token_id, sender=borrower)
-    weth.deposit(value=principal - origination_fee, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     loan_id = p2p_nfts_eth.create_loan(
         offer_bayc,
@@ -149,10 +150,12 @@ def ongoing_loan_prorata(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc,
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
 
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_eth.address, token_id, sender=borrower)
-    weth.deposit(value=principal - origination_fee, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
     loan_id = p2p_nfts_eth.create_loan(
@@ -542,8 +545,10 @@ def test_replace_loan(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, now, bayc, w
     offer = offer_bayc2.offer
     new_lender = offer.lender
     principal = offer.principal
-    weth.deposit(value=principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=new_lender)
+
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     loan_id = p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
@@ -572,7 +577,6 @@ def test_replace_loan(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, now, bayc, w
 def test_replace_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, now, bayc, weth):
     token_id = 1
     offer = offer_bayc2.offer
-    borrower = ongoing_loan_bayc.borrower
     lender = offer.lender
     principal = offer.principal
     interest = ongoing_loan_bayc.get_interest(now)
@@ -583,8 +587,10 @@ def test_replace_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, n
     protocol_fee_amount = ongoing_loan_bayc.get_protocol_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
     broker_fee_amount = ongoing_loan_bayc.get_lender_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
     borrower_broker_fee_amount = ongoing_loan_bayc.get_borrower_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
-    weth.deposit(value=principal, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     loan_id = p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
@@ -621,8 +627,9 @@ def test_replace_loan_works_with_proxy(p2p_nfts_eth, ongoing_loan_bayc, offer_ba
     offer = offer_bayc2.offer
     lender = offer.lender
     principal = offer.principal
-    weth.deposit(value=principal, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
     loan_id = p2p_nfts_proxy.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
@@ -656,8 +663,9 @@ def test_replace_loan_succeeds_if_broker_matches_lock(p2p_nfts_eth, p2p_control,
     lender = offer.lender
     broker = offer.broker_address
     principal = offer.principal
-    weth.deposit(value=principal, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     # simulate previous broker lock
     p2p_control.add_broker_lock(collateral_contract, token_id, broker, now + 100, sender=p2p_nfts_eth.address)
@@ -672,13 +680,12 @@ def test_replace_loan_succeeds_if_broker_matches_lock(p2p_nfts_eth, p2p_control,
 def test_replace_loan_keeps_delegation(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, bayc, delegation_registry, weth):
     token_id = 1
     offer = offer_bayc2.offer
-    borrower = ongoing_loan_bayc.borrower
     lender = offer.lender
     delegate = ongoing_loan_bayc.borrower
     principal = offer.principal
-    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
-    weth.deposit(value=principal, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     assert delegation_registry.checkDelegateForERC721(delegate, p2p_nfts_eth.address, bayc.address, token_id, b"")
 
@@ -690,12 +697,11 @@ def test_replace_loan_keeps_delegation(p2p_nfts_eth, ongoing_loan_bayc, offer_ba
 def test_replace_loan_keeps_collateral_to_escrow(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, bayc, weth):
     token_id = 1
     offer = offer_bayc2.offer
-    borrower = ongoing_loan_bayc.borrower
     lender = offer.lender
     principal = offer.principal
-    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
-    weth.deposit(value=principal, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     assert bayc.ownerOf(token_id) == p2p_nfts_eth.address
 
@@ -710,8 +716,9 @@ def test_replace_loan_transfers_principal_to_borrower(p2p_nfts_eth, ongoing_loan
     new_lender = offer.lender
     principal = offer.principal
     amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
-    weth.deposit(value=principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=new_lender)
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(ongoing_loan_bayc, offer, now)
@@ -726,27 +733,27 @@ def test_replace_loan_transfers_principal_to_borrower(p2p_nfts_eth, ongoing_loan
 
 def test_replace_loan_transfers_origination_fee_to_lender(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, weth):
     offer = offer_bayc2.offer
-    borrower = ongoing_loan_bayc.borrower
     new_lender = offer.lender
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
-    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
 
     initial_lender_balance = boa.env.get_balance(new_lender)
-    weth.deposit(value=principal - origination_fee, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, principal - origination_fee, sender=new_lender)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
-    assert boa.env.get_balance(new_lender) == initial_lender_balance - principal + origination_fee
+    assert boa.env.get_balance(new_lender) == initial_lender_balance - principal + origination_fee - offer.broker_upfront_fee_amount
 
 
 def test_replace_loan_updates_offer_usage_count(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, weth):
     offer = offer_bayc2.offer
     lender = offer.lender
     principal = offer.principal
-    weth.deposit(value=principal, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     principal = offer.principal
 
@@ -767,16 +774,18 @@ def test_replace_loan_pays_lender(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, 
     upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(ongoing_loan_bayc, offer, now)
     settlement_fees = loan.get_settlement_fees()
-    lender1_delta = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest - settlement_fees - borrower_compensation
+    current_lender_delta = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest - settlement_fees - borrower_compensation + offer.broker_upfront_fee_amount
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
     initial_lender_balance = boa.env.get_balance(lender)
 
-    weth.deposit(value=principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
-    assert boa.env.get_balance(loan.lender) == initial_lender_balance + lender1_delta
+    assert boa.env.get_balance(loan.lender) == initial_lender_balance + current_lender_delta
 
 
 def test_replace_loan_pays_borrower_if_needed(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc, weth, lender, lender2, lender2_key, now):
@@ -791,22 +800,24 @@ def test_replace_loan_pays_borrower_if_needed(p2p_nfts_eth, ongoing_loan_bayc, o
     upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(loan, offer, now)
     settlement_fees = loan.get_settlement_fees()
-    lender1_delta = loan.amount + loan.interest - settlement_fees - borrower_compensation
+    current_lender_delta = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest - settlement_fees - borrower_compensation + offer.broker_upfront_fee_amount
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
     borrower_delta = offer.principal - loan.amount - upfront_fees - interest + borrower_compensation
 
     print(f"{upfront_fees=} {borrower_compensation=} {settlement_fees=}")
-    print(f"{lender1_delta=} {borrower_delta=}")
+    print(f"{current_lender_delta=} {borrower_delta=}")
 
     initial_borrower_balance = boa.env.get_balance(borrower)
 
-    weth.deposit(value=principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     p2p_nfts_eth.replace_loan_lender(
         loan,
         sign_offer(offer, lender2_key, p2p_nfts_eth.address),
         sender=loan.lender,
-        value=max(-lender1_delta, 0)
+        value=max(-current_lender_delta, 0)
     )
 
     assert borrower_delta > 0
@@ -815,17 +826,17 @@ def test_replace_loan_pays_borrower_if_needed(p2p_nfts_eth, ongoing_loan_bayc, o
 
 def test_replace_loan_pays_broker_fees(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, weth):
     loan = ongoing_loan_bayc
-    borrower = ongoing_loan_bayc.borrower
+    offer = offer_bayc2.offer
     new_lender = offer_bayc2.offer.lender
-    new_principal = offer_bayc2.offer.principal
     interest = loan.interest
     broker_fee_amount = interest * ongoing_loan_bayc.get_lender_broker_fee().settlement_bps // 10000
-    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
     broker_address = ongoing_loan_bayc.get_lender_broker_fee().wallet
     initial_broker_balance = boa.env.get_balance(broker_address)
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
-    weth.deposit(value=new_principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, new_principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
@@ -834,33 +845,20 @@ def test_replace_loan_pays_broker_fees(p2p_nfts_eth, ongoing_loan_bayc, offer_ba
 
 def test_replace_loan_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_bayc, weth, offer_bayc2):
     loan = ongoing_loan_bayc
-    borrower = ongoing_loan_bayc.borrower
+    offer = offer_bayc2.offer
     new_lender = offer_bayc2.offer.lender
-    new_principal = offer_bayc2.offer.principal
     interest = loan.interest
     protocol_fee_amount = interest * loan.get_protocol_fee().settlement_bps // 10000
-    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
     initial_protocol_wallet_balance = boa.env.get_balance(p2p_nfts_eth.protocol_wallet())
 
-    weth.deposit(value=new_principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, new_principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
     assert boa.env.get_balance(p2p_nfts_eth.protocol_wallet()) == initial_protocol_wallet_balance + protocol_fee_amount + p2p_nfts_eth.protocol_upfront_fee()
-
-
-def test_replace_loan_prorata_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_prorata, weth):
-    loan = ongoing_loan_prorata
-    loan_duration = loan.maturity - loan.start_time
-    actual_duration = loan_duration * 2 // 3
-    amount = loan.amount
-    interest = loan.interest * actual_duration // loan_duration
-    amount_to_settle = amount + interest
-
-    boa.env.time_travel(seconds=actual_duration)
-    with boa.reverts("invalid sent value"):
-        p2p_nfts_eth.settle_loan(loan, sender=loan.borrower, value=amount_to_settle - 1)
 
 
 def test_replace_loan_prorata_logs_event(p2p_nfts_eth, ongoing_loan_prorata, weth, now, offer_bayc2):
@@ -876,12 +874,14 @@ def test_replace_loan_prorata_logs_event(p2p_nfts_eth, ongoing_loan_prorata, wet
     broker_fee_amount = interest * loan.get_lender_broker_fee().settlement_bps // 10000
     borrower_broker_fee_amount = interest * loan.get_borrower_broker_fee().settlement_bps // 10000
     amount_to_settle = amount + interest
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
     max_interest_delta = _max_interest_delta(ongoing_loan_prorata, offer, now)
     borrower_compensation = max(max_interest_delta, interest + ongoing_loan_prorata.amount - new_principal)
 
-    weth.deposit(value=new_principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, new_principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     print(f"{amount_to_settle=}")
     boa.env.time_travel(seconds=actual_duration)
@@ -920,19 +920,20 @@ def test_replace_loan_prorata_pays_lender(p2p_nfts_eth, ongoing_loan_prorata, we
     loan = ongoing_loan_prorata
     offer = offer_bayc2.offer
     new_lender = offer.lender
-    new_principal = offer.principal
     loan_duration = loan.maturity - loan.start_time
     actual_duration = loan_duration * 2 // 3
     interest = loan.interest * actual_duration // loan_duration
     initial_lender_balance = boa.env.get_balance(loan.lender)
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
     upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(loan, offer, now)
     settlement_fees = loan.get_settlement_fees(now + actual_duration)
-    lender1_delta = loan.amount + interest - settlement_fees - borrower_compensation
+    current_lender_delta = loan.amount + interest - settlement_fees - borrower_compensation + offer.broker_upfront_fee_amount
 
-    weth.deposit(value=new_principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, new_principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     boa.env.time_travel(seconds=actual_duration)
     p2p_nfts_eth.replace_loan_lender(loan, offer_bayc2, sender=ongoing_loan_prorata.lender)
@@ -941,15 +942,13 @@ def test_replace_loan_prorata_pays_lender(p2p_nfts_eth, ongoing_loan_prorata, we
     for fee in event.paid_settlement_fees:
         print(f"{fee=}")
 
-    assert boa.env.get_balance(loan.lender) == initial_lender_balance + lender1_delta
+    assert boa.env.get_balance(loan.lender) == initial_lender_balance + current_lender_delta
 
 
 def test_replace_loan_prorata_pays_broker_fees(p2p_nfts_eth, ongoing_loan_prorata, weth, offer_bayc2):
     loan = ongoing_loan_prorata
     offer = offer_bayc2.offer
-    borrower = loan.borrower
     new_lender = offer.lender
-    new_principal = offer.principal
     loan_duration = loan.maturity - loan.start_time
     actual_duration = loan_duration * 2 // 3
     amount = loan.amount
@@ -958,9 +957,11 @@ def test_replace_loan_prorata_pays_broker_fees(p2p_nfts_eth, ongoing_loan_prorat
     amount_to_settle = amount + interest
     broker_address = loan.get_lender_broker_fee().wallet
     initial_broker_balance = boa.env.get_balance(broker_address)
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
-    weth.deposit(value=new_principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, new_principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     print(f"{amount_to_settle=}")
     boa.env.time_travel(seconds=actual_duration)
@@ -972,9 +973,7 @@ def test_replace_loan_prorata_pays_broker_fees(p2p_nfts_eth, ongoing_loan_prorat
 def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_prorata, weth, offer_bayc2):
     loan = ongoing_loan_prorata
     offer = offer_bayc2.offer
-    borrower = loan.borrower
     new_lender = offer.lender
-    new_principal = offer.principal
     loan_duration = loan.maturity - loan.start_time
     actual_duration = loan_duration * 2 // 3
     amount = loan.amount
@@ -982,9 +981,11 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_pror
     protocol_fee_amount = interest * loan.get_protocol_fee().settlement_bps // 10000
     amount_to_settle = amount + interest
     initial_protocol_wallet_balance = boa.env.get_balance(p2p_nfts_eth.protocol_wallet())
+    new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
-    weth.deposit(value=new_principal, sender=new_lender)
-    weth.approve(p2p_nfts_eth.address, new_principal, sender=new_lender)
+    lender_approval = max(0, -new_lender_delta)
+    weth.deposit(value=lender_approval, sender=new_lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
     print(f"{amount_to_settle=}")
     boa.env.time_travel(seconds=actual_duration)
@@ -1048,8 +1049,9 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_eth.address, token_id, sender=borrower)
-    weth.deposit(value=principal_loan1 - origination_fee, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal_loan1, sender=lender)
+    lender_approval_loan1 = principal_loan1 - origination_fee + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval_loan1, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval_loan1, sender=lender)
 
     loan_id = p2p_nfts_eth.create_loan(
         signed_offer,
@@ -1109,8 +1111,8 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     borrower_compensation = max(max_interest_delta, interest + loan1.amount - offer2.principal)
     settlement_fees = loan1.get_settlement_fees(now + actual_duration)
     borrower_delta = offer2.principal - loan1.amount - interest + borrower_compensation
-    current_lender_delta = loan1.amount + interest - total_upfront_fees - settlement_fees - borrower_compensation
-    new_lender_delta = offer2.origination_fee_amount - offer2.principal
+    current_lender_delta = loan1.amount + interest - total_upfront_fees - settlement_fees - borrower_compensation + offer2.broker_upfront_fee_amount
+    new_lender_delta = offer2.origination_fee_amount - offer2.principal - offer2.broker_upfront_fee_amount
 
     print(f"{borrower=} {lender=} {lender2=}")
     print(f"{loan1.amount=} {loan1.interest=} {interest=}")

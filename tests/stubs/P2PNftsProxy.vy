@@ -10,6 +10,7 @@ interface P2PLendingNfts:
     def settle_loan(loan: Loan): payable
     def claim_defaulted_loan_collateral(loan: Loan): nonpayable
     def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amount: uint256, borrower_broker_settlement_fee_bps: uint256, borrower_broker: address) -> bytes32: payable
+    def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32: payable
     def revoke_offer(offer: SignedOffer): nonpayable
 
 
@@ -126,6 +127,12 @@ def replace_loan(
         borrower_broker,
         value=msg.value
     )
+
+@payable
+@external
+def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
+    return P2PLendingNfts(self.p2p_lending_nfts).replace_loan_lender(loan, offer, value=msg.value)
+
 
 @external
 def revoke_offer(offer: SignedOffer):

@@ -85,8 +85,9 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_eth.address, token_id, sender=borrower)
-    weth.deposit(value=principal - origination_fee, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     loan_id = p2p_nfts_eth.create_loan(
         offer_bayc,
@@ -148,8 +149,9 @@ def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopu
 
     cryptopunks.mint(borrower, token_id)
     cryptopunks.offerPunkForSaleToAddress(token_id, 0, p2p_nfts_eth.address, sender=borrower)
-    weth.deposit(value=principal - origination_fee, sender=lender)
-    weth.approve(p2p_nfts_eth.address, principal, sender=lender)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    weth.deposit(value=lender_approval, sender=lender)
+    weth.approve(p2p_nfts_eth.address, lender_approval, sender=lender)
 
     loan_id = p2p_nfts_eth.create_loan(
         offer_punk,

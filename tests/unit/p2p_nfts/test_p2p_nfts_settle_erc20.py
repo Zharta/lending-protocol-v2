@@ -116,8 +116,9 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
-    usdc.deposit(value=principal - origination_fee, sender=lender)
-    usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
 
     loan_id = p2p_nfts_usdc.create_loan(
         offer_bayc,
@@ -161,8 +162,9 @@ def ongoing_loan_punk(p2p_nfts_usdc, offer_punk, usdc, borrower, lender, cryptop
 
     cryptopunks.mint(borrower, token_id)
     cryptopunks.offerPunkForSaleToAddress(token_id, 0, p2p_nfts_usdc.address, sender=borrower)
-    usdc.deposit(value=principal - origination_fee, sender=lender)
-    usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
 
     loan_id = p2p_nfts_usdc.create_loan(
         offer_punk,
@@ -207,8 +209,9 @@ def ongoing_loan_prorata(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
-    usdc.deposit(value=principal - origination_fee, sender=lender)
-    usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
 
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
     loan_id = p2p_nfts_usdc.create_loan(
