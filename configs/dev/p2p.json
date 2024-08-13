@@ -7,8 +7,8 @@
             "properties_addresses": {}
         },
         "p2p_controller": {
-            "abi_key": "f9dc72e8c674826f9a1003541987aa3d3d075a88",
-            "address": "0xe45892a12d1D40944d4051FAf6FF60aE3Dc47BD2",
+            "abi_key": "2789ba334ae07bf37bcf76ffa60b31e4ede2dfa1",
+            "address": "0xEb7B7659b3F13C5256cf783D84DebEA05e10feDF",
             "contract": "P2PLendingControl",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -41,12 +41,11 @@
             "properties_addresses": {}
         }
     },
-    "configs": {
-    },
+    "configs": {},
     "p2p": {
         "eth_nfts": {
-            "abi_key": "f02a4294801fe5e6d42bea63dc155e24289904f7",
-            "address": "0x25435c5C77885E78F2903206a41776d2ff438E1a",
+            "abi_key": "76423760a1bee78d7819936e0d4b107471096120",
+            "address": "0xFF2477b1A3E3E2494bef702596c5D3FcF8A73dF7",
             "contract": "P2PLendingNfts",
             "properties": {
                 "controller_key": "common.p2p_controller",
@@ -57,7 +56,7 @@
                 "weth_key": "common.weth"
             },
             "properties_addresses": {
-                "controller": "0xe45892a12d1D40944d4051FAf6FF60aE3Dc47BD2",
+                "controller": "0xEb7B7659b3F13C5256cf783D84DebEA05e10feDF",
                 "cryptopunks": "0xFB87C36009603855163ABe3BbF512D3F58fd3819",
                 "delegation_registry": "0xB3d05Ae64E6a6D5258E90aE0aac8678E22AA8a1F",
                 "payment_token": "0xFb7C5F938835aE34aF48c278C6763E134907Acdb",
@@ -66,8 +65,8 @@
             "version": "1"
         },
         "usdc_nfts": {
-            "abi_key": "f02a4294801fe5e6d42bea63dc155e24289904f7",
-            "address": "0xA578DbFf26d887222961594138aa28Bf448162DF",
+            "abi_key": "76423760a1bee78d7819936e0d4b107471096120",
+            "address": "0xdAa0A1AF487eaAaD1728e0D00034Cd8FBA39BF8e",
             "contract": "P2PLendingNfts",
             "properties": {
                 "controller_key": "common.p2p_controller",
@@ -78,7 +77,7 @@
                 "weth_key": "common.weth"
             },
             "properties_addresses": {
-                "controller": "0xe45892a12d1D40944d4051FAf6FF60aE3Dc47BD2",
+                "controller": "0xEb7B7659b3F13C5256cf783D84DebEA05e10feDF",
                 "cryptopunks": "0xFB87C36009603855163ABe3BbF512D3F58fd3819",
                 "delegation_registry": "0xB3d05Ae64E6a6D5258E90aE0aac8678E22AA8a1F",
                 "payment_token": "0x741D86951a8b99159be52644e60de7826033Ee44",

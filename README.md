@@ -158,7 +158,6 @@ The protocol supports the following roles:
 * `Lender`: Defined as a individual role for each loan, can replace their loans and claim collateral in case of defaults
 * `Broker`: Can have temporary locks on collateral
 
-
 ## Development
 
 ### Implementation
@@ -233,6 +232,28 @@ For Offers:
 | change_protocol_wallet         | Owner                | Nonpayable   | Changes the protocol wallet address                             |
 | set_proxy_authorization        | Owner                | Nonpayable   | Sets authorization for a proxy address                          |
 
+
+##### Proxy Support
+
+The `P2PLendingNfts` contract includes support for authorized proxies, allowing for more flexible interaction with the protocol. This feature is particularly useful for integrations with other protocols or for implementing advanced user interfaces.
+
+Key aspects of proxy support include:
+
+1. Authorized Proxies:
+   - The contract maintains a mapping of authorized proxy addresses: `authorized_proxies: public(HashMap[address, bool])`
+   - The contract owner can set or revoke proxy authorization using the `set_proxy_authorization` function.
+
+2. User Checks:
+   - The contract includes an internal function `_check_user` that verifies if the caller is either the user themselves or an authorized proxy acting on behalf of the user.
+   - This check is used in various functions where user-specific actions are performed, such as settling loans or revoking offers.
+
+3. Proxy Usage:
+   - When an authorized proxy calls a function, the actual user is considered to be `tx.origin` rather than `msg.sender`.
+   - This allows proxies to perform actions on behalf of users while still maintaining proper access control and attribution.
+
+4. Security Considerations:
+   - Only the contract owner can authorize or deauthorize proxies, providing centralized control over which addresses can act as proxies.
+   - The use of `tx.origin` is only performed if the caller is an authorized proxy, otherwise the fallback authorization procedure used `msg.sender`
 
 #### P2P Lending Control Contract (`P2PLendingControl.vy`)
 
