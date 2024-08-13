@@ -27,7 +27,7 @@ requirements-dev.txt: pyproject.toml
 	uv pip compile -o requirements-dev.txt --extra dev pyproject.toml
 
 test: ${VENV}
-	${VENV}/bin/pytest tests/unit --durations=0 -n auto --dist loadscope
+	${VENV}/bin/pytest tests/unit --durations=5 -n auto --dist loadscope
 
 
 coverage:
@@ -93,17 +93,11 @@ console-dev:
 deploy-dev:
 	${VENV}/bin/ape run -I deployment --network https://network.dev.zharta.io
 
-publish-dev:
-	${VENV}/bin/ape run publish
-
 console-int:
 	${VENV}/bin/ape console --network ethereum:sepolia:alchemy
 
 deploy-int:
 	${VENV}/bin/ape run -I deployment --network ethereum:sepolia:alchemy
-
-publish-int:
-	${VENV}/bin/ape run publish
 
 console-prod:
 	${VENV}/bin/ape console --network ethereum:mainnet:alchemy
@@ -111,5 +105,9 @@ console-prod:
 deploy-prod: compile
 	${VENV}/bin/ape run -I deployment --network ethereum:mainnet:alchemy
 
-publish-prod:
+publish-dev publish-int publish-prod:
 	${VENV}/bin/ape run publish
+
+get-collections-dev get-collections-int get-collections-prod:
+	${VENV}/bin/ape run get_collections
+

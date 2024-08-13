@@ -14,3 +14,5 @@ reports/
 .vscode
 .cache
 .tool-versions
+
+configs/**/collections.json
