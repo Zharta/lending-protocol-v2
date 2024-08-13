@@ -62,6 +62,8 @@ event BrokerLockRemoved:
 
 WHITELIST_BATCH: constant(uint256) = 100
 
+VERSION: constant(String[30]) = "P2PLendingControl.20240807"
+
 cryptopunks: public(immutable(CryptoPunksMarket))
 
 owner: public(address)

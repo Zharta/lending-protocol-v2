@@ -3,7 +3,22 @@
 """
 @title P2PLendingNfts
 @author [Zharta](https://zharta.io/)
-@notice TODO
+@notice This contract facilitates peer-to-peer lending using NFTs as collateral.
+@dev It facilitates peer-to-peer lending using NFTs as collateral.
+      The contract allows lenders to offer loans and borrowers to accept them by providing NFTs as collateral.
+      Key functionalities include:
+      - Creating and managing loan offers
+      - Accepting loan offers and locking NFTs as collateral
+      - Accepts ERC721 and CryptoPunks NFTs as collateral
+      - Delegating the collateral using [Delegate](https://delegate.xyz/) DelegateRegistry v2
+      - Settling loans by repaying the principal and interest
+      - Claiming collateral in case of loan default
+      - Replacing existing loans with new terms
+      - Four types of fees are supported: protocol fee, origination fee, lender broker fee, and borrower broker fee
+      - Managing protocol fees and authorized proxies
+      - Handling ownership transfer of the contract
+      - Loan state is kept hashed in the contract to save gas
+      The contract ensures secure and transparent lending operations within the Zharta ecosystem.
 """
 
 # Interfaces
@@ -215,8 +230,6 @@ event ProxyAuthorizationChanged:
 
 # Global variables
 
-DEBUG: constant(address) = 0x0000000000000000000000000000000000011111
-
 owner: public(address)
 proposed_owner: public(address)
 
@@ -236,6 +249,8 @@ revoked_offers: public(HashMap[bytes32, bool])
 
 authorized_proxies: public(HashMap[address, bool])
 
+VERSION: constant(String[30]) = "P2PLendingNfts.20240807"
+
 ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
 
@@ -250,6 +265,17 @@ offer_sig_domain_separator: immutable(bytes32)
 
 @external
 def __init__(_payment_token: address, _max_protocol_settlement_fee: uint256, _delegation_registry: address, _weth9: address, _cryptopunks: address, _controller: address):
+
+    """
+    @notice Initialize the contract with the given parameters.
+    @param _payment_token The address of the payment token.
+    @param _max_protocol_settlement_fee The maximum protocol settlement fee.
+    @param _delegation_registry The address of the delegation registry.
+    @param _weth9 The address of the WETH contract.
+    @param _cryptopunks The address of the CryptoPunksMarket contract.
+    @param _controller The address of the P2PLendingControl contract.
+    """
+
     self.owner = msg.sender
     payment_token = _payment_token
     max_protocol_settlement_fee = _max_protocol_settlement_fee
@@ -272,6 +298,12 @@ def __init__(_payment_token: address, _max_protocol_settlement_fee: uint256, _de
 @external
 @payable
 def __default__():
+
+    """
+    @notice Fallback function to receive Ether.
+    @dev Only allows WETH9 contract to send Ether.
+    """
+
     assert msg.sender == weth9.address, "sender not WETH9"
 
 
@@ -371,13 +403,19 @@ def create_loan(
     borrower_broker_settlement_fee_bps: uint256,
     borrower_broker: address
 ) -> bytes32:
+
     """
-    @notice Create a loan
-    @param offer SignedOffer
-    @param collateral_token_id uint256
-    @param delegate address
-    @return bytes32 loan id
+    @notice Create a loan.
+    @param offer The signed offer.
+    @param collateral_token_id The ID of the collateral token.
+    @param delegate The address of the delegate. If empty, no delegation is set.
+    @param borrower_broker_upfront_fee_amount The upfront fee amount for the borrower broker.
+    @param borrower_broker_settlement_fee_bps The settlement fee basis points relative to the interest for the borrower broker.
+    @param borrower_broker The address of the borrower broker.
+    @return The ID of the created loan.
     """
+
+
     assert self._is_offer_signed_by_lender(offer, offer.offer.lender), "offer not signed by lender"
     assert offer.offer.expiration > block.timestamp, "offer expired"
     assert offer.offer.payment_token == payment_token, "invalid payment token"
@@ -441,13 +479,16 @@ def create_loan(
     )
     return loan.id
 
+
 @external
 @payable
 def settle_loan(loan: Loan):
+
     """
-    @notice Settle a loan
-    @param loan Loan
+    @notice Settle a loan.
+    @param loan The loan to be settled.
     """
+
     assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
     assert block.timestamp <= loan.maturity, "loan defaulted"
@@ -478,12 +519,15 @@ def settle_loan(loan: Loan):
         settlement_fees
     )
 
+
 @external
 def claim_defaulted_loan_collateral(loan: Loan):
+
     """
-    @notice Claim defaulted loan collateral
-    @param loan Loan
+    @notice Claim defaulted loan collateral.
+    @param loan The loan whose collateral is to be claimed. The loan maturity must have been passed.
     """
+
     assert self._is_loan_valid(loan), "invalid loan"
     assert block.timestamp > loan.maturity, "loan not defaulted"
     assert self._check_user(loan.lender), "not lender"
@@ -500,15 +544,28 @@ def claim_defaulted_loan_collateral(loan: Loan):
         loan.collateral_token_id
     )
 
+
 @external
 @payable
-def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amount: uint256, borrower_broker_settlement_fee_bps: uint256, borrower_broker: address) -> bytes32:
+def replace_loan(
+    loan: Loan,
+    offer: SignedOffer,
+    borrower_broker_upfront_fee_amount: uint256,
+    borrower_broker_settlement_fee_bps: uint256,
+    borrower_broker: address
+) -> bytes32:
+
     """
-    @notice Replace a loan
-    @param loan Loan
-    @param offer Offer
-    @return bytes32 loan id
+    @notice Replace an existing loan by accepting a new offer over the same collateral. The current loan is settled and the new loan is created. Must be called by the borrower.
+    @dev No collateral transfer is required and the delegation is not changed. The borrower must be the same as the borrower of the current loan.
+    @param loan The loan to be replaced.
+    @param offer The new signed offer.
+    @param borrower_broker_upfront_fee_amount The upfront fee amount for the borrower broker.
+    @param borrower_broker_settlement_fee_bps The settlement fee basis points relative to the interest for the borrower broker.
+    @param borrower_broker The address of the borrower broker, if any.
+    @return The ID of the new loan.
     """
+
     assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
     assert self._check_user(loan.borrower), "not borrower"
@@ -613,12 +670,15 @@ def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amo
 @external
 @payable
 def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
+
     """
-    @notice Replace a loan
-    @param loan Loan
-    @param offer Offer
-    @return bytes32 loan id
+    @notice Replace a loan by the lender. The current loan is settled and the new loan is created. Must be called by the lender.
+    @dev No collateral transfer is required and the delegation is not changed. The borrower must be the same as the borrower of the current loan. No funds are required from the borrower. Also no funds are required from the lender, except when the current and new lender are the same.
+    @param loan The loan to be replaced.
+    @param offer The new signed offer.
+    @return The ID of the new loan.
     """
+
     assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
     assert self._check_user(loan.lender), "not lender"
@@ -730,10 +790,12 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
 
 @external
 def revoke_offer(offer: SignedOffer):
+
     """
-    @notice Revoke an offer
-    @param offer SignedOffer
+    @notice Revoke an offer.
+    @param offer The signed offer to be revoked.
     """
+
     assert self._check_user(offer.offer.lender), "not lender"
     assert offer.offer.expiration > block.timestamp, "offer expired"
     assert self._is_offer_signed_by_lender(offer, offer.offer.lender), "offer not signed by lender"
@@ -750,6 +812,7 @@ def revoke_offer(offer: SignedOffer):
         offer.offer.collateral_min_token_id,
         offer.offer.collateral_max_token_id
     )
+
 
 @view
 @external
@@ -951,8 +1014,6 @@ def _transfer_collateral(wallet: address, collateral_contract: address, token_id
 @internal
 def _send_funds(_to: address, _amount: uint256):
 
-    #raw_call(DEBUG, _abi_encode(_to))
-    #raw_call(DEBUG, _abi_encode(_amount))
     if payment_token == empty(address):
         weth9.withdraw(_amount)
         send(_to, _amount)
