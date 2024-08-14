@@ -2,24 +2,24 @@
     "common": {
         "delegation_registry": {
             "abi_key": "8f910c9aa38cffa69fc4a97a81cbc79dda306e2a",
-            "address": "0xB3d05Ae64E6a6D5258E90aE0aac8678E22AA8a1F",
+            "address": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
         "p2p_controller": {
             "abi_key": "2789ba334ae07bf37bcf76ffa60b31e4ede2dfa1",
-            "address": "0xEb7B7659b3F13C5256cf783D84DebEA05e10feDF",
+            "address": "0xAE12Cbfa95ee96577f524Af5521C09e7F2196B90",
             "contract": "P2PLendingControl",
             "properties": {
                 "cryptopunks_key": "punk",
                 "max_broker_lock_duration": 172800
             },
             "properties_addresses": {
-                "cryptopunks": "0xFB87C36009603855163ABe3BbF512D3F58fd3819"
+                "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314"
             }
         },
         "usdc": {
-            "address": "0x741D86951a8b99159be52644e60de7826033Ee44",
+            "address": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab",
             "contract": "ERC20",
             "properties": {
                 "decimals": 6,
@@ -30,7 +30,7 @@
             "properties_addresses": {}
         },
         "weth": {
-            "address": "0xFb7C5F938835aE34aF48c278C6763E134907Acdb",
+            "address": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb",
             "contract": "ERC20",
             "properties": {
                 "decimals": 18,
@@ -45,7 +45,7 @@
     "p2p": {
         "eth_nfts": {
             "abi_key": "76423760a1bee78d7819936e0d4b107471096120",
-            "address": "0xFF2477b1A3E3E2494bef702596c5D3FcF8A73dF7",
+            "address": "0xC69F37E30F988f7af95f2b48E0eC9372CBa128F8",
             "contract": "P2PLendingNfts",
             "properties": {
                 "controller_key": "common.p2p_controller",
@@ -56,17 +56,17 @@
                 "weth_key": "common.weth"
             },
             "properties_addresses": {
-                "controller": "0xEb7B7659b3F13C5256cf783D84DebEA05e10feDF",
-                "cryptopunks": "0xFB87C36009603855163ABe3BbF512D3F58fd3819",
-                "delegation_registry": "0xB3d05Ae64E6a6D5258E90aE0aac8678E22AA8a1F",
-                "payment_token": "0xFb7C5F938835aE34aF48c278C6763E134907Acdb",
-                "weth": "0xFb7C5F938835aE34aF48c278C6763E134907Acdb"
+                "controller": "0xAE12Cbfa95ee96577f524Af5521C09e7F2196B90",
+                "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
+                "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
+                "payment_token": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb",
+                "weth": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb"
             },
             "version": "1"
         },
         "usdc_nfts": {
             "abi_key": "76423760a1bee78d7819936e0d4b107471096120",
-            "address": "0xdAa0A1AF487eaAaD1728e0D00034Cd8FBA39BF8e",
+            "address": "0x66DcDADB47309eD55A4b288e125F53B1a1c7c0fc",
             "contract": "P2PLendingNfts",
             "properties": {
                 "controller_key": "common.p2p_controller",
@@ -77,11 +77,11 @@
                 "weth_key": "common.weth"
             },
             "properties_addresses": {
-                "controller": "0xEb7B7659b3F13C5256cf783D84DebEA05e10feDF",
-                "cryptopunks": "0xFB87C36009603855163ABe3BbF512D3F58fd3819",
-                "delegation_registry": "0xB3d05Ae64E6a6D5258E90aE0aac8678E22AA8a1F",
-                "payment_token": "0x741D86951a8b99159be52644e60de7826033Ee44",
-                "weth": "0xFb7C5F938835aE34aF48c278C6763E134907Acdb"
+                "controller": "0xAE12Cbfa95ee96577f524Af5521C09e7F2196B90",
+                "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
+                "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
+                "payment_token": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab",
+                "weth": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb"
             },
             "version": "1"
         }
