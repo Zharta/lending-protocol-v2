@@ -29,7 +29,6 @@ requirements-dev.txt: pyproject.toml
 test: ${VENV}
 	${VENV}/bin/pytest tests/unit --durations=5 -n auto --dist loadscope
 
-
 coverage:
 	${VENV}/bin/coverage run -m pytest tests/unit --runslow
 	${VENV}/bin/coverage report
@@ -41,15 +40,8 @@ branch-coverage:
 unit-tests:
 	${VENV}/bin/pytest tests/unit --runslow --durations=0 -n auto --dist loadscope
 
-integration-tests:
-	${VENV}/bin/pytest -n auto tests/integration --durations=0 --dist loadscope
-
-stateful-tests:
-	${VENV}/bin/pytest tests/stateful --durations=0 -n auto
-
 gas:
-	${VENV}/bin/pytest tests/integration --gas-profile
-
+	${VENV}/bin/pytest tests/unit --gas-profile
 
 interfaces:
 	${VENV}/bin/python scripts/build_interfaces.py contracts/*.vy
@@ -110,4 +102,3 @@ publish-dev publish-int publish-prod:
 
 get-collections-dev get-collections-int get-collections-prod:
 	${VENV}/bin/ape run get_collections
-

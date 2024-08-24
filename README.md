@@ -311,7 +311,7 @@ contracts/
     └── WETH9Mock.vy
 ```
 
-* The `ERC20.vy` and `ERC721.vy` contracts are used to deploy mock ERC20 and ERC721 tokens, respectively. 
+* The `ERC20.vy` and `ERC721.vy` contracts are used to deploy mock ERC20 and ERC721 tokens, respectively.
 * The `CryptoPunksMarketMock.vy` contract mocks the [CryptoPunksMarket](https://etherscan.io/token/0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb#code) contract.
 * The `DelegationRegistryMock.vy` contract is used to deploy a mock implementation of the [delegate.xyz](https://delegate.xyz/) delegation contract V2.
 * The `WETH9Mock.vy` contract mocks the [Wrapped Ether](https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2#code) contract.
@@ -324,17 +324,17 @@ make install-dev
 ```
 
 To run the tests:
-* unit tests
+* unit tests: When running the unit tests for the first time, **run the command twice**! The first time will throw a lot of errors because the titanoboa cache isn't initialized yet.
 ```
 make unit-tests
-```
-* integration tests
-```
-make integration-tests
 ```
 * coverage
 ```
 make coverage
+```
+* branch coverage
+```
+make branch-coverage
 ```
 * gas profiling
 ```
@@ -371,4 +371,3 @@ Additionally, for each P2P Lending Market in each environment (e.g., NFTs backed
 |                     | `_controller: address`                  | Address of the P2PLendingControl contract       |
 | `P2PLendingControl` | `_cryptopunks: address`                 | Address of the CryptoPunksMarket contract       |
 |                     | `_max_broker_lock_duration: uint256`    | Maximum duration for broker locks on collateral |
-
