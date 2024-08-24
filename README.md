@@ -324,19 +324,19 @@ make install-dev
 ```
 
 To run the tests:
-* unit tests: When running the unit tests for the first time, **run the command twice**! The first time will throw a lot of errors because the titanoboa cache isn't initialized yet.
+* Unit tests: when running the unit tests for the first time, **run the command twice**! The first time will throw a lot of errors because the titanoboa cache isn't initialized yet.
 ```
 make unit-tests
 ```
-* coverage
+* Coverage
 ```
 make coverage
 ```
-* branch coverage
+* Branch coverage
 ```
 make branch-coverage
 ```
-* gas profiling
+* Gas profiling
 ```
 make gas
 ```
