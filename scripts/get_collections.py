@@ -1,5 +1,3 @@
-# ruff: noqa: ERA001 PTH123 FURB103 F821
-
 import json
 import logging
 import os
@@ -19,6 +17,7 @@ warnings.filterwarnings("ignore")
 
 ENV = Environment[os.environ.get("ENV", "local")]
 DYNAMODB = boto3.resource("dynamodb")
+P2P_CONFIGS = DYNAMODB.Table(f"p2p-configs-{ENV.name}")
 COLLECTIONS = DYNAMODB.Table(f"collections-{ENV.name}")
 ABI = DYNAMODB.Table(f"abis-{ENV.name}")
 KEY_ATTRIBUTES = ["p2p_config_key"]
@@ -48,7 +47,7 @@ def store_collections_config(collections: list[dict], env: Environment):
     config_file = f"{Path.cwd()}/configs/{env.name}/collections.json"
     config = {c["collection_key"]: c for c in collections}
 
-    with open(config_file, "w", encoding="locale") as f:
+    with open(config_file, "w") as f:
         f.write(json.dumps(config, indent=4, sort_keys=True))
 
 
@@ -68,5 +67,9 @@ def update_abi(abi_key: str, abi: list[dict]):
 
 @click.command()
 def cli():
+    print(f"Retrieving collection configs in {ENV.name}")
+
     collections = get_collections()
     store_collections_config(collections, ENV)
+
+    print(f"Collections configs retrieved in {ENV.name}")
