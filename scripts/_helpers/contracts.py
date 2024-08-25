@@ -179,11 +179,11 @@ class DelegationRegistry(ContractConfig):
 
 class DelegateRegistry2Container(ContractContainer):
     def __init__(self):
-        with open("contracts/auxiliary/DelegateRegistry2_abi.json", encoding="locale") as f:
+        with open("contracts/auxiliary/DelegateRegistry2_abi.json", "r") as f:
             abi = json.load(f)
-        with open("contracts/auxiliary/DelegateRegistry2_deployment.hex", encoding="locale") as f:
+        with open("contracts/auxiliary/DelegateRegistry2_deployment.hex", "r") as f:
             deployment_bytecode = HexBytes(f.read().strip())
-        with open("contracts/auxiliary/DelegateRegistry2_runtime.hex", encoding="locale") as f:
+        with open("contracts/auxiliary/DelegateRegistry2_runtime.hex", "r") as f:
             runtime_bytecode = HexBytes(f.read().strip())
         contract = ContractType(
             contractName="DelegateRegistry2",
