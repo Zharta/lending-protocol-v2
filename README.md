@@ -344,6 +344,19 @@ make gas
 
 ### Deployment
 
+#### Deploy the protocol locally
+
+In order to run the protocol locally:
+1. Install [Foundry](https://book.getfoundry.sh/getting-started/installation)
+2. In a terminal, run `anvil`
+3. In the line 39 of `scripts/deployment.py`, change the statement to `dm.deploy(changes, dryrun=False)`. You can leave `dryrun=True` if you want to see the deployment steps without actually deploying the contracts.`
+4. In another terminal, run `make deploy-local`
+5. To run transactions manually, run `make console-local` and use the console to interact with the contracts
+
+After step 4, you should see that the config file `configs/local/p2p.json` contains all the contract addresses and other relevant information from the local deployment. If you want to redeploy the contracts again, you can copy the contents of `configs/local/p2p.json.template` to `configs/local/p2p.json` and run `make deploy-local` again.
+
+#### Deploy the protocol to existing networks
+
 For each environment a makefile rule is available to deploy the contracts, eg for DEV:
 ```
 make deploy-dev
