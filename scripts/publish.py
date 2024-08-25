@@ -1,4 +1,4 @@
-# ruff: noqa: A001 PTH123
+# ruff: noqa: A001 PLW1514 PTH123 T201  UP015
 
 import hashlib
 import json
@@ -32,7 +32,7 @@ def abi_key(abi: list) -> str:
 
 def get_abi_map(context, env: Environment) -> dict:
     config_file = f"{Path.cwd()}/configs/{env.name}/p2p.json"
-    with open(config_file, encoding="locale") as f:
+    with open(config_file, "r") as f:
         config = json.load(f)
 
     contracts = {f"{prefix}.{k}": v for prefix, contracts in config.items() for k, v in contracts.items()}
@@ -46,7 +46,7 @@ def get_abi_map(context, env: Environment) -> dict:
 
 def get_p2p_configs(context, env: Environment) -> dict:
     config_file = f"{Path.cwd()}/configs/{env.name}/p2p.json"
-    with open(config_file, encoding="locale") as f:
+    with open(config_file, "r") as f:
         config = json.load(f)
 
     p2p_configs = config["p2p"]
@@ -76,9 +76,12 @@ def update_abi(abi_key: str, abi: list[dict]):
 def cli():
     dm = DeploymentManager(ENV)
 
+    print(f"Updating p2p configs in {ENV.name}")
+
     abis = get_abi_map(dm.context, dm.env)
-    for config in abis.values():
+    for contract_key, config in abis.items():
         abi_key = config["abi_key"]
+        print(f"adding abi {contract_key=} {abi_key=}")
         update_abi(abi_key, config["abi"])
 
     p2p_configs = get_p2p_configs(dm.context, dm.env)
@@ -91,4 +94,7 @@ def cli():
         v["properties_abis"] = properties_abis
 
         abi_key = v["abi_key"]
+        print(f"updating p2p config {k} {abi_key=}")
         update_p2p_config(k, v)
+
+    print(f"P2P configs updated in {ENV.name}")
