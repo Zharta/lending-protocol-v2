@@ -2,11 +2,12 @@ import json
 import logging
 import os
 import warnings
+from decimal import Decimal
 from pathlib import Path
 
 import boto3
 import click
-from decimal import Decimal
+
 from ._helpers.deployment import Environment
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ warnings.filterwarnings("ignore")
 
 ENV = Environment[os.environ.get("ENV", "local")]
 DYNAMODB = boto3.resource("dynamodb")
+P2P_CONFIGS = DYNAMODB.Table(f"p2p-configs-{ENV.name}")
 COLLECTIONS = DYNAMODB.Table(f"collections-{ENV.name}")
 ABI = DYNAMODB.Table(f"abis-{ENV.name}")
 KEY_ATTRIBUTES = ["p2p_config_key"]
@@ -65,11 +67,9 @@ def update_abi(abi_key: str, abi: list[dict]):
 
 @click.command()
 def cli():
-
     print(f"Retrieving collection configs in {ENV.name}")
 
     collections = get_collections()
     store_collections_config(collections, ENV)
 
     print(f"Collections configs retrieved in {ENV.name}")
-

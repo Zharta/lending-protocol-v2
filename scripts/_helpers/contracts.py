@@ -98,7 +98,7 @@ class P2PLendingNfts(ContractConfig):
                 delegation_registry_key,
                 weth_key,
                 cryptopunks_key,
-                controller_key
+                controller_key,
             ],
         )
         if address:

@@ -7,9 +7,9 @@ from eth_utils import decode_hex
 from ...conftest_base import (
     ZERO_ADDRESS,
     CollateralStatus,
-    Loan,
     Fee,
     FeeType,
+    Loan,
     Offer,
     Signature,
     SignedOffer,
@@ -17,8 +17,8 @@ from ...conftest_base import (
     compute_signed_offer_id,
     deploy_reverts,
     get_last_event,
-    sign_offer,
     replace_namedtuple_field,
+    sign_offer,
 )
 
 FOREVER = 2**256 - 1
@@ -44,7 +44,7 @@ def test_create_loan_reverts_if_offer_not_signed_by_lender(p2p_nfts_eth, borrowe
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, borrower_key, p2p_nfts_eth.address)
 
@@ -68,7 +68,7 @@ def test_create_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_eth, borrow
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
-        size=1
+        size=1,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -93,7 +93,9 @@ def test_create_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_eth, borrow
     for invalid_offer in invalid_offers:
         print(f"{invalid_offer=}")
         with boa.reverts("offer not signed by lender"):
-            p2p_nfts_eth.create_loan(SignedOffer(invalid_offer, signed_offer.signature), 1, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+            p2p_nfts_eth.create_loan(
+                SignedOffer(invalid_offer, signed_offer.signature), 1, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower
+            )
 
 
 def test_create_loan_reverts_if_offer_expired(p2p_nfts_eth, borrower, now, lender, lender_key, bayc):
@@ -112,7 +114,7 @@ def test_create_loan_reverts_if_offer_expired(p2p_nfts_eth, borrower, now, lende
         collateral_max_token_id=token_id,
         expiration=now,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -138,7 +140,7 @@ def test_create_loan_reverts_if_payment_token_invalid(p2p_nfts_eth, borrower, no
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -165,7 +167,7 @@ def test_create_loan_reverts_if_collateral_locked(p2p_nfts_eth, p2p_control, bor
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -191,7 +193,7 @@ def test_create_loan_reverts_if_collateral_not_whitelisted(p2p_nfts_eth, p2p_con
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -217,7 +219,7 @@ def test_create_loan_reverts_if_token_id_below_offer_range(p2p_nfts_eth, borrowe
         collateral_max_token_id=token_id + 1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -241,7 +243,7 @@ def test_create_loan_reverts_if_token_id_above_offer_range(p2p_nfts_eth, borrowe
         collateral_max_token_id=token_id - 1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -265,7 +267,7 @@ def test_create_loan_reverts_if_offer_is_revoked(p2p_nfts_eth, borrower, now, le
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -292,7 +294,7 @@ def test_create_loan_reverts_if_offer_exceeds_count(p2p_nfts_eth, borrower, now,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
-        size=0
+        size=0,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -316,7 +318,7 @@ def test_create_loan_reverts_if_origination_fee_exceeds_principal(p2p_nfts_eth, 
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -340,7 +342,7 @@ def test_create_loan_reverts_if_broker_fee_without_address(p2p_nfts_eth, borrowe
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -365,7 +367,7 @@ def test_create_loan_reverts_if_collateral_not_approved_erc721(p2p_nfts_eth, bor
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -394,7 +396,7 @@ def test_create_loan_reverts_if_collateral_not_approved_punks(p2p_nfts_eth, borr
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -423,7 +425,7 @@ def test_create_loan_reverts_if_lender_funds_not_approved(p2p_nfts_eth, borrower
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -452,7 +454,7 @@ def test_create_loan(p2p_nfts_eth, borrower, now, lender, lender_key, bayc, weth
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -473,13 +475,8 @@ def test_create_loan(p2p_nfts_eth, borrower, now, lender, lender_key, bayc, weth
         lender=lender,
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
-        fees=[
-            Fee.protocol(p2p_nfts_eth),
-            Fee.origination(offer),
-            Fee.lender_broker(offer),
-            Fee.borrower_broker(ZERO_ADDRESS)
-        ],
-        pro_rata=offer.pro_rata
+        fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), Fee.borrower_broker(ZERO_ADDRESS)],
+        pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)
 
@@ -501,7 +498,7 @@ def test_create_loan_logs_event(p2p_nfts_eth, borrower, now, lender, lender_key,
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -526,7 +523,7 @@ def test_create_loan_logs_event(p2p_nfts_eth, borrower, now, lender, lender_key,
         Fee.protocol(p2p_nfts_eth),
         Fee.origination(offer),
         Fee.lender_broker(offer),
-        Fee.borrower_broker(ZERO_ADDRESS)
+        Fee.borrower_broker(ZERO_ADDRESS),
     ]
     assert event.pro_rata == offer.pro_rata
 
@@ -554,7 +551,7 @@ def test_create_loan_succeeds_if_broker_matches_lock(p2p_nfts_eth, p2p_control, 
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -589,7 +586,7 @@ def test_create_loan_creates_delegation(p2p_nfts_eth, borrower, now, lender, len
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -620,7 +617,7 @@ def test_create_loan_transfers_collateral_to_escrow(p2p_nfts_eth, borrower, now,
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -653,7 +650,7 @@ def test_create_loan_transfers_principal_to_borrower(p2p_nfts_eth, borrower, now
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -687,7 +684,7 @@ def test_create_loan_transfers_origination_fee_to_lender(p2p_nfts_eth, borrower,
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -714,7 +711,7 @@ def test_create_loan_updates_offer_usage_count(p2p_nfts_eth, borrower, now, lend
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
-        size=1
+        size=1,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -744,7 +741,7 @@ def test_create_loan_works_with_proxy(p2p_nfts_eth, borrower, now, lender, lende
         collateral_max_token_id=token_id,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -767,12 +764,7 @@ def test_create_loan_works_with_proxy(p2p_nfts_eth, borrower, now, lender, lende
         lender=lender,
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
-        fees=[
-            Fee.protocol(p2p_nfts_eth),
-            Fee.origination(offer),
-            Fee.lender_broker(offer),
-            Fee.borrower_broker(ZERO_ADDRESS)
-        ],
-        pro_rata=offer.pro_rata
+        fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), Fee.borrower_broker(ZERO_ADDRESS)],
+        pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)
