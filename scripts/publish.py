@@ -1,5 +1,3 @@
-# ruff: noqa: A001 PLW1514 PTH123 T201  UP015
-
 import hashlib
 import json
 import logging

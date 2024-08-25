@@ -1,5 +1,3 @@
-# ruff: noqa: ERA001 PTH123 FURB103
-
 import json
 import logging
 import os

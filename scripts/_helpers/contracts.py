@@ -1,5 +1,3 @@
-# ruff: noqa: ERA001 PTH123 FURB101 FURB103
-
 import json
 from dataclasses import dataclass
 

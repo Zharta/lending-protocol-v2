@@ -1,5 +1,3 @@
-# ruff: noqa: ERA001
-
 from textwrap import dedent
 
 import boa

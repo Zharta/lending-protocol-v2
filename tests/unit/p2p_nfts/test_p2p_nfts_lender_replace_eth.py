@@ -1,5 +1,3 @@
-# ruff: noqa: PLR0914 PLR0915 RUF100
-
 from textwrap import dedent
 
 import boa

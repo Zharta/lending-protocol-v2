@@ -1,5 +1,3 @@
-# ruff: noqa: ERA001 PYI024
-
 import contextlib
 from collections import namedtuple
 from dataclasses import dataclass, field

@@ -56,20 +56,37 @@ target-version = "py311"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+"ape_console_extras.py" = ["T201"]
 "tests/*.py" = [
     "ARG001",
+    "ERA001",
     "F401",
     "FBT003",
     "N815",
     "PLC1901",
+    "PLR0914",
+    "PLR0915",
     "PLR0917",
     "PT004",
     "PT022",
     "PTH",
+    "PYI024",
     "RUF029",
+    "RUF100",
     "SLF001",
     "T201",
     "TID252",
+]
+"scripts/*.py" = [
+    "A001",
+    "ERA001",
+    "FURB101",
+    "FURB103",
+    "ERA001",
+    "PLW1514",
+    "PTH123",
+    "T201",
+    "UP015"
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
@@ -90,4 +107,3 @@ source = ["contracts"]
 
 [tool.coverage.report]
 show_missing = true
-
