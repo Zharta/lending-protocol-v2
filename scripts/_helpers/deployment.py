@@ -64,7 +64,7 @@ def store_contracts(env: Environment, contracts: list[ContractConfig]):
                     addresses[prop_key[:-4]] = contracts_dict[prop_val].address()
             c["properties_addresses"] = addresses
 
-    with open(config_file, "w", encoding="locale") as f:
+    with open(config_file, "w") as f:
         f.write(json.dumps(config, indent=4, sort_keys=True))
 
 
