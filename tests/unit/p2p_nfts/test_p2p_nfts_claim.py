@@ -18,8 +18,8 @@ from ...conftest_base import (
     compute_signed_offer_id,
     deploy_reverts,
     get_last_event,
-    sign_offer,
     get_loan_mutations,
+    sign_offer,
 )
 
 
@@ -70,14 +70,13 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_eth):
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
-        size=1
+        size=1,
     )
     return sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
 
 @pytest.fixture
 def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, protocol_fee, borrower_broker_fee):
-
     offer = offer_bayc.offer
     token_id = offer.collateral_min_token_id
     principal = offer.principal
@@ -96,7 +95,7 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
         borrower_broker_fee.upfront_amount,
         borrower_broker_fee.settlement_bps,
         borrower_broker_fee.wallet,
-        sender=borrower
+        sender=borrower,
     )
 
     loan = Loan(
@@ -111,7 +110,7 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
-        pro_rata=offer.pro_rata
+        pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)
     return loan
@@ -135,7 +134,7 @@ def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_eth):
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
-        size=1
+        size=1,
     )
     return sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -160,7 +159,7 @@ def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopu
         borrower_broker_fee.upfront_amount,
         borrower_broker_fee.settlement_bps,
         borrower_broker_fee.wallet,
-        sender=borrower
+        sender=borrower,
     )
 
     loan = Loan(
@@ -175,14 +174,13 @@ def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopu
         collateral_contract=cryptopunks.address,
         collateral_token_id=token_id,
         fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
-        pro_rata=offer.pro_rata
+        pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)
     return loan
 
 
 def test_claim_defaulted_reverts_if_loan_invalid(p2p_nfts_eth, ongoing_loan_bayc):
-
     for loan in get_loan_mutations(ongoing_loan_bayc):
         print(f"{loan=}")
         with boa.reverts("invalid loan"):
@@ -210,13 +208,11 @@ def test_claim_defaulted_reverts_if_not_lender(p2p_nfts_eth, ongoing_loan_bayc, 
 
 
 def test_claim_defaulted_reverts_with_unauth_proxy(p2p_nfts_eth, ongoing_loan_bayc, now, weth, p2p_nfts_proxy):
-
     time_to_default = ongoing_loan_bayc.maturity - now
     boa.env.time_travel(seconds=time_to_default + 1)
 
     with boa.reverts("not lender"):
         p2p_nfts_proxy.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.lender)
-
 
 
 def test_claim_defaulted(p2p_nfts_eth, ongoing_loan_bayc, now, weth):
@@ -231,7 +227,6 @@ def test_claim_defaulted(p2p_nfts_eth, ongoing_loan_bayc, now, weth):
 
 
 def test_claim_defaulted_works_with_proxy(p2p_nfts_eth, ongoing_loan_bayc, now, weth, p2p_nfts_proxy):
-
     p2p_nfts_eth.set_proxy_authorization(p2p_nfts_proxy, True, sender=p2p_nfts_eth.owner())
 
     time_to_default = ongoing_loan_bayc.maturity - now

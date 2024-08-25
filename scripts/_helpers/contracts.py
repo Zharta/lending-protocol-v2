@@ -1,3 +1,5 @@
+# ruff: noqa: ERA001 PTH123 FURB101 FURB103
+
 import json
 from dataclasses import dataclass
 
@@ -98,7 +100,7 @@ class P2PLendingNfts(ContractConfig):
                 delegation_registry_key,
                 weth_key,
                 cryptopunks_key,
-                controller_key
+                controller_key,
             ],
         )
         if address:
@@ -179,11 +181,11 @@ class DelegationRegistry(ContractConfig):
 
 class DelegateRegistry2Container(ContractContainer):
     def __init__(self):
-        with open("contracts/auxiliary/DelegateRegistry2_abi.json", "r") as f:
+        with open("contracts/auxiliary/DelegateRegistry2_abi.json", encoding="locale") as f:
             abi = json.load(f)
-        with open("contracts/auxiliary/DelegateRegistry2_deployment.hex", "r") as f:
+        with open("contracts/auxiliary/DelegateRegistry2_deployment.hex", encoding="locale") as f:
             deployment_bytecode = HexBytes(f.read().strip())
-        with open("contracts/auxiliary/DelegateRegistry2_runtime.hex", "r") as f:
+        with open("contracts/auxiliary/DelegateRegistry2_runtime.hex", encoding="locale") as f:
             runtime_bytecode = HexBytes(f.read().strip())
         contract = ContractType(
             contractName="DelegateRegistry2",

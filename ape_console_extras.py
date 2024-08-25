@@ -1,6 +1,7 @@
 # ruff: noqa: T201
 
 import os
+from enum import Enum
 
 import web3
 from ape import convert
@@ -8,6 +9,11 @@ from ape import convert
 from scripts.deployment import DeploymentManager, Environment
 
 ENV = Environment[os.environ.get("ENV", "local")]
+
+
+class Context(Enum):
+    DEPLOYMENT = "deployment"
+    CONSOLE = "console"
 
 
 def inject_poa(w3):
@@ -38,7 +44,7 @@ def claim_ownership(dm, wallet):
 
 
 def ape_init_extras():
-    dm = DeploymentManager(ENV)
+    dm = DeploymentManager(ENV, Context.CONSOLE)
 
     globals()["dm"] = dm
     globals()["owner"] = dm.owner

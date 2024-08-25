@@ -10,15 +10,7 @@ FOREVER = 2**256 - 1
 
 
 def test_initial_state(
-    p2p_nfts_eth,
-    p2p_nfts_usdc,
-    p2p_control,
-    weth,
-    usdc,
-    delegation_registry,
-    cryptopunks,
-    owner,
-    max_protocol_fee
+    p2p_nfts_eth, p2p_nfts_usdc, p2p_control, weth, usdc, delegation_registry, cryptopunks, owner, max_protocol_fee
 ):
     assert p2p_nfts_eth.owner() == owner
     assert p2p_nfts_eth.payment_token() == ZERO_ADDRESS
@@ -110,10 +102,10 @@ def test_set_proxy_authorization_reverts_if_not_owner(p2p_nfts_eth):
 def test_set_proxy_authorization(p2p_nfts_eth, owner):
     proxy = boa.env.generate_address("proxy")
     p2p_nfts_eth.set_proxy_authorization(proxy, True, sender=owner)
-    assert p2p_nfts_eth.authorized_proxies(proxy) == True
+    assert p2p_nfts_eth.authorized_proxies(proxy) is True
 
     p2p_nfts_eth.set_proxy_authorization(proxy, False, sender=owner)
-    assert p2p_nfts_eth.authorized_proxies(proxy) == False
+    assert p2p_nfts_eth.authorized_proxies(proxy) is False
 
 
 def test_set_proxy_authorization_logs_event(p2p_nfts_eth, owner):
@@ -122,7 +114,7 @@ def test_set_proxy_authorization_logs_event(p2p_nfts_eth, owner):
     event = get_last_event(p2p_nfts_eth, "ProxyAuthorizationChanged")
 
     assert event.proxy == proxy
-    assert event.value == True
+    assert event.value is True
 
 
 def test_propose_owner_reverts_if_wrong_caller(p2p_nfts_eth):

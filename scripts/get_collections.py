@@ -1,12 +1,15 @@
+# ruff: noqa: ERA001 PTH123 FURB103 F821
+
 import json
 import logging
 import os
 import warnings
+from decimal import Decimal
 from pathlib import Path
 
 import boto3
 import click
-from decimal import Decimal
+
 from ._helpers.deployment import Environment
 
 logger = logging.getLogger(__name__)
@@ -45,7 +48,7 @@ def store_collections_config(collections: list[dict], env: Environment):
     config_file = f"{Path.cwd()}/configs/{env.name}/collections.json"
     config = {c["collection_key"]: c for c in collections}
 
-    with open(config_file, "w") as f:
+    with open(config_file, "w", encoding="locale") as f:
         f.write(json.dumps(config, indent=4, sort_keys=True))
 
 
@@ -65,11 +68,5 @@ def update_abi(abi_key: str, abi: list[dict]):
 
 @click.command()
 def cli():
-
-    print(f"Retrieving collection configs in {ENV.name}")
-
     collections = get_collections()
     store_collections_config(collections, ENV)
-
-    print(f"Collections configs retrieved in {ENV.name}")
-

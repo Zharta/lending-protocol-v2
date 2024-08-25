@@ -324,7 +324,8 @@ make install-dev
 ```
 
 To run the tests:
-* Unit tests: when running the unit tests for the first time, **run the command twice**! The first time will throw a lot of errors because the titanoboa cache isn't initialized yet.
+* Unit tests
+  * **Important note**: when running the unit tests for the first time, **run the command twice**! The first time will throw a lot of errors because the titanoboa cache isn't initialized yet.
 ```
 make unit-tests
 ```

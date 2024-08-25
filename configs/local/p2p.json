@@ -1,0 +1,91 @@
+{
+    "common": {
+        "delegation_registry": {
+            "abi_key": "",
+            "address": "",
+            "contract": "DelegationRegistry",
+            "properties_addresses": {}
+        },
+        "p2p_controller": {
+            "abi_key": "",
+            "address": "",
+            "contract": "P2PLendingControl",
+            "properties": {
+                "cryptopunks_key": "cryptopunks",
+                "max_broker_lock_duration": 172800
+            },
+            "properties_addresses": {
+                "cryptopunks": ""
+            }
+        },
+        "usdc": {
+            "abi_key": "",
+            "address": "",
+            "contract": "ERC20",
+            "properties": {
+                "decimals": 6,
+                "name": "USDC",
+                "supply": "1000000000000000000",
+                "symbol": "USDC"
+            },
+            "properties_addresses": {}
+        },
+        "weth": {
+            "abi_key": "",
+            "address": "",
+            "contract": "ERC20",
+            "properties": {
+                "decimals": 18,
+                "name": "WETH",
+                "supply": "1000000000000000000000000",
+                "symbol": "WETH"
+            },
+            "properties_addresses": {}
+        }
+    },
+    "configs": {},
+    "p2p": {
+        "eth_nfts": {
+            "abi_key": "",
+            "address": "",
+            "contract": "P2PLendingNfts",
+            "properties": {
+                "controller_key": "common.p2p_controller",
+                "cryptopunks_key": "cryptopunks",
+                "delegation_registry_key": "common.delegation_registry",
+                "max_protocol_fee": 0,
+                "payment_token_key": "common.weth",
+                "weth_key": "common.weth"
+            },
+            "properties_addresses": {
+                "controller": "",
+                "cryptopunks": "",
+                "delegation_registry": "",
+                "payment_token": "",
+                "weth": ""
+            },
+            "version": "1"
+        },
+        "usdc_nfts": {
+            "abi_key": "",
+            "address": "",
+            "contract": "P2PLendingNfts",
+            "properties": {
+                "controller_key": "common.p2p_controller",
+                "cryptopunks_key": "cryptopunks",
+                "delegation_registry_key": "common.delegation_registry",
+                "max_protocol_fee": 0,
+                "payment_token_key": "common.usdc",
+                "weth_key": "common.weth"
+            },
+            "properties_addresses": {
+                "controller": "",
+                "cryptopunks": "",
+                "delegation_registry": "",
+                "payment_token": "",
+                "weth": ""
+            },
+            "version": "1"
+        }
+    }
+}

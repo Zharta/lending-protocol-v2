@@ -7,9 +7,7 @@ from eth_account import Account
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--runslow", action="store_true", default=False, help="run slow tests"
-    )
+    parser.addoption("--runslow", action="store_true", default=False, help="run slow tests")
 
 
 def pytest_configure(config):
@@ -175,4 +173,3 @@ def debug_bytes32(data: bytes):
 def debug_precompile(boa_env):
     register_raw_precompile("0x0000000000000000000000000000000000011111", debug_bytes32)
     yield
-

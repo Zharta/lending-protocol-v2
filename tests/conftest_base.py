@@ -1,3 +1,5 @@
+# ruff: noqa: ERA001 PYI024
+
 import contextlib
 from collections import namedtuple
 from dataclasses import dataclass, field
@@ -7,8 +9,8 @@ from itertools import starmap
 from textwrap import dedent
 from typing import NamedTuple
 
-import eth_abi
 import boa
+import eth_abi
 import vyper
 from boa.contracts.vyper.event import Event
 from boa.contracts.vyper.vyper_contract import VyperContract
@@ -96,16 +98,18 @@ Offer = namedtuple(
         "expiration",
         "lender",
         "pro_rata",
-        "size"
+        "size",
     ],
-    defaults=[0, 0, ZERO_ADDRESS, 0, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, False, 0]
+    defaults=[0, 0, ZERO_ADDRESS, 0, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, False, 0],
 )
+
 
 class FeeType(IntEnum):
     PROTOCOL = 1 << 0
     ORIGINATION = 1 << 1
     LENDER_BROKER = 1 << 2
     BORROWER_BROKER = 1 << 3
+
 
 Signature = namedtuple("Signature", ["v", "r", "s"], defaults=[0, ZERO_BYTES32, ZERO_BYTES32])
 
@@ -122,10 +126,7 @@ class Fee(NamedTuple):
     @classmethod
     def protocol(cls, contract):
         return cls(
-            FeeType.PROTOCOL,
-            contract.protocol_upfront_fee(),
-            contract.protocol_settlement_fee(),
-            contract.protocol_wallet()
+            FeeType.PROTOCOL, contract.protocol_upfront_fee(), contract.protocol_settlement_fee(), contract.protocol_wallet()
         )
 
     @classmethod
@@ -135,10 +136,7 @@ class Fee(NamedTuple):
     @classmethod
     def lender_broker(cls, offer):
         return cls(
-            FeeType.LENDER_BROKER,
-            offer.broker_upfront_fee_amount,
-            offer.broker_settlement_fee_bps,
-            offer.broker_address
+            FeeType.LENDER_BROKER, offer.broker_upfront_fee_amount, offer.broker_settlement_fee_bps, offer.broker_address
         )
 
     @classmethod
@@ -201,7 +199,7 @@ class CollateralStatus(NamedTuple):
 PunkOffer = namedtuple(
     "PunkOffer",
     ["isForSale", "punkIndex", "seller", "minValue", "onlySellTo"],
-    defaults=[False, 0, ZERO_ADDRESS, 0, ZERO_ADDRESS]
+    defaults=[False, 0, ZERO_ADDRESS, 0, ZERO_ADDRESS],
 )
 
 
@@ -211,7 +209,9 @@ WhitelistRecord = namedtuple("WhitelistRecord", ["collection", "whitelisted"], d
 def compute_loan_hash(loan: Loan):
     print(f"compute_loan_hash {loan=}")
     encoded = eth_abi.encode(
-        ["(bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"],
+        [
+            "(bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"
+        ],
         [loan],
     )
     return boa.eval(f"""keccak256({encoded})""")
@@ -278,7 +278,7 @@ def replace_namedtuple_field(namedtuple, **kwargs):
 
 
 def replace_list_element(lst, index, value):
-    return lst[:index] + [value] + lst[index + 1:]
+    return lst[:index] + [value] + lst[index + 1 :]
 
 
 def get_loan_mutations(loan):
@@ -301,20 +301,17 @@ def get_loan_mutations(loan):
         yield replace_namedtuple_field(loan, fees=[*fees, Fee(FeeType.PROTOCOL, 0, 0, random_address)])
 
     for i, fee in enumerate(fees):
-        yield replace_namedtuple_field(loan, fees=fees[:i] + fees[i + 1:])
+        yield replace_namedtuple_field(loan, fees=fees[:i] + fees[i + 1 :])
         yield replace_namedtuple_field(
             loan,
-            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, type=next(t for t in FeeType if t != fee.type)))
+            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, type=next(t for t in FeeType if t != fee.type))),
         )
         yield replace_namedtuple_field(
-            loan,
-            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, upfront_amount=fee.upfront_amount + 1))
+            loan, fees=replace_list_element(fees, i, replace_namedtuple_field(fee, upfront_amount=fee.upfront_amount + 1))
         )
         yield replace_namedtuple_field(
-            loan,
-            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, settlement_bps=fee.settlement_bps + 1))
+            loan, fees=replace_list_element(fees, i, replace_namedtuple_field(fee, settlement_bps=fee.settlement_bps + 1))
         )
         yield replace_namedtuple_field(
-            loan,
-            fees=replace_list_element(fees, i, replace_namedtuple_field(fee, wallet=random_address))
+            loan, fees=replace_list_element(fees, i, replace_namedtuple_field(fee, wallet=random_address))
         )
