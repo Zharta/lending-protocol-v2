@@ -140,6 +140,7 @@ event LoanCreated:
     collateral_token_id: uint256
     fees: DynArray[Fee, MAX_FEES]
     pro_rata: bool
+    offer_id: bytes32
 
 event LoanReplaced:
     id: bytes32
@@ -158,6 +159,7 @@ event LoanReplaced:
     paid_principal: uint256
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
+    offer_id: bytes32
 
 event LoanReplacedByLender:
     id: bytes32
@@ -177,6 +179,7 @@ event LoanReplacedByLender:
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
     borrower_compensation: uint256
+    offer_id: bytes32
 
 event LoanPaid:
     id: bytes32
@@ -462,6 +465,7 @@ def create_loan(
             self._transfer_funds_from_lender(loan.lender, fee.wallet, fee.upfront_amount)
 
     self._set_delegation(delegate, loan.collateral_contract, loan.collateral_token_id, delegate != empty(address))
+    offer_id: bytes32 = self._compute_signed_offer_id(offer)
 
     log LoanCreated(
         loan.id,
@@ -475,7 +479,8 @@ def create_loan(
         loan.collateral_contract,
         loan.collateral_token_id,
         loan.fees,
-        loan.pro_rata
+        loan.pro_rata,
+        offer_id
     )
     return loan.id
 
@@ -644,6 +649,7 @@ def replace_loan(
 
     assert self.loans[new_loan.id] == empty(bytes32), "loan already exists"
     self.loans[new_loan.id] = self._loan_state_hash(new_loan)
+    offer_id: bytes32 = self._compute_signed_offer_id(offer)
 
     log LoanReplaced(
         new_loan.id,
@@ -661,7 +667,8 @@ def replace_loan(
         loan.id,
         loan.amount,
         interest,
-        settlement_fees
+        settlement_fees,
+        offer_id
     )
 
     return new_loan.id
@@ -764,6 +771,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
 
     assert self.loans[new_loan.id] == empty(bytes32), "loan already exists"
     self.loans[new_loan.id] = self._loan_state_hash(new_loan)
+    offer_id: bytes32 = self._compute_signed_offer_id(offer)
 
     log LoanReplacedByLender(
         new_loan.id,
@@ -782,7 +790,8 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         loan.amount,
         interest,
         settlement_fees,
-        borrower_compensation
+        borrower_compensation,
+        offer_id
     )
 
     return new_loan.id
