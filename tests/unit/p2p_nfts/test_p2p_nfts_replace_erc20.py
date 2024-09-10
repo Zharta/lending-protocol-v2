@@ -147,7 +147,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 
 
 @pytest.fixture
-def ongoing_loan_prorata(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, lender_key, borrower_broker_fee):
+def ongoing_loan_prorata(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, lender_key, borrower_broker_fee, protocol_fee):
     offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
     token_id = offer.collateral_min_token_id
     principal = offer.principal

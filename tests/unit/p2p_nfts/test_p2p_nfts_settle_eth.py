@@ -107,7 +107,7 @@ def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_eth):
 
 
 @pytest.fixture
-def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee):
+def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee, protocol_fee):
     offer = offer_bayc.offer
     token_id = offer.collateral_min_token_id
     principal = offer.principal
@@ -209,6 +209,7 @@ def ongoing_loan_prorata(
     now,
     lender_key,
     borrower_broker_fee,
+    protocol_fee,
 ):
     offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
     token_id = offer.collateral_min_token_id

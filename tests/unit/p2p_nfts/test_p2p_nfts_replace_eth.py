@@ -102,7 +102,7 @@ def offer_bayc2(now, lender2, lender2_key, bayc, broker, p2p_nfts_eth):
 
 
 @pytest.fixture
-def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee):
+def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee, protocol_fee):
     offer = offer_bayc.offer
     token_id = offer.collateral_min_token_id
     principal = offer.principal
