@@ -997,9 +997,10 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pro
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
     p2p_nfts_usdc.replace_loan(loan, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
 
+    protocol_upfront_fee_amount = p2p_nfts_usdc.protocol_upfront_fee() * amount // 10000
     assert (
         usdc.balanceOf(p2p_nfts_usdc.protocol_wallet())
-        == initial_protocol_wallet_balance + protocol_fee_amount + p2p_nfts_usdc.protocol_upfront_fee()
+        == initial_protocol_wallet_balance + protocol_fee_amount + protocol_upfront_fee_amount
     )
 
 

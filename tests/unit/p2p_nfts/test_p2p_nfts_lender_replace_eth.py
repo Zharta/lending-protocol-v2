@@ -738,10 +738,9 @@ def test_replace_loan_transfers_principal_to_borrower(p2p_nfts_eth, ongoing_loan
     weth.deposit(value=lender_approval, sender=new_lender)
     weth.approve(p2p_nfts_eth.address, lender_approval, sender=new_lender)
 
-    upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    protocol_upfront_fee_amount = p2p_nfts_eth.protocol_upfront_fee() * principal // 10000
+    upfront_fees = protocol_upfront_fee_amount + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(ongoing_loan_bayc, offer, now)
-
-    upfront_fees = offer.origination_fee_amount + p2p_nfts_eth.protocol_upfront_fee() + offer.broker_upfront_fee_amount
     initial_borrower_balance = boa.env.get_balance(borrower)
 
     p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
@@ -794,7 +793,8 @@ def test_replace_loan_pays_lender(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, 
     lender = ongoing_loan_bayc.lender
     new_lender = offer.lender
 
-    upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    protocol_upfront_fee_amount = p2p_nfts_eth.protocol_upfront_fee() * offer.principal // 10000
+    upfront_fees = protocol_upfront_fee_amount + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(ongoing_loan_bayc, offer, now)
     settlement_fees = loan.get_settlement_fees()
     current_lender_delta = (
@@ -827,7 +827,8 @@ def test_replace_loan_pays_borrower_if_needed(
     new_lender = offer.lender
     interest = loan.interest
 
-    upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    protocol_upfront_fee_amount = p2p_nfts_eth.protocol_upfront_fee() * offer.principal // 10000
+    upfront_fees = protocol_upfront_fee_amount + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(loan, offer, now)
     settlement_fees = loan.get_settlement_fees()
     current_lender_delta = (
@@ -894,9 +895,10 @@ def test_replace_loan_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_bayc, weth, 
 
     p2p_nfts_eth.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
+    protocol_upfront_fee_amount = p2p_nfts_eth.protocol_upfront_fee() * ongoing_loan_bayc.amount // 10000
     assert (
         boa.env.get_balance(p2p_nfts_eth.protocol_wallet())
-        == initial_protocol_wallet_balance + protocol_fee_amount + p2p_nfts_eth.protocol_upfront_fee()
+        == initial_protocol_wallet_balance + protocol_fee_amount + protocol_upfront_fee_amount
     )
 
 
@@ -965,7 +967,8 @@ def test_replace_loan_prorata_pays_lender(p2p_nfts_eth, ongoing_loan_prorata, we
     initial_lender_balance = boa.env.get_balance(loan.lender)
     new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
-    upfront_fees = p2p_nfts_eth.protocol_upfront_fee() + offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    protocol_upfront_fee_amount = p2p_nfts_eth.protocol_upfront_fee() * offer.principal // 10000
+    upfront_fees = protocol_upfront_fee_amount + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(loan, offer, now)
     settlement_fees = loan.get_settlement_fees(now + actual_duration)
     current_lender_delta = loan.amount + interest - settlement_fees - borrower_compensation + offer.broker_upfront_fee_amount
@@ -1030,9 +1033,10 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_eth, ongoing_loan_pror
     boa.env.time_travel(seconds=actual_duration)
     p2p_nfts_eth.replace_loan_lender(loan, offer_bayc2, sender=ongoing_loan_prorata.lender)
 
+    protocol_upfront_fee_amount = p2p_nfts_eth.protocol_upfront_fee() * amount // 10000
     assert (
         boa.env.get_balance(p2p_nfts_eth.protocol_wallet())
-        == initial_protocol_wallet_balance + protocol_fee_amount + p2p_nfts_eth.protocol_upfront_fee()
+        == initial_protocol_wallet_balance + protocol_fee_amount + protocol_upfront_fee_amount
     )
 
 
