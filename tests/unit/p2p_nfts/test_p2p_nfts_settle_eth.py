@@ -57,7 +57,7 @@ def protocol_fee(p2p_nfts_eth):
     upfront_fee = 11
     p2p_nfts_eth.set_protocol_fee(upfront_fee, settlement_fee, sender=p2p_nfts_eth.owner())
     p2p_nfts_eth.change_protocol_wallet(p2p_nfts_eth.owner(), sender=p2p_nfts_eth.owner())
-    return Fee.protocol(p2p_nfts_eth)
+    return Fee.protocol(p2p_nfts_eth, 11)
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_eth):
 
 
 @pytest.fixture
-def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, protocol_fee, borrower_broker_fee):
+def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee):
     offer = offer_bayc.offer
     token_id = offer.collateral_min_token_id
     principal = offer.principal
@@ -141,7 +141,7 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[
-            protocol_fee,
+            Fee.protocol(p2p_nfts_eth, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             borrower_broker_fee,
@@ -153,7 +153,7 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
 
 
 @pytest.fixture
-def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopunks, now, borrower_broker_fee, protocol_fee):
+def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopunks, now, borrower_broker_fee):
     offer = offer_punk.offer
     token_id = offer.collateral_min_token_id
     principal = offer.principal
@@ -187,7 +187,7 @@ def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopu
         collateral_contract=cryptopunks.address,
         collateral_token_id=token_id,
         fees=[
-            protocol_fee,
+            Fee.protocol(p2p_nfts_eth, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             borrower_broker_fee,
@@ -200,7 +200,15 @@ def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopu
 
 @pytest.fixture
 def ongoing_loan_prorata(
-    p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, lender_key, borrower_broker_fee, protocol_fee
+    p2p_nfts_eth,
+    offer_bayc,
+    weth,
+    borrower,
+    lender,
+    bayc,
+    now,
+    lender_key,
+    borrower_broker_fee,
 ):
     offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
     token_id = offer.collateral_min_token_id
@@ -236,7 +244,7 @@ def ongoing_loan_prorata(
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[
-            protocol_fee,
+            Fee.protocol(p2p_nfts_eth, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             borrower_broker_fee,
@@ -294,7 +302,7 @@ def test_settle_loan_reverts_if_loan_already_settled(p2p_nfts_eth, ongoing_loan_
         p2p_nfts_eth.settle_loan(loan, sender=loan.borrower, value=amount_to_settle)
 
 
-def test_settle_loan_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_bayc, weth):
+def test_settle_loan_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_bayc):
     interest = ongoing_loan_bayc.interest
     amount_to_settle = ongoing_loan_bayc.amount + interest
 
@@ -302,7 +310,7 @@ def test_settle_loan_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_bayc, 
         p2p_nfts_eth.settle_loan(ongoing_loan_bayc, sender=ongoing_loan_bayc.borrower, value=amount_to_settle - 1)
 
 
-def test_settle_loan_prorata_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_prorata, weth):
+def test_settle_loan_prorata_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loan_prorata):
     loan = ongoing_loan_prorata
     loan_duration = loan.maturity - loan.start_time
     actual_duration = loan_duration * 2 // 3
@@ -315,7 +323,7 @@ def test_settle_loan_prorata_reverts_if_funds_not_sent(p2p_nfts_eth, ongoing_loa
         p2p_nfts_eth.settle_loan(loan, sender=loan.borrower, value=amount_to_settle - 1)
 
 
-def test_settle_loan(p2p_nfts_eth, ongoing_loan_bayc, weth):
+def test_settle_loan(p2p_nfts_eth, ongoing_loan_bayc):
     loan = ongoing_loan_bayc
     interest = loan.interest
     amount_to_settle = loan.amount + interest
@@ -326,7 +334,7 @@ def test_settle_loan(p2p_nfts_eth, ongoing_loan_bayc, weth):
     assert boa.env.get_balance(p2p_nfts_eth.address) == 0
 
 
-def test_settle_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, weth):
+def test_settle_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc):
     loan = ongoing_loan_bayc
     interest = loan.interest
     protocol_fee_amount = interest * loan.get_protocol_fee().settlement_bps // 10000
@@ -364,7 +372,6 @@ def test_settle_loan_logs_fees(
     lender,
     lender_key,
     now,
-    offer_bayc,
     p2p_nfts_eth,
     weth,
     protocol_upfront_fee,
@@ -435,7 +442,7 @@ def test_settle_loan_logs_fees(
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[
-            Fee.protocol(p2p_nfts_eth),
+            Fee.protocol(p2p_nfts_eth, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             Fee.borrower_broker(borrower_broker, borrower_broker_upfront_fee, borrower_broker_settlement_fee),

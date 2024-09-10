@@ -2,21 +2,14 @@ from textwrap import dedent
 
 import boa
 import pytest
-from eth_utils import decode_hex
 
 from ...conftest_base import (
     ZERO_ADDRESS,
     ZERO_BYTES32,
-    CollateralStatus,
     Fee,
-    FeeType,
     Loan,
     Offer,
-    Signature,
-    SignedOffer,
     compute_loan_hash,
-    compute_signed_offer_id,
-    deploy_reverts,
     get_last_event,
     get_loan_mutations,
     sign_offer,
@@ -43,13 +36,13 @@ def borrower_broker_fee(borrower_broker):
     return Fee.borrower_broker(borrower_broker, upfront_amount=15, settlement_bps=300)
 
 
-@pytest.fixture
-def protocol_fee(p2p_nfts_eth):
-    settlement_fee = p2p_nfts_eth.max_protocol_settlement_fee()
-    upfront_fee = 11
-    p2p_nfts_eth.set_protocol_fee(upfront_fee, settlement_fee, sender=p2p_nfts_eth.owner())
-    p2p_nfts_eth.change_protocol_wallet(p2p_nfts_eth.owner(), sender=p2p_nfts_eth.owner())
-    return Fee.protocol(p2p_nfts_eth)
+# @pytest.fixture
+# def protocol_fee(p2p_nfts_eth):
+#     settlement_fee = p2p_nfts_eth.max_protocol_settlement_fee()
+#     upfront_fee = 11
+#     p2p_nfts_eth.set_protocol_fee(upfront_fee, settlement_fee, sender=p2p_nfts_eth.owner())
+#     p2p_nfts_eth.change_protocol_wallet(p2p_nfts_eth.owner(), sender=p2p_nfts_eth.owner())
+#     return Fee.protocol(p2p_nfts_eth)
 
 
 @pytest.fixture
@@ -76,7 +69,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_eth):
 
 
 @pytest.fixture
-def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, protocol_fee, borrower_broker_fee):
+def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, now, borrower_broker_fee):
     offer = offer_bayc.offer
     token_id = offer.collateral_min_token_id
     principal = offer.principal
@@ -109,7 +102,7 @@ def ongoing_loan_bayc(p2p_nfts_eth, offer_bayc, weth, borrower, lender, bayc, no
         lender=lender,
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
-        fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
+        fees=[Fee.protocol(p2p_nfts_eth, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)
@@ -140,7 +133,7 @@ def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_eth):
 
 
 @pytest.fixture
-def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopunks, now, protocol_fee, borrower_broker_fee):
+def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopunks, now, borrower_broker_fee):
     offer = offer_punk.offer
     token_id = offer.collateral_min_token_id
     principal = offer.principal
@@ -173,7 +166,7 @@ def ongoing_loan_punk(p2p_nfts_eth, offer_punk, weth, borrower, lender, cryptopu
         lender=lender,
         collateral_contract=cryptopunks.address,
         collateral_token_id=token_id,
-        fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
+        fees=[Fee.protocol(p2p_nfts_eth, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)

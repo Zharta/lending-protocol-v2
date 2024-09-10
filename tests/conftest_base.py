@@ -122,9 +122,12 @@ class Fee(NamedTuple):
     wallet: str = ZERO_ADDRESS
 
     @classmethod
-    def protocol(cls, contract):
+    def protocol(cls, contract, principal):
         return cls(
-            FeeType.PROTOCOL, contract.protocol_upfront_fee(), contract.protocol_settlement_fee(), contract.protocol_wallet()
+            FeeType.PROTOCOL,
+            int(contract.protocol_upfront_fee() * principal / 10000),
+            contract.protocol_settlement_fee(),
+            contract.protocol_wallet(),
         )
 
     @classmethod
