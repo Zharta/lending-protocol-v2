@@ -618,6 +618,7 @@ def test_replace_loan_logs_event(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, n
         Fee.lender_broker(offer),
         Fee.borrower_broker(ZERO_ADDRESS),
     ]
+    assert event.offer_id == compute_signed_offer_id(offer_bayc2)
 
 
 def test_replace_loan_works_with_proxy(p2p_nfts_eth, ongoing_loan_bayc, offer_bayc2, now, bayc, weth, p2p_nfts_proxy):
