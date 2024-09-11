@@ -662,7 +662,9 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
 
             """)
     erc20 = boa.loads(failing_erc20_code)
-    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, delegation_registry, weth, cryptopunks, p2p_control)
+    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(
+        erc20, delegation_registry, weth, cryptopunks, p2p_control, 0, 0, owner
+    )
 
     token_id = 1
     offer = Offer(

@@ -21,6 +21,9 @@ def test_initial_state(
     assert p2p_nfts_eth.weth9() == weth.address
     assert p2p_nfts_eth.cryptopunks() == cryptopunks.address
     assert p2p_nfts_eth.controller() == p2p_control.address
+    assert p2p_nfts_eth.protocol_upfront_fee() == 0
+    assert p2p_nfts_eth.protocol_settlement_fee() == 0
+    assert p2p_nfts_eth.protocol_wallet() == owner
 
     assert p2p_nfts_usdc.owner() == owner
     assert p2p_nfts_usdc.payment_token() == usdc.address
@@ -28,6 +31,9 @@ def test_initial_state(
     assert p2p_nfts_usdc.weth9() == weth.address
     assert p2p_nfts_usdc.cryptopunks() == cryptopunks.address
     assert p2p_nfts_usdc.controller() == p2p_control.address
+    assert p2p_nfts_usdc.protocol_upfront_fee() == 0
+    assert p2p_nfts_usdc.protocol_settlement_fee() == 0
+    assert p2p_nfts_usdc.protocol_wallet() == owner
 
 
 def test_set_protocol_fee_reverts_if_not_owner(p2p_nfts_eth):
@@ -85,7 +91,7 @@ def test_change_protocol_wallet_logs_event(p2p_nfts_eth, owner):
     p2p_nfts_eth.change_protocol_wallet(new_wallet, sender=owner)
     event = get_last_event(p2p_nfts_eth, "ProtocolWalletChanged")
 
-    assert event.old_wallet == ZERO_ADDRESS
+    assert event.old_wallet == owner
     assert event.new_wallet == new_wallet
 
 

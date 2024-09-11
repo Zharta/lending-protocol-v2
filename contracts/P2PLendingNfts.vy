@@ -263,7 +263,16 @@ offer_sig_domain_separator: immutable(bytes32)
 
 
 @external
-def __init__(_payment_token: address, _delegation_registry: address, _weth9: address, _cryptopunks: address, _controller: address):
+def __init__(
+    _payment_token: address,
+    _delegation_registry: address,
+    _weth9: address,
+    _cryptopunks: address,
+    _controller: address,
+    _protocol_upfront_fee: uint256,
+    _protocol_settlement_fee: uint256,
+    _protocol_wallet: address
+):
 
     """
     @notice Initialize the contract with the given parameters.
@@ -272,7 +281,12 @@ def __init__(_payment_token: address, _delegation_registry: address, _weth9: add
     @param _weth9 The address of the WETH contract.
     @param _cryptopunks The address of the CryptoPunksMarket contract.
     @param _controller The address of the P2PLendingControl contract.
+    @param _protocol_upfront_fee The percentage (bps) of the principal paid to the protocol at origination.
+    @param _protocol_settlement_fee The percentage (bps) of the interest paid to the protocol at settlement.
+    @param _protocol_wallet The address where the protocol fees are accrued.
     """
+
+    assert _protocol_wallet != empty(address), "wallet is the zero address"
 
     self.owner = msg.sender
     payment_token = _payment_token
@@ -280,6 +294,9 @@ def __init__(_payment_token: address, _delegation_registry: address, _weth9: add
     weth9 = WETH(_weth9)
     cryptopunks = CryptoPunksMarket(_cryptopunks)
     controller = P2PLendingControl(_controller)
+    self.protocol_upfront_fee = _protocol_upfront_fee
+    self.protocol_settlement_fee = _protocol_settlement_fee
+    self.protocol_wallet = _protocol_wallet
 
     offer_sig_domain_separator = keccak256(
         _abi_encode(
