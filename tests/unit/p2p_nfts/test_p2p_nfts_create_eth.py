@@ -1,5 +1,3 @@
-from textwrap import dedent
-
 import boa
 import pytest
 

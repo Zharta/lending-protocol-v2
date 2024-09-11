@@ -1,5 +1,3 @@
-from textwrap import dedent
-
 import boa
 import pytest
 
@@ -53,11 +51,11 @@ def borrower_broker_fee(borrower_broker):
 
 @pytest.fixture
 def protocol_fee(p2p_nfts_usdc):
-    settlement_fee = p2p_nfts_usdc.max_protocol_settlement_fee()
+    settlement_fee = 1000
     upfront_fee = 11
     p2p_nfts_usdc.set_protocol_fee(upfront_fee, settlement_fee, sender=p2p_nfts_usdc.owner())
     p2p_nfts_usdc.change_protocol_wallet(p2p_nfts_usdc.owner(), sender=p2p_nfts_usdc.owner())
-    return Fee.protocol(p2p_nfts_usdc, 11)
+    return Fee.protocol(p2p_nfts_usdc, upfront_fee)
 
 
 @pytest.fixture
@@ -147,7 +145,9 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 
 
 @pytest.fixture
-def ongoing_loan_prorata(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, lender_key, borrower_broker_fee, protocol_fee):
+def ongoing_loan_prorata(
+    p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, lender_key, borrower_broker_fee, protocol_fee
+):
     offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
     token_id = offer.collateral_min_token_id
     principal = offer.principal

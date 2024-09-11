@@ -43,7 +43,7 @@ def borrower_broker_fee(borrower_broker):
 
 @pytest.fixture
 def protocol_fee(p2p_nfts_eth):
-    settlement_fee = p2p_nfts_eth.max_protocol_settlement_fee()
+    settlement_fee = 1000
     upfront_fee = 11
     p2p_nfts_eth.set_protocol_fee(upfront_fee, settlement_fee, sender=p2p_nfts_eth.owner())
     p2p_nfts_eth.change_protocol_wallet(p2p_nfts_eth.owner(), sender=p2p_nfts_eth.owner())

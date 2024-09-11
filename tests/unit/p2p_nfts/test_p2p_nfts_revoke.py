@@ -1,6 +1,5 @@
 import boa
 import pytest
-from eth_utils import decode_hex
 
 from ...conftest_base import ZERO_ADDRESS, Offer, compute_signed_offer_id, get_last_event, sign_offer
 
