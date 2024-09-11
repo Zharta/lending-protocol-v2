@@ -526,6 +526,7 @@ def test_create_loan_logs_event(p2p_nfts_eth, borrower, now, lender, lender_key,
         Fee.borrower_broker(ZERO_ADDRESS),
     ]
     assert event.pro_rata == offer.pro_rata
+    assert event.offer_id == compute_signed_offer_id(signed_offer)
 
 
 def test_create_loan_succeeds_if_broker_matches_lock(p2p_nfts_eth, p2p_control, borrower, now, lender, lender_key, bayc, weth):

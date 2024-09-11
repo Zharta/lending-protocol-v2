@@ -140,6 +140,7 @@ event LoanCreated:
     collateral_token_id: uint256
     fees: DynArray[Fee, MAX_FEES]
     pro_rata: bool
+    offer_id: bytes32
 
 event LoanReplaced:
     id: bytes32
@@ -158,6 +159,7 @@ event LoanReplaced:
     paid_principal: uint256
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
+    offer_id: bytes32
 
 event LoanReplacedByLender:
     id: bytes32
@@ -177,6 +179,7 @@ event LoanReplacedByLender:
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
     borrower_compensation: uint256
+    offer_id: bytes32
 
 event LoanPaid:
     id: bytes32
@@ -475,7 +478,8 @@ def create_loan(
         loan.collateral_contract,
         loan.collateral_token_id,
         loan.fees,
-        loan.pro_rata
+        loan.pro_rata,
+        self._compute_signed_offer_id(offer)
     )
     return loan.id
 
@@ -661,7 +665,8 @@ def replace_loan(
         loan.id,
         loan.amount,
         interest,
-        settlement_fees
+        settlement_fees,
+        self._compute_signed_offer_id(offer)
     )
 
     return new_loan.id
@@ -782,7 +787,8 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         loan.amount,
         interest,
         settlement_fees,
-        borrower_compensation
+        borrower_compensation,
+        self._compute_signed_offer_id(offer)
     )
 
     return new_loan.id
