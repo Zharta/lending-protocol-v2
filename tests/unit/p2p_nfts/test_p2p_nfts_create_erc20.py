@@ -2,20 +2,16 @@ from textwrap import dedent
 
 import boa
 import pytest
-from eth_utils import decode_hex
 
 from ...conftest_base import (
     ZERO_ADDRESS,
     CollateralStatus,
     Fee,
-    FeeType,
     Loan,
     Offer,
-    Signature,
     SignedOffer,
     compute_loan_hash,
     compute_signed_offer_id,
-    deploy_reverts,
     get_last_event,
     replace_namedtuple_field,
     sign_offer,
@@ -480,7 +476,7 @@ def test_create_loan(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usd
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[
-            Fee.protocol(p2p_nfts_usdc),
+            Fee.protocol(p2p_nfts_usdc, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             Fee.borrower_broker(ZERO_ADDRESS),
@@ -528,7 +524,7 @@ def test_create_loan_logs_event(p2p_nfts_usdc, borrower, now, lender, lender_key
     assert event.collateral_contract == bayc.address
     assert event.collateral_token_id == token_id
     assert event.fees == [
-        Fee.protocol(p2p_nfts_usdc),
+        Fee.protocol(p2p_nfts_usdc, principal),
         Fee.origination(offer),
         Fee.lender_broker(offer),
         Fee.borrower_broker(ZERO_ADDRESS),

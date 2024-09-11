@@ -2,20 +2,16 @@ from textwrap import dedent
 
 import boa
 import pytest
-from eth_utils import decode_hex
 
 from ...conftest_base import (
     ZERO_ADDRESS,
     CollateralStatus,
     Fee,
-    FeeType,
     Loan,
     Offer,
-    Signature,
     SignedOffer,
     compute_loan_hash,
     compute_signed_offer_id,
-    deploy_reverts,
     get_last_event,
     replace_namedtuple_field,
     sign_offer,
@@ -475,7 +471,12 @@ def test_create_loan(p2p_nfts_eth, borrower, now, lender, lender_key, bayc, weth
         lender=lender,
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
-        fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), Fee.borrower_broker(ZERO_ADDRESS)],
+        fees=[
+            Fee.protocol(p2p_nfts_eth, principal),
+            Fee.origination(offer),
+            Fee.lender_broker(offer),
+            Fee.borrower_broker(ZERO_ADDRESS),
+        ],
         pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)
@@ -520,7 +521,7 @@ def test_create_loan_logs_event(p2p_nfts_eth, borrower, now, lender, lender_key,
     assert event.collateral_contract == bayc.address
     assert event.collateral_token_id == token_id
     assert event.fees == [
-        Fee.protocol(p2p_nfts_eth),
+        Fee.protocol(p2p_nfts_eth, principal),
         Fee.origination(offer),
         Fee.lender_broker(offer),
         Fee.borrower_broker(ZERO_ADDRESS),
@@ -765,7 +766,12 @@ def test_create_loan_works_with_proxy(p2p_nfts_eth, borrower, now, lender, lende
         lender=lender,
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
-        fees=[Fee.protocol(p2p_nfts_eth), Fee.origination(offer), Fee.lender_broker(offer), Fee.borrower_broker(ZERO_ADDRESS)],
+        fees=[
+            Fee.protocol(p2p_nfts_eth, principal),
+            Fee.origination(offer),
+            Fee.lender_broker(offer),
+            Fee.borrower_broker(ZERO_ADDRESS),
+        ],
         pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_eth.loans(loan_id)

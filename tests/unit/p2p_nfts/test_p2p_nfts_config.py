@@ -1,10 +1,8 @@
 from textwrap import dedent
 
 import boa
-import pytest
-from eth_utils import decode_hex
 
-from ...conftest_base import ZERO_ADDRESS, BrokerLock, CollateralStatus, WhitelistRecord, deploy_reverts, get_last_event
+from ...conftest_base import ZERO_ADDRESS, get_last_event
 
 FOREVER = 2**256 - 1
 

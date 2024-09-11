@@ -1,5 +1,3 @@
-from textwrap import dedent
-
 import boa
 import pytest
 from eth_utils import decode_hex
@@ -27,7 +25,7 @@ def test_revoke_offer_reverts_if_sender_is_not_lender(p2p_nfts_eth, borrower, no
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -54,7 +52,7 @@ def test_revoke_offer_reverts_if_proxy_not_auth(p2p_nfts_eth, borrower, now, len
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -78,7 +76,7 @@ def test_revoke_offer_reverts_if_offer_expired(p2p_nfts_eth, borrower, now, lend
         collateral_max_token_id=1,
         expiration=now,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -101,7 +99,7 @@ def test_revoke_offer_reverts_if_offer_not_signed_by_lender(p2p_nfts_eth, borrow
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, borrower_key, p2p_nfts_eth.address)
 
@@ -124,7 +122,7 @@ def test_revoke_offer_reverts_if_offer_already_revoked(p2p_nfts_eth, borrower, n
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -149,7 +147,7 @@ def test_revoke_offer(p2p_nfts_eth, borrower, now, lender, lender_key):
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -173,7 +171,7 @@ def test_revoke_offer_logs_event(p2p_nfts_eth, borrower, now, lender, lender_key
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 
@@ -202,7 +200,7 @@ def test_revoke_offer_works_with_proxy(p2p_nfts_eth, borrower, now, lender, lend
         collateral_max_token_id=1,
         expiration=now + 100,
         lender=lender,
-        pro_rata=False
+        pro_rata=False,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_eth.address)
 

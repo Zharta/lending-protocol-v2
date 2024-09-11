@@ -140,7 +140,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
         lender=lender,
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
-        fees=[Fee.protocol(p2p_nfts_usdc), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
+        fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
@@ -182,7 +182,7 @@ def ongoing_loan_punk(p2p_nfts_usdc, offer_punk, usdc, borrower, lender, cryptop
         collateral_contract=cryptopunks.address,
         collateral_token_id=token_id,
         fees=[
-            Fee.protocol(p2p_nfts_usdc),
+            Fee.protocol(p2p_nfts_usdc, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             borrower_broker_fee,
@@ -229,7 +229,7 @@ def ongoing_loan_prorata(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[
-            Fee.protocol(p2p_nfts_usdc),
+            Fee.protocol(p2p_nfts_usdc, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             borrower_broker_fee,
@@ -413,7 +413,7 @@ def test_settle_loan_logs_fees(
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[
-            Fee.protocol(p2p_nfts_usdc),
+            Fee.protocol(p2p_nfts_usdc, principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             Fee.borrower_broker(borrower_broker, borrower_broker_upfront_fee, borrower_broker_settlement_fee),
@@ -706,7 +706,7 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
         collateral_contract=bayc.address,
         collateral_token_id=token_id,
         fees=[
-            Fee.protocol(p2p_nfts_erc20),
+            Fee.protocol(p2p_nfts_erc20, offer.principal),
             Fee.origination(offer),
             Fee.lender_broker(offer),
             Fee.borrower_broker(ZERO_ADDRESS),

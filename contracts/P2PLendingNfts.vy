@@ -911,7 +911,7 @@ def _get_loan_fees(offer: Offer, borrower_broker_upfront_fee_amount: uint256, bo
         assert borrower_broker != empty(address), "broker fee without address"
     fees.append(Fee({
         type: FeeType.PROTOCOL_FEE,
-        upfront_amount: self.protocol_upfront_fee,
+        upfront_amount: self.protocol_upfront_fee * offer.principal / BPS,
         interest_bps: self.protocol_settlement_fee,
         wallet: self.protocol_wallet
     }))
