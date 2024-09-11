@@ -234,7 +234,6 @@ owner: public(address)
 proposed_owner: public(address)
 
 payment_token: public(immutable(address))
-max_protocol_settlement_fee: public(immutable(uint256))
 loans: public(HashMap[bytes32, bytes32])
 delegation_registry: public(immutable(DelegationRegistry))
 weth9: public(immutable(WETH))
@@ -249,7 +248,7 @@ revoked_offers: public(HashMap[bytes32, bool])
 
 authorized_proxies: public(HashMap[address, bool])
 
-VERSION: constant(String[30]) = "P2PLendingNfts.20240807"
+VERSION: constant(String[30]) = "P2PLendingNfts.20240911"
 
 ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
@@ -264,12 +263,11 @@ offer_sig_domain_separator: immutable(bytes32)
 
 
 @external
-def __init__(_payment_token: address, _max_protocol_settlement_fee: uint256, _delegation_registry: address, _weth9: address, _cryptopunks: address, _controller: address):
+def __init__(_payment_token: address, _delegation_registry: address, _weth9: address, _cryptopunks: address, _controller: address):
 
     """
     @notice Initialize the contract with the given parameters.
     @param _payment_token The address of the payment token.
-    @param _max_protocol_settlement_fee The maximum protocol settlement fee.
     @param _delegation_registry The address of the delegation registry.
     @param _weth9 The address of the WETH contract.
     @param _cryptopunks The address of the CryptoPunksMarket contract.
@@ -278,7 +276,6 @@ def __init__(_payment_token: address, _max_protocol_settlement_fee: uint256, _de
 
     self.owner = msg.sender
     payment_token = _payment_token
-    max_protocol_settlement_fee = _max_protocol_settlement_fee
     delegation_registry = DelegationRegistry(_delegation_registry)
     weth9 = WETH(_weth9)
     cryptopunks = CryptoPunksMarket(_cryptopunks)
@@ -321,7 +318,6 @@ def set_protocol_fee(protocol_upfront_fee: uint256, protocol_settlement_fee: uin
     """
 
     assert msg.sender == self.owner, "not owner"
-    assert protocol_settlement_fee <= max_protocol_settlement_fee, "protocol fee > max fee"
 
     log ProtocolFeeSet(self.protocol_upfront_fee, self.protocol_settlement_fee, protocol_upfront_fee, protocol_settlement_fee)
     self.protocol_upfront_fee = protocol_upfront_fee

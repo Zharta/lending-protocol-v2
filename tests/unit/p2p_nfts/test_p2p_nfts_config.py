@@ -1,5 +1,3 @@
-from textwrap import dedent
-
 import boa
 
 from ...conftest_base import ZERO_ADDRESS, get_last_event
@@ -8,11 +6,17 @@ FOREVER = 2**256 - 1
 
 
 def test_initial_state(
-    p2p_nfts_eth, p2p_nfts_usdc, p2p_control, weth, usdc, delegation_registry, cryptopunks, owner, max_protocol_fee
+    p2p_nfts_eth,
+    p2p_nfts_usdc,
+    p2p_control,
+    weth,
+    usdc,
+    delegation_registry,
+    cryptopunks,
+    owner,
 ):
     assert p2p_nfts_eth.owner() == owner
     assert p2p_nfts_eth.payment_token() == ZERO_ADDRESS
-    assert p2p_nfts_eth.max_protocol_settlement_fee() == max_protocol_fee
     assert p2p_nfts_eth.delegation_registry() == delegation_registry.address
     assert p2p_nfts_eth.weth9() == weth.address
     assert p2p_nfts_eth.cryptopunks() == cryptopunks.address
@@ -20,7 +24,6 @@ def test_initial_state(
 
     assert p2p_nfts_usdc.owner() == owner
     assert p2p_nfts_usdc.payment_token() == usdc.address
-    assert p2p_nfts_usdc.max_protocol_settlement_fee() == max_protocol_fee
     assert p2p_nfts_usdc.delegation_registry() == delegation_registry.address
     assert p2p_nfts_usdc.weth9() == weth.address
     assert p2p_nfts_usdc.cryptopunks() == cryptopunks.address
@@ -32,16 +35,12 @@ def test_set_protocol_fee_reverts_if_not_owner(p2p_nfts_eth):
         p2p_nfts_eth.set_protocol_fee(1, 1, sender=boa.env.generate_address("random"))
 
 
-def test_set_protocol_fee_reverts_if_protocol_fee_gt_max(p2p_nfts_eth, owner, max_protocol_fee):
-    with boa.reverts("protocol fee > max fee"):
-        p2p_nfts_eth.set_protocol_fee(0, max_protocol_fee + 1, sender=owner)
-
-
-def test_set_protocol_fee(p2p_nfts_eth, owner, max_protocol_fee):
+def test_set_protocol_fee(p2p_nfts_eth, owner):
     upfront_fee = 1
-    p2p_nfts_eth.set_protocol_fee(upfront_fee, max_protocol_fee, sender=owner)
+    settlement_fee = 1
+    p2p_nfts_eth.set_protocol_fee(upfront_fee, settlement_fee, sender=owner)
     assert p2p_nfts_eth.protocol_upfront_fee() == upfront_fee
-    assert p2p_nfts_eth.protocol_settlement_fee() == max_protocol_fee
+    assert p2p_nfts_eth.protocol_settlement_fee() == settlement_fee
 
     p2p_nfts_eth.set_protocol_fee(0, 0, sender=owner)
     assert p2p_nfts_eth.protocol_upfront_fee() == 0

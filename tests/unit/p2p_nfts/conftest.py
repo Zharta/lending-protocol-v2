@@ -12,11 +12,6 @@ def max_lock_expiration():
     return 2 * 86400
 
 
-@pytest.fixture(scope="module")
-def max_protocol_fee():
-    return 500
-
-
 @pytest.fixture
 def bayc(erc721_contract_def, owner):
     return erc721_contract_def.deploy()
@@ -48,17 +43,9 @@ def p2p_nfts_eth(
     delegation_registry,
     cryptopunks,
     p2p_control,
-    max_protocol_fee,
     owner,
 ):
-    return p2p_lending_nfts_contract_def.deploy(
-        ZERO_ADDRESS,
-        max_protocol_fee,
-        delegation_registry,
-        weth,
-        cryptopunks,
-        p2p_control
-    )
+    return p2p_lending_nfts_contract_def.deploy(ZERO_ADDRESS, delegation_registry, weth, cryptopunks, p2p_control)
 
 
 @pytest.fixture
@@ -70,17 +57,9 @@ def p2p_nfts_usdc(
     delegation_registry,
     cryptopunks,
     p2p_control,
-    max_protocol_fee,
     owner,
 ):
-    return p2p_lending_nfts_contract_def.deploy(
-        usdc,
-        max_protocol_fee,
-        delegation_registry,
-        weth,
-        cryptopunks,
-        p2p_control
-    )
+    return p2p_lending_nfts_contract_def.deploy(usdc, delegation_registry, weth, cryptopunks, p2p_control)
 
 
 @pytest.fixture

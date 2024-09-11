@@ -2,22 +2,16 @@ from textwrap import dedent
 
 import boa
 import pytest
-from eth_utils import decode_hex
 
 from ...conftest_base import (
     ZERO_ADDRESS,
     ZERO_BYTES32,
-    CollateralStatus,
     Fee,
     FeeAmount,
     FeeType,
     Loan,
     Offer,
-    Signature,
-    SignedOffer,
     compute_loan_hash,
-    compute_signed_offer_id,
-    deploy_reverts,
     get_last_event,
     get_loan_mutations,
     sign_offer,
@@ -53,7 +47,7 @@ def borrower_broker_fee(borrower_broker):
 
 @pytest.fixture
 def protocol_fees(p2p_nfts_usdc):
-    settlement_fee = p2p_nfts_usdc.max_protocol_settlement_fee()
+    settlement_fee = 1000
     upfront_fee = 11
     p2p_nfts_usdc.set_protocol_fee(upfront_fee, settlement_fee, sender=p2p_nfts_usdc.owner())
     p2p_nfts_usdc.change_protocol_wallet(p2p_nfts_usdc.owner(), sender=p2p_nfts_usdc.owner())
@@ -668,7 +662,7 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
 
             """)
     erc20 = boa.loads(failing_erc20_code)
-    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, 0, delegation_registry, weth, cryptopunks, p2p_control)
+    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, delegation_registry, weth, cryptopunks, p2p_control)
 
     token_id = 1
     offer = Offer(
