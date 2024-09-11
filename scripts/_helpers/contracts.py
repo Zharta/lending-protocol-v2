@@ -77,12 +77,14 @@ class P2PLendingNfts(ContractConfig):
         version: str | None = None,
         abi_key: str,
         payment_token_key: str | None = None,
-        max_protocol_fee: int,
         delegation_registry_key: str,
         weth_key: str,
         cryptopunks_key: str,
         controller_key: str,
         address: str | None = None,
+        protocol_upfront_fee: int,
+        protocol_settlement_fee: int,
+        protocol_wallet: str,
     ):
         payment_token_deps = [payment_token_key] if payment_token_key else []
         super().__init__(
@@ -94,11 +96,13 @@ class P2PLendingNfts(ContractConfig):
             deployment_deps={*payment_token_deps, delegation_registry_key, weth_key, cryptopunks_key, controller_key},
             deployment_args=[
                 payment_token_key or ZERO_ADDRESS,
-                max_protocol_fee,
                 delegation_registry_key,
                 weth_key,
                 cryptopunks_key,
                 controller_key,
+                protocol_upfront_fee,
+                protocol_settlement_fee,
+                protocol_wallet,
             ],
         )
         if address:

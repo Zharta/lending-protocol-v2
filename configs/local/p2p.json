@@ -53,9 +53,11 @@
                 "controller_key": "common.p2p_controller",
                 "cryptopunks_key": "cryptopunks",
                 "delegation_registry_key": "common.delegation_registry",
-                "max_protocol_fee": 0,
                 "payment_token_key": "common.weth",
-                "weth_key": "common.weth"
+                "weth_key": "common.weth",
+                "protocol_upfront_fee": 0,
+                "protocol_settlement_fee": 0,
+                "protocol_wallet": "0x0000000000000000000000000000000000000000"
             },
             "properties_addresses": {
                 "controller": "",
@@ -74,9 +76,11 @@
                 "controller_key": "common.p2p_controller",
                 "cryptopunks_key": "cryptopunks",
                 "delegation_registry_key": "common.delegation_registry",
-                "max_protocol_fee": 0,
                 "payment_token_key": "common.usdc",
-                "weth_key": "common.weth"
+                "weth_key": "common.weth",
+                "protocol_upfront_fee": 0,
+                "protocol_settlement_fee": 0,
+                "protocol_wallet": "0x0000000000000000000000000000000000000000"
             },
             "properties_addresses": {
                 "controller": "",
