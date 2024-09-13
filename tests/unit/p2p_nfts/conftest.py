@@ -35,17 +35,17 @@ def delegation_registry(delegation_registry_contract_def, owner):
     return delegation_registry_contract_def.deploy()
 
 
-@pytest.fixture
-def p2p_nfts_eth(
-    p2p_lending_nfts_contract_def,
-    max_lock_expiration,
-    weth,
-    delegation_registry,
-    cryptopunks,
-    p2p_control,
-    owner,
-):
-    return p2p_lending_nfts_contract_def.deploy(ZERO_ADDRESS, delegation_registry, weth, cryptopunks, p2p_control, 0, 0, owner)
+# @pytest.fixture
+# def p2p_nfts_eth(
+#     p2p_lending_nfts_contract_def,
+#     max_lock_expiration,
+#     weth,
+#     delegation_registry,
+#     cryptopunks,
+#     p2p_control,
+#     owner,
+# ):
+#     return p2p_lending_nfts_contract_def.deploy(ZERO_ADDRESS, delegation_registry, weth, cryptopunks, p2p_control, 0, 0, owner)
 
 
 @pytest.fixture
@@ -53,13 +53,12 @@ def p2p_nfts_usdc(
     p2p_lending_nfts_contract_def,
     max_lock_expiration,
     usdc,
-    weth,
     delegation_registry,
     cryptopunks,
     p2p_control,
     owner,
 ):
-    return p2p_lending_nfts_contract_def.deploy(usdc, delegation_registry, weth, cryptopunks, p2p_control, 0, 0, owner)
+    return p2p_lending_nfts_contract_def.deploy(usdc, delegation_registry, cryptopunks, p2p_control, 0, 0, owner)
 
 
 @pytest.fixture

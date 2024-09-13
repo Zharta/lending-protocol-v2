@@ -239,7 +239,6 @@ proposed_owner: public(address)
 payment_token: public(immutable(address))
 loans: public(HashMap[bytes32, bytes32])
 delegation_registry: public(immutable(DelegationRegistry))
-weth9: public(immutable(WETH))
 cryptopunks: public(immutable(CryptoPunksMarket))
 controller: public(immutable(P2PLendingControl))
 
@@ -269,7 +268,6 @@ offer_sig_domain_separator: immutable(bytes32)
 def __init__(
     _payment_token: address,
     _delegation_registry: address,
-    _weth9: address,
     _cryptopunks: address,
     _controller: address,
     _protocol_upfront_fee: uint256,
@@ -281,7 +279,6 @@ def __init__(
     @notice Initialize the contract with the given parameters.
     @param _payment_token The address of the payment token.
     @param _delegation_registry The address of the delegation registry.
-    @param _weth9 The address of the WETH contract.
     @param _cryptopunks The address of the CryptoPunksMarket contract.
     @param _controller The address of the P2PLendingControl contract.
     @param _protocol_upfront_fee The percentage (bps) of the principal paid to the protocol at origination.
@@ -290,11 +287,11 @@ def __init__(
     """
 
     assert _protocol_wallet != empty(address), "wallet is the zero address"
+    assert _payment_token != empty(address), "payment token is zero"
 
     self.owner = msg.sender
     payment_token = _payment_token
     delegation_registry = DelegationRegistry(_delegation_registry)
-    weth9 = WETH(_weth9)
     cryptopunks = CryptoPunksMarket(_cryptopunks)
     controller = P2PLendingControl(_controller)
     self.protocol_upfront_fee = _protocol_upfront_fee
@@ -311,17 +308,6 @@ def __init__(
         )
     )
 
-
-@external
-@payable
-def __default__():
-
-    """
-    @notice Fallback function to receive Ether.
-    @dev Only allows WETH9 contract to send Ether.
-    """
-
-    assert msg.sender == weth9.address, "sender not WETH9"
 
 
 # Config functions
@@ -471,11 +457,11 @@ def create_loan(
     self.loans[loan.id] = self._loan_state_hash(loan)
 
     self._store_collateral(loan.borrower, loan.collateral_contract, loan.collateral_token_id)
-    self._transfer_funds_from_lender(loan.lender, loan.borrower, loan.amount - total_upfront_fees + offer.offer.broker_upfront_fee_amount)
+    self._transfer_funds(loan.lender, loan.borrower, loan.amount - total_upfront_fees + offer.offer.broker_upfront_fee_amount)
 
     for fee in fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
-            self._transfer_funds_from_lender(loan.lender, fee.wallet, fee.upfront_amount)
+            self._transfer_funds(loan.lender, fee.wallet, fee.upfront_amount)
 
     self._set_delegation(delegate, loan.collateral_contract, loan.collateral_token_id, delegate != empty(address))
 
@@ -498,7 +484,6 @@ def create_loan(
 
 
 @external
-@payable
 def settle_loan(loan: Loan):
 
     """
@@ -506,7 +491,6 @@ def settle_loan(loan: Loan):
     @param loan The loan to be settled.
     """
 
-    assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
     assert block.timestamp <= loan.maturity, "loan defaulted"
     assert self._check_user(loan.borrower), "not borrower"
@@ -518,7 +502,7 @@ def settle_loan(loan: Loan):
 
     self.loans[loan.id] = empty(bytes32)
 
-    self._receive_funds_from_caller(loan.borrower, loan.amount + interest)
+    self._receive_funds(loan.borrower, loan.amount + interest)
 
     self._send_funds(loan.lender, loan.amount + interest - settlement_fees_total)
     for fee in settlement_fees:
@@ -563,7 +547,6 @@ def claim_defaulted_loan_collateral(loan: Loan):
 
 
 @external
-@payable
 def replace_loan(
     loan: Loan,
     offer: SignedOffer,
@@ -583,7 +566,6 @@ def replace_loan(
     @return The ID of the new loan.
     """
 
-    assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
     assert self._check_user(loan.borrower), "not borrower"
     assert block.timestamp <= loan.maturity, "loan defaulted"
@@ -623,15 +605,15 @@ def replace_loan(
     new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount + offer.offer.broker_upfront_fee_amount
 
     if borrower_delta < 0:
-        self._receive_funds_from_caller(loan.borrower, convert(-1 * borrower_delta, uint256))
+        self._receive_funds(loan.borrower, convert(-1 * borrower_delta, uint256))
 
     if loan.lender != offer.offer.lender:
-        self._receive_funds_from_lender(offer.offer.lender, new_lender_delta_abs)
+        self._receive_funds(offer.offer.lender, new_lender_delta_abs)
         self._send_funds(loan.lender, current_lender_delta)
     elif current_lender_delta > new_lender_delta_abs:
         self._send_funds(loan.lender, current_lender_delta - new_lender_delta_abs)
     elif current_lender_delta < new_lender_delta_abs:
-        self._receive_funds_from_lender(loan.lender, new_lender_delta_abs - current_lender_delta)
+        self._receive_funds(loan.lender, new_lender_delta_abs - current_lender_delta)
 
     if borrower_delta > 0:
         self._send_funds(loan.borrower, convert(borrower_delta, uint256))
@@ -686,7 +668,6 @@ def replace_loan(
 
 
 @external
-@payable
 def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
 
     """
@@ -697,7 +678,6 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
     @return The ID of the new loan.
     """
 
-    assert payment_token == empty(address) or msg.value == 0, "native payment not allowed"
     assert self._is_loan_valid(loan), "invalid loan"
     assert self._check_user(loan.lender), "not lender"
     assert block.timestamp <= loan.maturity, "loan defaulted"
@@ -744,7 +724,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
 
     if loan.lender != offer.offer.lender:
         assert current_lender_delta >= 0, "lender delta < 0"
-        self._receive_funds_from_lender(offer.offer.lender, new_lender_delta_abs)
+        self._receive_funds(offer.offer.lender, new_lender_delta_abs)
         if current_lender_delta > 0:
             self._send_funds(loan.lender, convert(current_lender_delta, uint256))
     else:
@@ -752,7 +732,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         if lender_delta > 0:
             self._send_funds(loan.lender, convert(lender_delta, uint256))
         if lender_delta < 0:
-            self._receive_funds_from_caller(loan.lender, convert(-1 * lender_delta, uint256))
+            self._receive_funds(loan.lender, convert(-1 * lender_delta, uint256))
 
     if borrower_delta > 0:
         self._send_funds(loan.borrower, convert(borrower_delta, uint256))
@@ -1023,7 +1003,6 @@ def _transfer_erc721(_wallet: address, _collateralAddress: address, _tokenId: ui
 
 @internal
 def _transfer_collateral(wallet: address, collateral_contract: address, token_id: uint256):
-
     if self._is_punk(collateral_contract):
         self._transfer_punk(wallet, collateral_contract, token_id)
     else:
@@ -1032,47 +1011,17 @@ def _transfer_collateral(wallet: address, collateral_contract: address, token_id
 
 @internal
 def _send_funds(_to: address, _amount: uint256):
-
-    if payment_token == empty(address):
-        weth9.withdraw(_amount)
-        send(_to, _amount)
-    else:
-        if not IERC20(payment_token).transfer(_to, _amount):
-            raise "error sending funds"
+    assert IERC20(payment_token).transfer(_to, _amount), "error sending funds"
 
 
 @internal
-@payable
-def _receive_funds_from_caller(_from: address, _amount: uint256):
-
-    if payment_token == empty(address):
-        assert msg.value >= _amount, "invalid sent value"
-        weth9.deposit(value=_amount)
-        if _amount < msg.value:
-            send(_from, msg.value - _amount)
-    else:
-        assert IERC20(payment_token).transferFrom(_from, self, _amount), "transferFrom failed"
+def _receive_funds(_from: address, _amount: uint256):
+    assert IERC20(payment_token).transferFrom(_from, self, _amount), "transferFrom failed"
 
 
 @internal
-def _receive_funds_from_lender(_from: address, _amount: uint256):
-
-    if payment_token == empty(address):
-        assert weth9.transferFrom(_from, self, _amount), "transferFrom failed"
-    else:
-        assert IERC20(payment_token).transferFrom(_from, self, _amount), "transferFrom failed"
-
-
-@internal
-@payable
-def _transfer_funds_from_lender(_from: address, _to: address, _amount: uint256):
-
-    if payment_token == empty(address):
-        assert weth9.transferFrom(_from, self, _amount), "transferFrom failed"
-        weth9.withdraw(_amount)
-        send(_to, _amount)
-    else:
-        assert IERC20(payment_token).transferFrom(_from, _to, _amount), "transferFrom failed"
+def _transfer_funds(_from: address, _to: address, _amount: uint256):
+    assert IERC20(payment_token).transferFrom(_from, _to, _amount), "transferFrom failed"
 
 @pure
 @internal
