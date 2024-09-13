@@ -496,34 +496,38 @@ def test_replace_loan_reverts_if_collateral_contract_mismatch(
         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, signed_offer, sender=ongoing_loan_bayc.lender)
 
 
-# def test_replace_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, ongoing_loan_bayc):
-#     token_id = 1
-#     principal = 1000
-#     offer = Offer(
-#         principal=principal,
-#         interest=100,
-#         payment_token=ongoing_loan_bayc.payment_token,
-#         duration=100,
-#         origination_fee_amount=0,
-#         broker_upfront_fee_amount=0,
-#         broker_settlement_fee_bps=0,
-#         broker_address=ZERO_ADDRESS,
-#         collateral_contract=bayc.address,
-#         collateral_min_token_id=token_id,
-#         collateral_max_token_id=token_id,
-#         expiration=now + 100,
-#         lender=lender,
-#         pro_rata=False,
-#     )
-#     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
+def test_replace_loan_reverts_if_lender_funds_not_approved(
+    p2p_nfts_usdc,
+    borrower,
+    now,
+    lender,
+    lender_key,
+    bayc,
+    usdc,
+    ongoing_loan_bayc,
+    offer_bayc2
+):
+    token_id = 1
+    offer = offer_bayc2.offer
+    lender = offer.lender
+    principal = offer.principal
+    interest = ongoing_loan_bayc.get_interest(now)
 
-#     bayc.mint(borrower, token_id)
-#     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
-#     usdc.deposit(value=principal, sender=lender)
+    max_interest_delta = _max_interest_delta(ongoing_loan_bayc, offer, now)
+    borrower_compensation = max(max_interest_delta, interest + ongoing_loan_bayc.amount - principal)
 
-#     with boa.reverts():
-#         p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
-#         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, signed_offer, sender=ongoing_loan_bayc.lender)
+    protocol_fee_amount = ongoing_loan_bayc.get_protocol_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    broker_fee_amount = ongoing_loan_bayc.get_lender_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    borrower_broker_fee_amount = (
+        ongoing_loan_bayc.get_borrower_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    )
+
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval - 1, sender=lender)
+
+    with boa.reverts():
+        p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
 
 def _max_interest_delta(loan: Loan, offer: Offer, refinance_timestamp: int):
@@ -763,9 +767,9 @@ def test_replace_loan_transfers_origination_fee_to_lender(p2p_nfts_usdc, ongoing
     origination_fee = offer.origination_fee_amount
     lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
 
-    initial_lender_balance = usdc.balanceOf(new_lender)
     usdc.deposit(value=lender_approval, sender=new_lender)
     usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=new_lender)
+    initial_lender_balance = usdc.balanceOf(new_lender)
 
     p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
@@ -1187,10 +1191,6 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     print(f"{total_upfront_fees=} {max_interest_delta=} {borrower_compensation=} {settlement_fees=}")
     print(f"{borrower_delta=} {current_lender_delta=} {new_lender_delta=}")
 
-    initial_borrower_balance = usdc.balanceOf(borrower)
-    initial_lender_balance = usdc.balanceOf(lender)
-    initial_lender2_balance = usdc.balanceOf(lender2)
-
     if lender != lender2:
         usdc.deposit(value=-new_lender_delta, sender=lender2)
         usdc.approve(p2p_nfts_usdc.address, -new_lender_delta, sender=lender2)
@@ -1202,6 +1202,10 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
 
     usdc.deposit(value=max(-lender_delta, 0), sender=loan1.lender)
     usdc.approve(p2p_nfts_usdc.address, max(-lender_delta, 0), sender=loan1.lender)
+
+    initial_borrower_balance = usdc.balanceOf(borrower)
+    initial_lender_balance = usdc.balanceOf(lender)
+    initial_lender2_balance = usdc.balanceOf(lender2)
 
     loan2_id = p2p_nfts_usdc.replace_loan_lender(loan1, signed_offer2, sender=loan1.lender)
 

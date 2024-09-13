@@ -1136,10 +1136,6 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     print(f"{actual_duration=}, {interest=}, {protocol_fee_amount=}, {broker_fee_amount=} {borrower_broker_fee_amount=}")
     print(f"{borrower_delta=}, {current_lender_delta=}, {new_lender_delta=}")
 
-    initial_borrower_balance = usdc.balanceOf(borrower)
-    initial_lender_balance = usdc.balanceOf(lender)
-    initial_lender2_balance = usdc.balanceOf(lender2)
-
     if lender != lender2:
         usdc.approve(p2p_nfts_usdc.address, -new_lender_delta, sender=lender2)
     elif current_lender_delta + new_lender_delta < 0:
@@ -1148,6 +1144,11 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
 
     boa.env.time_travel(seconds=actual_duration)
     usdc.approve(p2p_nfts_usdc.address, max(0, -borrower_delta), sender=borrower)
+
+    initial_borrower_balance = usdc.balanceOf(borrower)
+    initial_lender_balance = usdc.balanceOf(lender)
+    initial_lender2_balance = usdc.balanceOf(lender2)
+
     loan2_id = p2p_nfts_usdc.replace_loan(
         loan1, signed_offer2, borrower_broker_upfront_fee, borrower_broker_settlement_fee, borrower_broker, sender=borrower
     )
