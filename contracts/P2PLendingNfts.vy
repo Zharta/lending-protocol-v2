@@ -32,6 +32,7 @@ interface WETH:
     def deposit(): payable
     def withdraw(_amount: uint256): nonpayable
     def transferFrom(_from: address, _to: address, _amount: uint256) -> bool: nonpayable
+    def transfer(_to : address, _value : uint256) -> bool: nonpayable
 
 interface CryptoPunksMarket:
     def transferPunk(to: address, punkIndex: uint256): nonpayable
@@ -43,12 +44,10 @@ interface CryptoPunksMarket:
 interface DelegationRegistry:
     def delegateERC721(delegate: address, contract: address, token_id: uint256, rights: bytes32, _value: bool) -> bytes32: nonpayable
 
-interface P2PLendingControl:
-    def get_collateral_status(collateral_address: address, collateral_token_id: uint256) -> CollateralStatus: view
-
 
 # Structs
 
+WHITELIST_BATCH: constant(uint256) = 100
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
@@ -112,13 +111,10 @@ struct Loan:
     pro_rata: bool
 
 
-struct BrokerLock:
-    broker: address
-    expiration: uint256
-
-struct CollateralStatus:
-    broker_lock: BrokerLock
+struct WhitelistRecord:
+    collection: address
     whitelisted: bool
+
 
 struct PunkOffer:
     isForSale: bool
@@ -204,10 +200,6 @@ event OfferRevoked:
     collateral_min_token_id: uint256
     collateral_max_token_id: uint256
 
-event LendingControlChanged:
-    old_control: address
-    new_control: address
-
 event OwnerProposed:
     owner: address
     proposed_owner: address
@@ -230,6 +222,9 @@ event ProxyAuthorizationChanged:
     proxy: address
     value: bool
 
+event WhitelistChanged:
+    changed: DynArray[WhitelistRecord, WHITELIST_BATCH]
+
 
 # Global variables
 
@@ -240,7 +235,6 @@ payment_token: public(immutable(address))
 loans: public(HashMap[bytes32, bytes32])
 delegation_registry: public(immutable(DelegationRegistry))
 cryptopunks: public(immutable(CryptoPunksMarket))
-controller: public(immutable(P2PLendingControl))
 
 protocol_wallet: public(address)
 protocol_upfront_fee: public(uint256)
@@ -249,6 +243,7 @@ offer_count: public(HashMap[bytes32, uint256])
 revoked_offers: public(HashMap[bytes32, bool])
 
 authorized_proxies: public(HashMap[address, bool])
+whitelisted: public(HashMap[address, bool])
 
 VERSION: constant(String[30]) = "P2PLendingNfts.20240911"
 
@@ -269,7 +264,6 @@ def __init__(
     _payment_token: address,
     _delegation_registry: address,
     _cryptopunks: address,
-    _controller: address,
     _protocol_upfront_fee: uint256,
     _protocol_settlement_fee: uint256,
     _protocol_wallet: address
@@ -280,7 +274,6 @@ def __init__(
     @param _payment_token The address of the payment token.
     @param _delegation_registry The address of the delegation registry.
     @param _cryptopunks The address of the CryptoPunksMarket contract.
-    @param _controller The address of the P2PLendingControl contract.
     @param _protocol_upfront_fee The percentage (bps) of the principal paid to the protocol at origination.
     @param _protocol_settlement_fee The percentage (bps) of the interest paid to the protocol at settlement.
     @param _protocol_wallet The address where the protocol fees are accrued.
@@ -293,7 +286,6 @@ def __init__(
     payment_token = _payment_token
     delegation_registry = DelegationRegistry(_delegation_registry)
     cryptopunks = CryptoPunksMarket(_cryptopunks)
-    controller = P2PLendingControl(_controller)
     self.protocol_upfront_fee = _protocol_upfront_fee
     self.protocol_settlement_fee = _protocol_settlement_fee
     self.protocol_wallet = _protocol_wallet
@@ -394,6 +386,19 @@ def claim_ownership():
     self.proposed_owner = empty(address)
 
 
+@external
+def change_whitelisted_collections(collections: DynArray[WhitelistRecord, WHITELIST_BATCH]):
+    """
+    @notice Set whitelisted collections
+    @param collections array of WhitelistRecord
+    """
+    assert msg.sender == self.owner, "sender not owner"
+    for c in collections:
+        self.whitelisted[c.collection] = c.whitelisted
+
+    log WhitelistChanged(collections)
+
+
 # Core functions
 
 @external
@@ -423,11 +428,7 @@ def create_loan(
     assert offer.offer.payment_token == payment_token, "invalid payment token"
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
 
-    collateral_status: CollateralStatus = controller.get_collateral_status(offer.offer.collateral_contract, collateral_token_id)
-    if collateral_status.broker_lock.broker != offer.offer.broker_address:
-        assert collateral_status.broker_lock.expiration < block.timestamp, "collateral locked"
-    assert collateral_status.whitelisted, "collateral not whitelisted"
-
+    assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
     assert offer.offer.collateral_min_token_id <= collateral_token_id, "tokenid below offer range"
     assert offer.offer.collateral_max_token_id >= collateral_token_id, "tokenid above offer range"
 
@@ -575,10 +576,7 @@ def replace_loan(
     assert offer.offer.payment_token == payment_token, "invalid payment token"
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
 
-    collateral_status: CollateralStatus = controller.get_collateral_status(offer.offer.collateral_contract, loan.collateral_token_id)
-    if collateral_status.broker_lock.broker != offer.offer.broker_address:
-        assert collateral_status.broker_lock.expiration < block.timestamp, "collateral locked"
-    assert collateral_status.whitelisted, "collateral not whitelisted"
+    assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
 
     assert offer.offer.collateral_min_token_id <= loan.collateral_token_id, "tokenid below offer range"
     assert offer.offer.collateral_max_token_id >= loan.collateral_token_id, "tokenid above offer range"
@@ -688,10 +686,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
     assert block.timestamp + offer.offer.duration >= loan.maturity, "maturity before loan maturity"
 
-    collateral_status: CollateralStatus = controller.get_collateral_status(offer.offer.collateral_contract, loan.collateral_token_id)
-    if collateral_status.broker_lock.broker != offer.offer.broker_address:
-        assert collateral_status.broker_lock.expiration < block.timestamp, "collateral locked"
-    assert collateral_status.whitelisted, "collateral not whitelisted"
+    assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
 
     assert offer.offer.collateral_min_token_id <= loan.collateral_token_id, "tokenid below offer range"
     assert offer.offer.collateral_max_token_id >= loan.collateral_token_id, "tokenid above offer range"

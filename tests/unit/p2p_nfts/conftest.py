@@ -18,14 +18,6 @@ def bayc(erc721_contract_def, owner):
 
 
 @pytest.fixture
-def p2p_control(p2p_lending_control_contract_def, cryptopunks, bayc, max_lock_expiration, owner):
-    p2p_control = p2p_lending_control_contract_def.deploy(cryptopunks, max_lock_expiration)
-    p2p_control.change_whitelisted_collections([WhitelistRecord(cryptopunks.address, True)])
-    p2p_control.change_whitelisted_collections([WhitelistRecord(bayc.address, True)])
-    return p2p_control
-
-
-@pytest.fixture
 def usdc(weth9_contract_def, owner):
     return weth9_contract_def.deploy("USDC", "USDC", 9, 10**20)
 
@@ -35,30 +27,11 @@ def delegation_registry(delegation_registry_contract_def, owner):
     return delegation_registry_contract_def.deploy()
 
 
-# @pytest.fixture
-# def p2p_nfts_eth(
-#     p2p_lending_nfts_contract_def,
-#     max_lock_expiration,
-#     weth,
-#     delegation_registry,
-#     cryptopunks,
-#     p2p_control,
-#     owner,
-# ):
-#     return p2p_lending_nfts_contract_def.deploy(ZERO_ADDRESS, delegation_registry, weth, cryptopunks, p2p_control, 0, 0, owner)
-
-
 @pytest.fixture
-def p2p_nfts_usdc(
-    p2p_lending_nfts_contract_def,
-    max_lock_expiration,
-    usdc,
-    delegation_registry,
-    cryptopunks,
-    p2p_control,
-    owner,
-):
-    return p2p_lending_nfts_contract_def.deploy(usdc, delegation_registry, cryptopunks, p2p_control, 0, 0, owner)
+def p2p_nfts_usdc(p2p_lending_nfts_contract_def, max_lock_expiration, usdc, delegation_registry, bayc, cryptopunks, owner):
+    contract = p2p_lending_nfts_contract_def.deploy(usdc, delegation_registry, cryptopunks, 0, 0, owner)
+    contract.change_whitelisted_collections([WhitelistRecord(cryptopunks.address, True), WhitelistRecord(bayc.address, True)])
+    return contract
 
 
 @pytest.fixture

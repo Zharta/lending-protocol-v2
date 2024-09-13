@@ -1,13 +1,19 @@
 import boa
+import pytest
 
-from ...conftest_base import ZERO_ADDRESS, get_last_event
+from ...conftest_base import ZERO_ADDRESS, get_last_event, WhitelistRecord
 
 FOREVER = 2**256 - 1
 
 
+@pytest.fixture
+def collections():
+    return ["0x" + str(i) * 40 for i in range(1, 6)]
+
+
+
 def test_initial_state(
     p2p_nfts_usdc,
-    p2p_control,
     weth,
     usdc,
     delegation_registry,
@@ -18,7 +24,6 @@ def test_initial_state(
     assert p2p_nfts_usdc.payment_token() == usdc.address
     assert p2p_nfts_usdc.delegation_registry() == delegation_registry.address
     assert p2p_nfts_usdc.cryptopunks() == cryptopunks.address
-    assert p2p_nfts_usdc.controller() == p2p_control.address
     assert p2p_nfts_usdc.protocol_upfront_fee() == 0
     assert p2p_nfts_usdc.protocol_settlement_fee() == 0
     assert p2p_nfts_usdc.protocol_wallet() == owner
@@ -162,3 +167,31 @@ def test_claim_ownership_logs_event(p2p_nfts_usdc, owner):
 
     assert event.old_owner == owner
     assert event.new_owner == new_owner
+
+
+def test_change_whitelisted_collections_reverts_if_wrong_caller(p2p_nfts_eth):
+    with boa.reverts("sender not owner"):
+        p2p_nfts_eth.change_whitelisted_collections([], sender=boa.env.generate_address("random"))
+
+
+def test_change_whitelisted_collections(p2p_nfts_eth, collections, owner):
+    whitelist = [WhitelistRecord(c, i % 2 == 0) for i, c in enumerate(collections)]
+    p2p_nfts_eth.change_whitelisted_collections(whitelist, sender=owner)
+
+    for c, w in whitelist:
+        assert p2p_nfts_eth.whitelisted(c) == w
+
+    whitelist = [WhitelistRecord(c, i % 2 == 1) for i, c in enumerate(collections)]
+    p2p_nfts_eth.change_whitelisted_collections(whitelist, sender=owner)
+
+    for c, w in whitelist:
+        assert p2p_nfts_eth.whitelisted(c) == w
+
+
+def test_change_whitelisted_collections_logs_event(p2p_nfts_eth, collections, owner):
+    whitelist = [WhitelistRecord(c, i % 2 == 0) for i, c in enumerate(collections)]
+    p2p_nfts_eth.change_whitelisted_collections(whitelist, sender=owner)
+    event = get_last_event(p2p_nfts_eth, "WhitelistChanged")
+
+    assert event.changed == whitelist
+

@@ -144,37 +144,8 @@ def test_create_loan_reverts_if_payment_token_invalid(p2p_nfts_usdc, borrower, n
         p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_collateral_locked(p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc):
-    token_id = 1
-    broker = boa.env.generate_address("broker")
-    bayc.mint(borrower, token_id)
-
-    offer = Offer(
-        principal=1000,
-        interest=100,
-        payment_token=usdc.address,
-        duration=100,
-        origination_fee_amount=0,
-        broker_upfront_fee_amount=0,
-        broker_settlement_fee_bps=0,
-        broker_address=ZERO_ADDRESS,
-        collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
-        expiration=now + 100,
-        lender=lender,
-        pro_rata=False,
-    )
-    signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
-
-    p2p_control.add_broker_lock(bayc.address, token_id, broker, now + 100, sender=borrower)
-
-    with boa.reverts("collateral locked"):
-        p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
-
-
 def test_create_loan_reverts_if_collateral_not_whitelisted(
-    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc
 ):
     token_id = 1
     offer = Offer(
@@ -195,7 +166,7 @@ def test_create_loan_reverts_if_collateral_not_whitelisted(
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
-    p2p_control.change_whitelisted_collections([(bayc.address, False)], sender=p2p_control.owner())
+    p2p_nfts_usdc.change_whitelisted_collections([(bayc.address, False)], sender=p2p_nfts_usdc.owner())
 
     with boa.reverts("collateral not whitelisted"):
         p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
@@ -530,42 +501,6 @@ def test_create_loan_logs_event(p2p_nfts_usdc, borrower, now, lender, lender_key
         Fee.borrower_broker(ZERO_ADDRESS),
     ]
     assert event.pro_rata == offer.pro_rata
-
-
-def test_create_loan_succeeds_if_broker_matches_lock(
-    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc
-):
-    token_id = 1
-    principal = 1000
-    broker = boa.env.generate_address("broker")
-    bayc.mint(borrower, token_id)
-    bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
-    usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
-
-    offer = Offer(
-        principal=principal,
-        interest=100,
-        payment_token=usdc.address,
-        duration=100,
-        origination_fee_amount=0,
-        broker_upfront_fee_amount=0,
-        broker_settlement_fee_bps=0,
-        broker_address=broker,
-        collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
-        expiration=now + 100,
-        lender=lender,
-        pro_rata=False,
-    )
-    signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
-
-    p2p_control.add_broker_lock(bayc.address, token_id, broker, now + 100, sender=borrower)
-    p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
-
-    collateral_status = CollateralStatus.from_tuple(p2p_control.get_collateral_status(bayc.address, token_id))
-    assert collateral_status.broker_lock.expiration > now
-    assert collateral_status.whitelisted
 
 
 def test_create_loan_creates_delegation(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, delegation_registry):
