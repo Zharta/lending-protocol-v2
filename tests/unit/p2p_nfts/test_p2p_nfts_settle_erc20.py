@@ -15,6 +15,7 @@ from ...conftest_base import (
     get_last_event,
     get_loan_mutations,
     sign_offer,
+    WhitelistRecord,
 )
 
 FOREVER = 2**256 - 1
@@ -638,7 +639,6 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
     bayc,
     delegation_registry,
     cryptopunks,
-    p2p_control,
     owner,
     borrower,
     lender,
@@ -657,9 +657,8 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
 
             """)
     erc20 = boa.loads(failing_erc20_code)
-    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(
-        erc20, delegation_registry, cryptopunks, p2p_control, 0, 0, owner
-    )
+    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, delegation_registry, cryptopunks, 0, 0, owner)
+    p2p_nfts_erc20.change_whitelisted_collections([WhitelistRecord(bayc.address, True)])
 
     token_id = 1
     offer = Offer(

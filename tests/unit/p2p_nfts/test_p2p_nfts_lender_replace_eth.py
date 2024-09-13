@@ -329,8 +329,8 @@ def test_replace_loan_reverts_if_payment_token_invalid(p2p_nfts_usdc, ongoing_lo
         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, signed_offer, sender=ongoing_loan_bayc.lender)
 
 
-def test_replace_loan_reverts_if_collateral_not_whitelisted(p2p_nfts_usdc, p2p_control, ongoing_loan_bayc, offer_bayc2, bayc):
-    p2p_control.change_whitelisted_collections([(bayc.address, False)], sender=p2p_control.owner())
+def test_replace_loan_reverts_if_collateral_not_whitelisted(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, bayc):
+    p2p_nfts_usdc.change_whitelisted_collections([(bayc.address, False)], sender=p2p_nfts_usdc.owner())
 
     with boa.reverts("collateral not whitelisted"):
         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
@@ -467,7 +467,7 @@ def test_replace_loan_reverts_if_broker_fee_without_address(p2p_nfts_usdc, ongoi
 
 
 def test_replace_loan_reverts_if_collateral_contract_mismatch(
-    p2p_nfts_usdc, p2p_control, ongoing_loan_bayc, now, lender, lender_key, bayc, usdc
+    p2p_nfts_usdc, ongoing_loan_bayc, now, lender, lender_key, bayc, weth
 ):
     token_id = 1
     principal = 1000
@@ -490,7 +490,7 @@ def test_replace_loan_reverts_if_collateral_contract_mismatch(
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
-    p2p_control.change_whitelisted_collections([(dummy_contract, True)], sender=p2p_control.owner())
+    p2p_nfts_usdc.change_whitelisted_collections([(dummy_contract, True)], sender=p2p_nfts_usdc.owner())
 
     with boa.reverts("collateral contract mismatch"):
         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, signed_offer, sender=ongoing_loan_bayc.lender)
@@ -546,23 +546,6 @@ def _max_interest_delta(loan: Loan, offer: Offer, refinance_timestamp: int):
     )
 
     return max(delta_at_refinance, offer_interest_at_loan_maturity - loan_interest_delta_at_maturity)
-
-
-def test_replace_loan_reverts_if_collateral_locked(p2p_nfts_usdc, p2p_control, ongoing_loan_bayc, now, offer_bayc2, usdc):
-    token_id = ongoing_loan_bayc.collateral_token_id
-    collateral_contract = ongoing_loan_bayc.collateral_contract
-    offer = offer_bayc2.offer
-    lender = offer.lender
-    broker = boa.env.generate_address("random")
-    principal = offer.principal
-    usdc.deposit(value=principal, sender=lender)
-    usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
-
-    # simulate previous broker lock
-    p2p_control.add_broker_lock(collateral_contract, token_id, broker, now + 100, sender=p2p_nfts_usdc.address)
-
-    with boa.reverts("collateral locked"):
-        p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
 
 def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc):
@@ -681,27 +664,6 @@ def test_replace_loan_works_with_proxy(p2p_nfts_usdc, ongoing_loan_bayc, offer_b
         pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
-
-
-def test_replace_loan_succeeds_if_broker_matches_lock(p2p_nfts_usdc, p2p_control, ongoing_loan_bayc, now, offer_bayc2, usdc):
-    token_id = ongoing_loan_bayc.collateral_token_id
-    collateral_contract = ongoing_loan_bayc.collateral_contract
-    offer = offer_bayc2.offer
-    lender = offer.lender
-    broker = offer.broker_address
-    principal = offer.principal
-    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
-    usdc.deposit(value=lender_approval, sender=lender)
-    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
-
-    # simulate previous broker lock
-    p2p_control.add_broker_lock(collateral_contract, token_id, broker, now + 100, sender=p2p_nfts_usdc.address)
-
-    p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
-
-    collateral_status = CollateralStatus.from_tuple(p2p_control.get_collateral_status(collateral_contract, token_id))
-    assert collateral_status.broker_lock.expiration > now
-    assert collateral_status.whitelisted
 
 
 def test_replace_loan_keeps_delegation(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, bayc, delegation_registry, usdc):
