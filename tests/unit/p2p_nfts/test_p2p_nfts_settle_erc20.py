@@ -632,11 +632,6 @@ def test_settle_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pror
     assert usdc.balanceOf(p2p_nfts_usdc.protocol_wallet()) == initial_protocol_wallet_balance + protocol_fee_amount
 
 
-def test_settle_loan_reverts_if_native_payment_for_erc20(p2p_nfts_usdc, ongoing_loan_bayc):
-    with boa.reverts("native payment not allowed"):
-        p2p_nfts_usdc.settle_loan(ongoing_loan_bayc, value=1)
-
-
 def test_settle_loan_fails_on_erc20_transfer_fail(
     p2p_lending_nfts_contract_def,
     weth,
@@ -663,7 +658,7 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
             """)
     erc20 = boa.loads(failing_erc20_code)
     p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(
-        erc20, delegation_registry, weth, cryptopunks, p2p_control, 0, 0, owner
+        erc20, delegation_registry, cryptopunks, p2p_control, 0, 0, owner
     )
 
     token_id = 1
