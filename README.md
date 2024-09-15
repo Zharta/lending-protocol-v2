@@ -11,9 +11,7 @@ This protocol implements a peer-to-peer lending system for NFTs. It allows NFT o
 | V1          | Vyper 0.3.7 - 0.3.10  | https://github.com/Zharta/protocol-v1         |
 | V2          | Vyper 0.3.10          | https://github.com/Zharta/lending-protocol-v2 |
 
-There are two major components in the protocol:
-* the `P2PLendingNfts` contract support NFTs backed peer to peer lending
-* the `P2PLendingControl` contract contains cross contract configurations
+The single major component in the protocol is the `P2PLendingNfts` contract, which support NFTs backed peer to peer lending
 
 The lending of an NFT in the context of this protocol means that:
 1. A lender provides a loan offer with specific terms
@@ -31,9 +29,9 @@ In addition, the protocol supports a broker system to facilitate loans and integ
 The current status of the protocol follows certain assumptions:
 
 1. Support for ERC721 NFTs and CryptoPunks as collateral
-2. The set of accepted NFT contracts is whitelisted, defined in `P2PLendingControl`
+2. The set of accepted NFT contracts is whitelisted
 3. Integration with a [delegation registry](https://delegate.xyz/) for potential NFT utility during loans
-4. Use of native ETH or some ERC20 (eg USDC) as a payment token, defined at deployment time for each instance of `P2PLendingNfts`
+4. Use of some ERC20 (eg USDC) as a payment token, defined at deployment time for each instance of `P2PLendingNfts`
 5. The loan terms are part of the lender offers, which are signed and kept off-chain
 6. Offers have an expiration timestamp and can also be revoked onchain
 7. Brokers can be part of the loan negotiation and the protocol supports fees for both lender and borrower brokers
@@ -52,9 +50,7 @@ Below are the smart contract audits performed for the protocol so far:
 
 ## Architecture
 
-As previously stated, there are two main components of the protocol:
-* The core lending functionality implemented in the `P2PLendingNfts.vy` contract
-* The collateral management and control logic implemented in the `P2PLendingControl.vy` contract
+As previously stated, the `P2PLendingNfts.vy` contract is the main component of the protocol, implementing the core lending functionality as well as the required configurations.
 
 Users and other protocols should primarily interact with the `P2PLendingNfts.vy` contract. This contract is responsible for:
 * Creating loans based on signed offers and collateral
@@ -65,11 +61,7 @@ Users and other protocols should primarily interact with the `P2PLendingNfts.vy`
 * Revoking unused offers
 * Managing authorized proxies
 * Setting and managing the delegation of collateral during loan creation
-
-The `P2PLendingControl.vy` contract manages:
 * Whitelisted NFT collections
-* Broker locks on collateral
-* Collateral status tracking
 
 
 ### Offers
@@ -145,18 +137,12 @@ The protocol supports several types of fees:
 The upfront fees are paid during loan creation, while the settlement fees are paid as a fraction of the interest amount during loan settlement.
 
 
-### Broker Locks
-
-The `P2PLendingControl` contract manages temporary locks on collateral for brokers. Collateral owners can add a broker lock on a specific collateral, which defines the broker address and the expiration time of the lock. Brokers can remove the lock on the collateral they are assigned to before the expiration time. This allows brokers to facilitate loans while ensuring the collateral is not used elsewhere during the loan negotiation process.
-
-
 ### Roles
 
 The protocol supports the following roles:
 * `Owner`: Can update protocol parameters, change whitelisted collections, and manage the protocol
 * `Borrower`: Defined as a individual role for each loan, can settle and replace their loans
 * `Lender`: Defined as a individual role for each loan, can replace their loans and claim collateral in case of defaults
-* `Broker`: Can have temporary locks on collateral
 
 ## Development
 
@@ -164,7 +150,7 @@ The protocol supports the following roles:
 
 #### P2P Lending NFTs Contract (`P2PLendingNfts.vy`)
 
-The P2P Lending NFTs contract facilitates peer-to-peer lending using NFTs as collateral. It manages loan offers, collateral locking, and loan settlements.
+The P2P Lending NFTs contract facilitates peer-to-peer lending using NFTs as collateral. It manages loan offers and settlements.
 
 ##### State variables
 
@@ -230,6 +216,7 @@ For Offers:
 | revoke_offer                   | Lender               | Nonpayable   | Revokes a signed offer                                          |
 | set_protocol_fee               | Owner                | Nonpayable   | Sets the protocol fee                                           |
 | change_protocol_wallet         | Owner                | Nonpayable   | Changes the protocol wallet address                             |
+| change_whitelisted_collections | Owner                | Nonpayable   | Updates the whitelisted status of collections                   |
 | set_proxy_authorization        | Owner                | Nonpayable   | Sets authorization for a proxy address                          |
 
 
@@ -254,44 +241,6 @@ Key aspects of proxy support include:
 4. Security Considerations:
    - Only the contract owner can authorize or deauthorize proxies, providing centralized control over which addresses can act as proxies.
    - The use of `tx.origin` is only performed if the caller is an authorized proxy, otherwise the fallback authorization procedure used `msg.sender`
-
-#### P2P Lending Control Contract (`P2PLendingControl.vy`)
-
-The P2P Lending Control contract manages lending parameters for P2P lending contracts, including whitelisted collections and broker pre-agreements.
-
-##### State variables
-
-| **Variable**             | **Type**                    | **Mutable** | **Description**                                                                |
-| ---                      | ---                         | :-:         | ---                                                                             |
-| owner                    | `address`                   | Yes         | Address of the contract owner                                                   |
-| proposed_owner           | `address`                   | Yes         | Address of the proposed new owner                                               |
-| max_broker_lock_duration | `uint256`                   | Yes         | Maximum duration for broker locks                                               |
-| whitelisted              | `HashMap[address, bool]`    | Yes         | Mapping of whitelisted collection addresses                                     |
-| broker_locks             | `HashMap[bytes32, BrokerLock]` | Yes      | Mapping of broker locks for collaterals                                         |
-
-##### Structs
-
-| **Struct**      | **Variable**    | **Type**    | **Description**                                               |
-| ---             | ---             | ---         | ---                                                           |
-| BrokerLock      | broker          | `address`   | Address of the broker                                         |
-|                 | expiration      | `uint256`   | Expiration timestamp of the broker lock                       |
-| WhitelistRecord | collection      | `address`   | Address of the collection                                     |
-|                 | whitelisted     | `bool`      | Whitelisted status of the collection                          |
-| CollateralStatus| broker_lock     | `BrokerLock`| Broker lock information for the collateral                    |
-|                 | whitelisted     | `bool`      | Whitelisted status of the collateral collection               |
-
-##### Relevant external functions
-
-| **Function**                   | **Roles Allowed** | **Modifier** | **Description**                                                            |
-| ---                            | :-:               | ---          | ---                                                                        |
-| propose_owner                  | Owner             | Nonpayable   | Proposes a new owner for the contract                                      |
-| claim_ownership                | Proposed Owner    | Nonpayable   | Allows the proposed owner to claim ownership                               |
-| change_whitelisted_collections | Owner             | Nonpayable   | Updates the whitelisted status of collections                              |
-| set_max_broker_lock_duration   | Owner             | Nonpayable   | Sets the maximum duration for broker locks                                 |
-| add_broker_lock                | Collateral Owner  | Nonpayable   | Adds a broker lock for a specific collateral                               |
-| remove_broker_lock             | Broker            | Nonpayable   | Removes a broker lock for a specific collateral                            |
-| get_broker_lock                | Any               | View         | Retrieves the broker lock for a specific collateral                        |
-| get_collateral_status          | Any               | View         | Retrieves the collateral status including broker lock and whitelist status |
 
 
 ### Testing
@@ -374,15 +323,15 @@ Because the protocol depends on external contracts that may not be available in 
 | **NFT Contract**          | Mock (`ERC721.vy`)            | Mock (`ERC721.vy`)                                                                                        | Several, eg Koda `0xE012Baf811CF9c05c408e879C399960D1f305903`                                                                            |
 | **Delegation Contract**   | Mock (`HotWalletMock.vy`)     | delegate.xyz DelegateRegistry `0x00000000000000447e69651d841bD8D104Bed493`                                | delegate.xyz DelegateRegistry `0x00000000000000447e69651d841bD8D104Bed493`                                                               |
 
-Additionally, for each P2P Lending Market in each environment (e.g., NFTs backed USDC Loans PROD), the following contracts are deployed (the `P2PLendingControl` may be shared between Lending Markets):
+Additionally, for each P2P Lending Market in each environment (e.g., NFTs backed USDC Loans PROD), the `P2PLendingNfts` contracts is deployed:
 
-| **Contract**        | **Deployment parameters**               | **Description**                                 |
-| ---                 | ---                                     | ---                                             |
-| `P2PLendingNfts`    | `_payment_token: address`               | Address of the payment token (ERC20) contract   |
-|                     | `_max_protocol_settlement_fee: uint256` | Maximum protocol settlement fee                 |
-|                     | `_delegation_registry: address`         | Address of the delegation registry              |
-|                     | `_weth9: address`                       | Address of the WETH9 contract                   |
-|                     | `_cryptopunks: address`                 | Address of the CryptoPunksMarket contract       |
-|                     | `_controller: address`                  | Address of the P2PLendingControl contract       |
-| `P2PLendingControl` | `_cryptopunks: address`                 | Address of the CryptoPunksMarket contract       |
-|                     | `_max_broker_lock_duration: uint256`    | Maximum duration for broker locks on collateral |
+
+| **Contract**     | **Deployment parameters**        | **Description**                                                           |
+| ---              | ---                              | ---                                                                       |
+| `P2PLendingNfts` | `_payment_token: address`        | Address of the payment token (ERC20) contract                             |
+|                  | `_delegation_registry: address`  | Address of the delegation registry                                        |
+|                  | `_cryptopunks: address`          | Address of the CryptoPunksMarket contract                                 |
+|                  | `_protocol_upfront_fee: uint256` | The percentage (bps) of the principal paid to the protocol at origination |
+|                  | `_protocol_settlement_fee`       | The percentage (bps) of the interest paid to the protocol at settlement   |
+|                  | `_protocol_wallet`               | Address where the protocol fees are accrued                               |
+
