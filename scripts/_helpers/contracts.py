@@ -37,38 +37,6 @@ class ERC721(ContractConfig):
 
 # TODO add whitelisting as config?
 @dataclass
-class P2PLendingControl(ContractConfig):
-    def __init__(
-        self,
-        *,
-        key: str,
-        version: str | None = None,
-        abi_key: str,
-        cryptopunks_key: str,
-        max_broker_lock_duration: int,
-        address: str | None = None,
-    ):
-        super().__init__(
-            key,
-            None,
-            project.P2PLendingControl,
-            version=version,
-            abi_key=abi_key,
-            deployment_deps={cryptopunks_key},
-            deployment_args=[cryptopunks_key, max_broker_lock_duration],
-            # config_deps={collateral_vault_peripheral_key: self.set_cvperiph},
-        )
-        # self.collateral_vault_peripheral_key = collateral_vault_peripheral_key
-        if address:
-            self.load_contract(address)
-
-    # @check_owner
-    # @check_different(getter="collateralVaultPeripheralAddress", value_property="collateral_vault_peripheral_key")
-    # def set_cvperiph(self, context: DeploymentContext):
-    #     execute(context, self.key, "setCollateralVaultPeripheralAddress", self.collateral_vault_peripheral_key)
-
-
-@dataclass
 class P2PLendingNfts(ContractConfig):
     def __init__(
         self,
@@ -78,9 +46,7 @@ class P2PLendingNfts(ContractConfig):
         abi_key: str,
         payment_token_key: str | None = None,
         delegation_registry_key: str,
-        weth_key: str,
         cryptopunks_key: str,
-        controller_key: str,
         address: str | None = None,
         protocol_upfront_fee: int,
         protocol_settlement_fee: int,
@@ -93,13 +59,11 @@ class P2PLendingNfts(ContractConfig):
             project.P2PLendingNfts,
             version=version,
             abi_key=abi_key,
-            deployment_deps={*payment_token_deps, delegation_registry_key, weth_key, cryptopunks_key, controller_key},
+            deployment_deps={*payment_token_deps, delegation_registry_key, cryptopunks_key},
             deployment_args=[
-                payment_token_key or ZERO_ADDRESS,
+                payment_token_key,
                 delegation_registry_key,
-                weth_key,
                 cryptopunks_key,
-                controller_key,
                 protocol_upfront_fee,
                 protocol_settlement_fee,
                 protocol_wallet,

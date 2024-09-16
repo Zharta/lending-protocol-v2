@@ -169,29 +169,29 @@ def test_claim_ownership_logs_event(p2p_nfts_usdc, owner):
     assert event.new_owner == new_owner
 
 
-def test_change_whitelisted_collections_reverts_if_wrong_caller(p2p_nfts_eth):
+def test_change_whitelisted_collections_reverts_if_wrong_caller(p2p_nfts_usdc):
     with boa.reverts("sender not owner"):
-        p2p_nfts_eth.change_whitelisted_collections([], sender=boa.env.generate_address("random"))
+        p2p_nfts_usdc.change_whitelisted_collections([], sender=boa.env.generate_address("random"))
 
 
-def test_change_whitelisted_collections(p2p_nfts_eth, collections, owner):
+def test_change_whitelisted_collections(p2p_nfts_usdc, collections, owner):
     whitelist = [WhitelistRecord(c, i % 2 == 0) for i, c in enumerate(collections)]
-    p2p_nfts_eth.change_whitelisted_collections(whitelist, sender=owner)
+    p2p_nfts_usdc.change_whitelisted_collections(whitelist, sender=owner)
 
     for c, w in whitelist:
-        assert p2p_nfts_eth.whitelisted(c) == w
+        assert p2p_nfts_usdc.whitelisted(c) == w
 
     whitelist = [WhitelistRecord(c, i % 2 == 1) for i, c in enumerate(collections)]
-    p2p_nfts_eth.change_whitelisted_collections(whitelist, sender=owner)
+    p2p_nfts_usdc.change_whitelisted_collections(whitelist, sender=owner)
 
     for c, w in whitelist:
-        assert p2p_nfts_eth.whitelisted(c) == w
+        assert p2p_nfts_usdc.whitelisted(c) == w
 
 
-def test_change_whitelisted_collections_logs_event(p2p_nfts_eth, collections, owner):
+def test_change_whitelisted_collections_logs_event(p2p_nfts_usdc, collections, owner):
     whitelist = [WhitelistRecord(c, i % 2 == 0) for i, c in enumerate(collections)]
-    p2p_nfts_eth.change_whitelisted_collections(whitelist, sender=owner)
-    event = get_last_event(p2p_nfts_eth, "WhitelistChanged")
+    p2p_nfts_usdc.change_whitelisted_collections(whitelist, sender=owner)
+    event = get_last_event(p2p_nfts_usdc, "WhitelistChanged")
 
     assert event.changed == whitelist
 
