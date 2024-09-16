@@ -48,7 +48,7 @@ interface DelegationRegistry:
 # Structs
 
 WHITELIST_BATCH: constant(uint256) = 100
-TOKEN_IDS_BATCH: constant(uint256) = 1024
+TOKEN_IDS_BATCH: constant(uint256) = 1 << 14
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
@@ -856,8 +856,8 @@ def _check_and_update_offer_state(offer: SignedOffer):
     offer_id: bytes32 = self._compute_signed_offer_id(offer)
     assert not self.revoked_offers[offer_id], "offer revoked"
 
-    single_token_offer: bool = offer.offer.offer_type == OfferType.TOKEN and offer.offer.token_ids[0] == offer.offer.token_ids[1]
-    max_count: uint256 = offer.offer.size if single_token_offer else 1
+    single_token_offer: bool = offer.offer.offer_type == OfferType.TOKEN and len(offer.offer.token_ids) == 1
+    max_count: uint256 = 1 if single_token_offer else offer.offer.size
 
     count: uint256 = self.offer_count[offer_id]
     assert count < max_count, "offer fully utilized"
@@ -882,7 +882,28 @@ def _is_offer_signed_by_lender(signed_offer: SignedOffer, lender: address) -> bo
                 convert("\x19\x01", Bytes[2]),
                 _abi_encode(
                     offer_sig_domain_separator,
-                    keccak256(_abi_encode(OFFER_TYPE_HASH, signed_offer.offer))
+                    keccak256(_abi_encode(
+                        OFFER_TYPE_HASH,
+                        signed_offer.offer.principal,
+                        signed_offer.offer.interest,
+                        signed_offer.offer.payment_token,
+                        signed_offer.offer.duration,
+                        signed_offer.offer.origination_fee_amount,
+                        signed_offer.offer.broker_upfront_fee_amount,
+                        signed_offer.offer.broker_settlement_fee_bps,
+                        signed_offer.offer.broker_address,
+                        signed_offer.offer.collateral_contract,
+                        signed_offer.offer.offer_type,
+                        keccak256(slice(
+                            _abi_encode(signed_offer.offer.token_ids),
+                            32*2,
+                            32*len(signed_offer.offer.token_ids)
+                        )),
+                        signed_offer.offer.expiration,
+                        signed_offer.offer.lender,
+                        signed_offer.offer.pro_rata,
+                        signed_offer.offer.size
+                    ))
                 )
             )
         ),

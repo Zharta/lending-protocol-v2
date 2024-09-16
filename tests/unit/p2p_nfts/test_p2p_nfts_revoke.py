@@ -1,7 +1,7 @@
 import boa
 import pytest
 
-from ...conftest_base import ZERO_ADDRESS, Offer, compute_signed_offer_id, get_last_event, sign_offer
+from ...conftest_base import ZERO_ADDRESS, Offer, compute_signed_offer_id, get_last_event, sign_offer, OfferType
 
 
 @pytest.fixture
@@ -20,8 +20,7 @@ def test_revoke_offer_reverts_if_sender_is_not_lender(p2p_nfts_usdc, borrower, n
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -47,8 +46,7 @@ def test_revoke_offer_reverts_if_proxy_not_auth(p2p_nfts_usdc, borrower, now, le
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -71,8 +69,7 @@ def test_revoke_offer_reverts_if_offer_expired(p2p_nfts_usdc, borrower, now, len
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now,
         lender=lender,
         pro_rata=False,
@@ -94,8 +91,7 @@ def test_revoke_offer_reverts_if_offer_not_signed_by_lender(p2p_nfts_usdc, borro
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -117,8 +113,7 @@ def test_revoke_offer_reverts_if_offer_already_revoked(p2p_nfts_usdc, borrower, 
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -142,8 +137,7 @@ def test_revoke_offer(p2p_nfts_usdc, borrower, now, lender, lender_key):
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -166,8 +160,7 @@ def test_revoke_offer_logs_event(p2p_nfts_usdc, borrower, now, lender, lender_ke
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -180,8 +173,8 @@ def test_revoke_offer_logs_event(p2p_nfts_usdc, borrower, now, lender, lender_ke
     assert event.offer_id == compute_signed_offer_id(signed_offer)
     assert event.lender == lender
     assert event.collateral_contract == ZERO_ADDRESS
-    assert event.collateral_min_token_id == 1
-    assert event.collateral_max_token_id == 1
+    assert event.offer_type == OfferType.TOKEN
+    assert event.token_ids == [1]
 
 
 def test_revoke_offer_works_with_proxy(p2p_nfts_usdc, borrower, now, lender, lender_key, p2p_nfts_proxy):
@@ -195,8 +188,7 @@ def test_revoke_offer_works_with_proxy(p2p_nfts_usdc, borrower, now, lender, len
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=ZERO_ADDRESS,
-        collateral_min_token_id=1,
-        collateral_max_token_id=1,
+        token_ids=[1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,

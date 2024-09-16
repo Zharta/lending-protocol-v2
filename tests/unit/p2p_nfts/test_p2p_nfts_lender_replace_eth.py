@@ -11,6 +11,7 @@ from ...conftest_base import (
     FeeType,
     Loan,
     Offer,
+    OfferType,
     SignedOffer,
     compute_loan_hash,
     compute_signed_offer_id,
@@ -62,8 +63,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc):
         broker_settlement_fee_bps=2000,
         broker_address=broker,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
+        token_ids=[token_id],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -85,8 +85,7 @@ def offer_bayc2(now, lender2, lender2_key, bayc, broker, p2p_nfts_usdc):
         broker_settlement_fee_bps=2000,
         broker_address=broker,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
+        token_ids=[token_id],
         expiration=now + 100,
         lender=lender2,
         pro_rata=False,
@@ -108,7 +107,7 @@ def ongoing_loan_bayc(
     protocol_fee,
 ):
     offer = offer_bayc.offer
-    token_id = offer.collateral_min_token_id
+    token_id = offer.token_ids[0]
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
 
@@ -160,7 +159,7 @@ def ongoing_loan_prorata(
     protocol_fee,
 ):
     offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
-    token_id = offer.collateral_min_token_id
+    token_id = offer.token_ids[0]
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
 
@@ -266,8 +265,9 @@ def test_replace_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_usdc, ongo
         replace_namedtuple_field(offer, broker_settlement_fee_bps=offer.broker_settlement_fee_bps + 1),
         replace_namedtuple_field(offer, broker_address=boa.env.generate_address("random")),
         replace_namedtuple_field(offer, collateral_contract=boa.env.generate_address("random")),
-        replace_namedtuple_field(offer, collateral_min_token_id=offer.collateral_min_token_id + 1),
-        replace_namedtuple_field(offer, collateral_max_token_id=offer.collateral_max_token_id + 1),
+        replace_namedtuple_field(offer, token_ids=[offer.token_ids[0] + 1]),
+        replace_namedtuple_field(offer, token_ids=[*offer.token_ids, 1]),
+        replace_namedtuple_field(offer, token_ids=[]),
         replace_namedtuple_field(offer, expiration=offer.expiration + 1),
         replace_namedtuple_field(offer, lender=boa.env.generate_address("random")),
         replace_namedtuple_field(offer, pro_rata=not offer.pro_rata),
@@ -293,8 +293,7 @@ def test_replace_loan_reverts_if_offer_expired(p2p_nfts_usdc, now, lender, lende
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
+        token_ids=[token_id],
         expiration=now,
         lender=lender,
         pro_rata=False,
@@ -317,8 +316,7 @@ def test_replace_loan_reverts_if_payment_token_invalid(p2p_nfts_usdc, ongoing_lo
         broker_settlement_fee_bps=2000,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
+        token_ids=[token_id],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -348,8 +346,8 @@ def test_replace_loan_reverts_if_token_id_below_offer_range(p2p_nfts_usdc, now, 
         broker_settlement_fee_bps=2000,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id + 1,
-        collateral_max_token_id=token_id + 1,
+        offer_type=OfferType.COLLECTION,
+        token_ids=[token_id + 1, token_id + 1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -372,8 +370,8 @@ def test_replace_loan_reverts_if_token_id_above_offer_range(p2p_nfts_usdc, now, 
         broker_settlement_fee_bps=2000,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id - 1,
-        collateral_max_token_id=token_id - 1,
+        offer_type=OfferType.COLLECTION,
+        token_ids=[token_id - 1, token_id - 1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -403,8 +401,8 @@ def test_replace_loan_reverts_if_offer_exceeds_count(p2p_nfts_usdc, ongoing_loan
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id - 1,
-        collateral_max_token_id=token_id + 1,
+        offer_type=OfferType.COLLECTION,
+        token_ids=[token_id, token_id],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -430,8 +428,7 @@ def test_replace_loan_reverts_if_origination_fee_exceeds_principal(
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
+        token_ids=[token_id],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -454,8 +451,7 @@ def test_replace_loan_reverts_if_broker_fee_without_address(p2p_nfts_usdc, ongoi
         broker_settlement_fee_bps=100,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
+        token_ids=[token_id],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -482,8 +478,7 @@ def test_replace_loan_reverts_if_collateral_contract_mismatch(
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=dummy_contract,
-        collateral_min_token_id=token_id,
-        collateral_max_token_id=token_id,
+        token_ids=[token_id],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -1065,7 +1060,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
         broker_settlement_fee_bps=lender_broker_settlement_fee,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
-    token_id = offer.collateral_min_token_id
+    token_id = offer.token_ids[0]
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
