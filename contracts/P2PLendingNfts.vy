@@ -724,8 +724,10 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
             self._send_funds(loan.lender, convert(current_lender_delta, uint256))
     else:
         lender_delta: int256 = current_lender_delta - convert(new_lender_delta_abs, int256)
-        if lender_delta > 0:
-            self._send_funds(loan.lender, convert(lender_delta, uint256))
+
+        # cant have lender delta > 0 and borrower delta >= 0
+        assert lender_delta <= 0, "lender delta > 0"
+
         if lender_delta < 0:
             self._receive_funds(loan.lender, convert(-1 * lender_delta, uint256))
 

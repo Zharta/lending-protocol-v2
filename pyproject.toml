@@ -99,6 +99,7 @@ plugins = [ "boa.coverage" ]
 relative_files = true
 omit = [
     "contracts/auxiliary/*",
+    "tests/stubs/*",
     "None"
     ]
 
