@@ -32,8 +32,8 @@
     "configs": {},
     "p2p": {
         "eth_nfts": {
-            "abi_key": "9b60fabca4812ed1afce38b9aeb9a9da990b0638",
-            "address": "0x48A79eA1d36BAb76EA5949c809C250Da95759F60",
+            "abi_key": "b267de93adcc2a0ba131a3e2e6c4d8daef2b58cc",
+            "address": "0x6131888fABa847BFCeB6c13A598A40C4f6829124",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -51,8 +51,8 @@
             "version": "1"
         },
         "usdc_nfts": {
-            "abi_key": "9b60fabca4812ed1afce38b9aeb9a9da990b0638",
-            "address": "0x1e230A165817876Cc354C0e00516424912f7b4Fe",
+            "abi_key": "b267de93adcc2a0ba131a3e2e6c4d8daef2b58cc",
+            "address": "0xda9C59C7A6E35a96Bf6F231ea55b70FA55a2399d",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",

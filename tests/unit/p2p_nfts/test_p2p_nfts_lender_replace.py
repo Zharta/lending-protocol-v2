@@ -382,6 +382,30 @@ def test_replace_loan_reverts_if_token_id_above_offer_range(p2p_nfts_usdc, now, 
         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, signed_offer, sender=ongoing_loan_bayc.lender)
 
 
+def test_replace_loan_reverts_if_token_id_not_in_list(p2p_nfts_usdc, now, ongoing_loan_bayc, lender, lender_key, bayc):
+    token_id = 1
+    offer = Offer(
+        principal=1000,
+        interest=100,
+        payment_token=ongoing_loan_bayc.payment_token,
+        duration=100,
+        origination_fee_amount=0,
+        broker_upfront_fee_amount=15,
+        broker_settlement_fee_bps=2000,
+        broker_address=ZERO_ADDRESS,
+        collateral_contract=bayc.address,
+        offer_type=OfferType.TOKEN,
+        token_ids=[token_id - 1],
+        expiration=now + 100,
+        lender=lender,
+        pro_rata=False,
+    )
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
+
+    with boa.reverts("token id not in offer"):
+        p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, signed_offer, sender=ongoing_loan_bayc.lender)
+
+
 def test_replace_loan_reverts_if_offer_is_revoked(p2p_nfts_usdc, borrower, now, ongoing_loan_bayc, offer_bayc2, bayc):
     p2p_nfts_usdc.revoke_offer(offer_bayc2, sender=offer_bayc2.offer.lender)
 

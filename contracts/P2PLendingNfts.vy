@@ -249,7 +249,7 @@ revoked_offers: public(HashMap[bytes32, bool])
 authorized_proxies: public(HashMap[address, bool])
 whitelisted: public(HashMap[address, bool])
 
-VERSION: constant(String[30]) = "P2PLendingNfts.20240915"
+VERSION: constant(String[30]) = "P2PLendingNfts.20240916"
 
 ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
