@@ -32,6 +32,10 @@ struct FeeAmount:
     amount: uint256
     wallet: address
 
+enum OfferType:
+    TOKEN
+    COLLECTION
+
 struct Offer:
     principal: uint256
     interest: uint256
@@ -42,13 +46,12 @@ struct Offer:
     broker_settlement_fee_bps: uint256
     broker_address: address
     collateral_contract: address
-    collateral_min_token_id: uint256
-    collateral_max_token_id: uint256
+    offer_type: OfferType
+    token_ids: DynArray[uint256, TOKEN_IDS_BATCH]
     expiration: uint256
     lender: address
     pro_rata: bool
     size: uint256
-
 
 struct Signature:
     v: uint256
@@ -74,6 +77,7 @@ struct Loan:
     pro_rata: bool
 
 
+TOKEN_IDS_BATCH: constant(uint256) = 1 << 14
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 

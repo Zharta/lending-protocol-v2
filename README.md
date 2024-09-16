@@ -76,7 +76,8 @@ Loans are created based on the borrower acceptance of offers from lenders, which
    - Origination fee amount
    - Broker fees (upfront and settlement)
    - Broker address
-   - Collateral contract address and token ID range
+   - Offer type, either for a collection or for specific tokens
+   - Collateral contract address and token ID range / list
    - Expiration timestamp
    - Lender address
    - Pro-rata flag (for interest calculation)
@@ -89,7 +90,7 @@ Loans are created based on the borrower acceptance of offers from lenders, which
 
 5. **Offer Revocation**: Lenders can revoke their offers before they expire or are fully utilized.
 
-6. **Collateral Range**: Offers specify a range of token IDs for the collateral, allowing flexibility in which specific NFT can be used as collateral within the same collection.
+6. **Collateral Range / List**: Offers specify a list of token IDs for the collateral (or a range for collection offers), allowing flexibility in which specific NFT can be used as collateral within the same collection.
 
 7. **Pro-rata Interest**: Offers can specify whether interest should be calculated on a pro-rata basis or for the full duration regardless of early repayment.
 
@@ -182,27 +183,27 @@ For Offers:
 
 ##### Structs
 
-| **Struct** | **Variable**           | **Type**                        | **Description**                                               |
-| ---        | ---                    | ---                             | ---                                                           |
-| Offer      | principal              | `uint256`                       | Principal amount of the loan                                  |
-|            | interest               | `uint256`                       | Interest amount of the loan                                   |
-|            | payment_token          | `address`                       | Address of the payment token                                  |
-|            | duration               | `uint256`                       | Duration of the loan                                          |
-|            | expiration             | `uint256`                       | Expiration timestamp of the offer                             |
-|            | lender                 | `address`                       | Address of the lender                                         |
-|            | collateral_contract    | `address`                       | Address of the collateral NFT contract                        |
-|            | collateral_min_token_id| `uint256`                       | Minimum token ID for the collateral range                     |
-|            | collateral_max_token_id| `uint256`                       | Maximum token ID for the collateral range                     |
-| Loan       | id                     | `bytes32`                       | Unique identifier of the loan                                 |
-|            | amount                 | `uint256`                       | Loan amount                                                   |
-|            | interest               | `uint256`                       | Interest amount                                               |
-|            | payment_token          | `address`                       | Address of the payment token                                  |
-|            | maturity               | `uint256`                       | Maturity timestamp of the loan                                |
-|            | start_time             | `uint256`                       | Start timestamp of the loan                                   |
-|            | borrower               | `address`                       | Address of the borrower                                       |
-|            | lender                 | `address`                       | Address of the lender                                         |
-|            | collateral_contract    | `address`                       | Address of the collateral NFT contract                        |
-|            | collateral_token_id    | `uint256`                       | Token ID of the collateral                                    |
+| **Struct** | **Variable**        | **Type**    | **Description**                                                                                 |
+| ---        | ---                 | ---         | ---                                                                                             |
+| Offer      | principal           | `uint256`   | Principal amount of the loan                                                                    |
+|            | interest            | `uint256`   | Interest amount of the loan                                                                     |
+|            | payment_token       | `address`   | Address of the payment token                                                                    |
+|            | duration            | `uint256`   | Duration of the loan                                                                            |
+|            | expiration          | `uint256`   | Expiration timestamp of the offer                                                               |
+|            | lender              | `address`   | Address of the lender                                                                           |
+|            | collateral_contract | `address`   | Address of the collateral NFT contract                                                          |
+|            | offer_type          | `OfferType` | Either `COLLECTION` or `TOKEN`                                                                  |
+|            | token_ids           | `uint256[]` | List of token ids accepted for a `TOKEN` offer, or a range of token ids for `COLLECTION` offers |
+| Loan       | id                  | `bytes32`   | Unique identifier of the loan                                                                   |
+|            | amount              | `uint256`   | Loan amount                                                                                     |
+|            | interest            | `uint256`   | Interest amount                                                                                 |
+|            | payment_token       | `address`   | Address of the payment token                                                                    |
+|            | maturity            | `uint256`   | Maturity timestamp of the loan                                                                  |
+|            | start_time          | `uint256`   | Start timestamp of the loan                                                                     |
+|            | borrower            | `address`   | Address of the borrower                                                                         |
+|            | lender              | `address`   | Address of the lender                                                                           |
+|            | collateral_contract | `address`   | Address of the collateral NFT contract                                                          |
+|            | collateral_token_id | `uint256`   | Token ID of the collateral                                                                      |
 
 ##### Relevant external functions
 
