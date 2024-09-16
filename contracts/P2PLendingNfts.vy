@@ -48,6 +48,7 @@ interface DelegationRegistry:
 # Structs
 
 WHITELIST_BATCH: constant(uint256) = 100
+TOKEN_IDS_BATCH: constant(uint256) = 1024
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
@@ -57,6 +58,9 @@ enum FeeType:
     LENDER_BROKER_FEE
     BORROWER_BROKER_FEE
 
+enum OfferType:
+    TOKEN
+    COLLECTION
 
 struct Fee:
     type: FeeType
@@ -79,8 +83,8 @@ struct Offer:
     broker_settlement_fee_bps: uint256
     broker_address: address
     collateral_contract: address
-    collateral_min_token_id: uint256
-    collateral_max_token_id: uint256
+    offer_type: OfferType
+    token_ids: DynArray[uint256, TOKEN_IDS_BATCH]
     expiration: uint256
     lender: address
     pro_rata: bool
@@ -197,8 +201,8 @@ event OfferRevoked:
     offer_id: bytes32
     lender: address
     collateral_contract: address
-    collateral_min_token_id: uint256
-    collateral_max_token_id: uint256
+    offer_type: OfferType
+    token_ids: DynArray[uint256, TOKEN_IDS_BATCH]
 
 event OwnerProposed:
     owner: address
@@ -251,9 +255,9 @@ ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
 
 DOMAIN_TYPE_HASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-OFFER_TYPE_DEF: constant(String[355]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
+OFFER_TYPE_DEF: constant(String[330]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
                                         "uint256 broker_upfront_fee_amount,uint256 broker_settlement_fee_bps,address broker_address,address collateral_contract," \
-                                        "uint256 collateral_min_token_id,uint256 collateral_max_token_id,uint256 expiration,address lender,bool pro_rata,uint256 size)"
+                                        "uint256 offer_type,uint256[] token_ids,uint256 expiration,address lender,bool pro_rata,uint256 size)"
 OFFER_TYPE_HASH: constant(bytes32) = keccak256(OFFER_TYPE_DEF)
 
 offer_sig_domain_separator: immutable(bytes32)
@@ -429,8 +433,7 @@ def create_loan(
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
 
     assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
-    assert offer.offer.collateral_min_token_id <= collateral_token_id, "tokenid below offer range"
-    assert offer.offer.collateral_max_token_id >= collateral_token_id, "tokenid above offer range"
+    self._validate_token_ids(offer.offer, collateral_token_id)
 
     fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_upfront_fee_amount, borrower_broker_settlement_fee_bps, borrower_broker)
     total_upfront_fees: uint256 = 0
@@ -578,8 +581,7 @@ def replace_loan(
 
     assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
 
-    assert offer.offer.collateral_min_token_id <= loan.collateral_token_id, "tokenid below offer range"
-    assert offer.offer.collateral_max_token_id >= loan.collateral_token_id, "tokenid above offer range"
+    self._validate_token_ids(offer.offer, loan.collateral_token_id)
     assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
@@ -688,8 +690,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
 
     assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
 
-    assert offer.offer.collateral_min_token_id <= loan.collateral_token_id, "tokenid below offer range"
-    assert offer.offer.collateral_max_token_id >= loan.collateral_token_id, "tokenid above offer range"
+    self._validate_token_ids(offer.offer, loan.collateral_token_id)
     assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
@@ -805,8 +806,8 @@ def revoke_offer(offer: SignedOffer):
         offer_id,
         offer.offer.lender,
         offer.offer.collateral_contract,
-        offer.offer.collateral_min_token_id,
-        offer.offer.collateral_max_token_id
+        offer.offer.offer_type,
+        offer.offer.token_ids
     )
 
 
@@ -855,7 +856,8 @@ def _check_and_update_offer_state(offer: SignedOffer):
     offer_id: bytes32 = self._compute_signed_offer_id(offer)
     assert not self.revoked_offers[offer_id], "offer revoked"
 
-    max_count: uint256 = offer.offer.size if offer.offer.collateral_min_token_id != offer.offer.collateral_max_token_id else 1
+    single_token_offer: bool = offer.offer.offer_type == OfferType.TOKEN and offer.offer.token_ids[0] == offer.offer.token_ids[1]
+    max_count: uint256 = offer.offer.size if single_token_offer else 1
 
     count: uint256 = self.offer_count[offer_id]
     assert count < max_count, "offer fully utilized"
@@ -1076,3 +1078,15 @@ def _store_collateral(wallet: address, collateral_contract: address, token_id: u
 @internal
 def _check_user(user: address) -> bool:
     return msg.sender == user or (self.authorized_proxies[msg.sender] and user == tx.origin)
+
+@internal
+def _validate_token_ids(offer: Offer, collateral_token_id: uint256):
+    if offer.offer_type == OfferType.TOKEN:
+        for token_id in offer.token_ids:
+            if token_id == collateral_token_id:
+                return
+        raise "token id not in offer"
+    else:
+        assert len(offer.token_ids) == 2, "invalid collection range"
+        assert collateral_token_id >= offer.token_ids[0], "tokenid below offer range"
+        assert collateral_token_id <= offer.token_ids[1], "tokenid above offer range"
