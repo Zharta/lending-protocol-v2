@@ -6,18 +6,6 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
-        "p2p_controller": {
-            "abi_key": "",
-            "address": "",
-            "contract": "P2PLendingControl",
-            "properties": {
-                "cryptopunks_key": "cryptopunks",
-                "max_broker_lock_duration": 172800
-            },
-            "properties_addresses": {
-                "cryptopunks": ""
-            }
-        },
         "usdc": {
             "abi_key": "",
             "address": "",
@@ -50,21 +38,17 @@
             "address": "",
             "contract": "P2PLendingNfts",
             "properties": {
-                "controller_key": "common.p2p_controller",
                 "cryptopunks_key": "cryptopunks",
                 "delegation_registry_key": "common.delegation_registry",
                 "payment_token_key": "common.weth",
-                "weth_key": "common.weth",
                 "protocol_upfront_fee": 0,
                 "protocol_settlement_fee": 0,
-                "protocol_wallet": "0x0000000000000000000000000000000000000000"
+                "protocol_wallet": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
             },
             "properties_addresses": {
-                "controller": "",
                 "cryptopunks": "",
                 "delegation_registry": "",
-                "payment_token": "",
-                "weth": ""
+                "payment_token": ""
             },
             "version": "1"
         },
@@ -73,21 +57,17 @@
             "address": "",
             "contract": "P2PLendingNfts",
             "properties": {
-                "controller_key": "common.p2p_controller",
                 "cryptopunks_key": "cryptopunks",
                 "delegation_registry_key": "common.delegation_registry",
                 "payment_token_key": "common.usdc",
-                "weth_key": "common.weth",
                 "protocol_upfront_fee": 0,
                 "protocol_settlement_fee": 0,
-                "protocol_wallet": "0x0000000000000000000000000000000000000000"
+                "protocol_wallet": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
             },
             "properties_addresses": {
-                "controller": "",
                 "cryptopunks": "",
                 "delegation_registry": "",
-                "payment_token": "",
-                "weth": ""
+                "payment_token": ""
             },
             "version": "1"
         }
