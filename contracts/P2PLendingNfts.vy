@@ -48,7 +48,7 @@ interface DelegationRegistry:
 # Structs
 
 WHITELIST_BATCH: constant(uint256) = 100
-TOKEN_IDS_BATCH: constant(uint256) = 1 << 14
+TOKEN_IDS_BATCH: constant(uint256) = 1 << 8
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
