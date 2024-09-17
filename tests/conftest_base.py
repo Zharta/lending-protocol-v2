@@ -79,34 +79,32 @@ def deploy_reverts():
         ...
 
 
-Offer = namedtuple(
-    "Offer",
-    [
-        "principal",
-        "interest",
-        "payment_token",
-        "duration",
-        "origination_fee_amount",
-        "broker_upfront_fee_amount",
-        "broker_settlement_fee_bps",
-        "broker_address",
-        "collateral_contract",
-        "collateral_min_token_id",
-        "collateral_max_token_id",
-        "expiration",
-        "lender",
-        "pro_rata",
-        "size",
-    ],
-    defaults=[0, 0, ZERO_ADDRESS, 0, 0, 0, 0, ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, 0, ZERO_ADDRESS, False, 0],
-)
-
-
 class FeeType(IntEnum):
     PROTOCOL = 1 << 0
     ORIGINATION = 1 << 1
     LENDER_BROKER = 1 << 2
     BORROWER_BROKER = 1 << 3
+
+class OfferType(IntEnum):
+    TOKEN = 1 << 0
+    COLLECTION = 1 << 1
+
+class Offer(NamedTuple):
+    principal: int = 0
+    interest: int = 0
+    payment_token: str = ZERO_ADDRESS
+    duration: int = 0
+    origination_fee_amount: int = 0
+    broker_upfront_fee_amount: int = 0
+    broker_settlement_fee_bps: int = 0
+    broker_address: str = ZERO_ADDRESS
+    collateral_contract: str = ZERO_ADDRESS
+    offer_type: OfferType = OfferType.TOKEN
+    token_ids: list[int] = field(default_factory=list)
+    expiration: int = 0
+    lender: str = ZERO_ADDRESS
+    pro_rata: bool = False
+    size: int = 0
 
 
 Signature = namedtuple("Signature", ["v", "r", "s"], defaults=[0, ZERO_BYTES32, ZERO_BYTES32])
@@ -250,8 +248,8 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
                 {"name": "broker_settlement_fee_bps", "type": "uint256"},
                 {"name": "broker_address", "type": "address"},
                 {"name": "collateral_contract", "type": "address"},
-                {"name": "collateral_min_token_id", "type": "uint256"},
-                {"name": "collateral_max_token_id", "type": "uint256"},
+                {"name": "offer_type", "type": "uint256"},
+                {"name": "token_ids", "type": "uint256[]"},
                 {"name": "expiration", "type": "uint256"},
                 {"name": "lender", "type": "address"},
                 {"name": "pro_rata", "type": "bool"},
