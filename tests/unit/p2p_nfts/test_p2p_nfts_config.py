@@ -1,7 +1,7 @@
 import boa
 import pytest
 
-from ...conftest_base import ZERO_ADDRESS, get_last_event, WhitelistRecord
+from ...conftest_base import ZERO_ADDRESS, get_last_event, WhitelistRecord, TokenTree
 
 FOREVER = 2**256 - 1
 
@@ -195,3 +195,12 @@ def test_change_whitelisted_collections_logs_event(p2p_nfts_usdc, collections, o
 
     assert event.changed == whitelist
 
+
+def test_change_trait_roots(p2p_nfts_usdc, owner):
+
+    trait_roots = {boa.eval(f"""keccak256(_abi_encode("trait-{i}"))"""): boa.eval(f"""keccak256(_abi_encode("{i}"))""") for i in range(1024)}
+
+    p2p_nfts_usdc.change_trait_roots(list(trait_roots.items()), sender=owner)
+
+    for key, root in trait_roots.items():
+        assert p2p_nfts_usdc.trait_roots(key) == root
