@@ -85,9 +85,12 @@ class FeeType(IntEnum):
     LENDER_BROKER = 1 << 2
     BORROWER_BROKER = 1 << 3
 
+
 class OfferType(IntEnum):
     TOKEN = 1 << 0
     COLLECTION = 1 << 1
+    TRAIT = 1 << 2
+
 
 class Offer(NamedTuple):
     principal: int = 0
@@ -100,7 +103,10 @@ class Offer(NamedTuple):
     broker_address: str = ZERO_ADDRESS
     collateral_contract: str = ZERO_ADDRESS
     offer_type: OfferType = OfferType.TOKEN
-    token_ids: list[int] = field(default_factory=list)
+    token_id: int = 0
+    token_range_min: int = 0
+    token_range_max: int = 0
+    trait_hash: str = ZERO_BYTES32
     expiration: int = 0
     lender: str = ZERO_ADDRESS
     pro_rata: bool = False
@@ -249,7 +255,10 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
                 {"name": "broker_address", "type": "address"},
                 {"name": "collateral_contract", "type": "address"},
                 {"name": "offer_type", "type": "uint256"},
-                {"name": "token_ids", "type": "uint256[]"},
+                {"name": "token_id", "type": "uint256"},
+                {"name": "token_range_min", "type": "uint256"},
+                {"name": "token_range_max", "type": "uint256"},
+                {"name": "trait_hash", "type": "bytes32"},
                 {"name": "expiration", "type": "uint256"},
                 {"name": "lender", "type": "address"},
                 {"name": "pro_rata", "type": "bool"},
@@ -314,3 +323,31 @@ def get_loan_mutations(loan):
         yield replace_namedtuple_field(
             loan, fees=replace_list_element(fees, i, replace_namedtuple_field(fee, wallet=random_address))
         )
+
+
+class TokenTree:
+
+    def __init__(self, token_ids, trait_key="key"):
+        self.trait_key_hash = keccak(trait_key.encode())
+        self.token_ids = sorted(set(token_ids))
+        size = len(token_ids)
+        self.proofs = [ZERO_BYTES32] * size + [keccak(encode(["uint256"], [token_id])) for token_id in token_ids]
+        for i in range(size - 1, 0, -1):
+            self.proofs[i] = keccak(self._merge(keccak(self.proofs[i * 2]), keccak(self.proofs[i * 2 + 1])))
+        self.token_index = dict(zip(token_ids, [size + i for i in range(size)]))
+
+    def root(self):
+        return self.proofs[1]
+
+    def proof(self, token_id):
+        if token_id not in self.token_index:
+            return []
+        index = self.token_index[token_id]
+        proof_list = []
+        while index > 1:
+            proof_list.append(self.proofs[index ^ 1])
+            index //= 2
+        return proof_list
+
+    def _merge(self, b1, b2):
+        return bytes(b1[i] ^ b2[i] for i in range(len(b1)))
