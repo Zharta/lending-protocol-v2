@@ -18,6 +18,7 @@ from eth_account import Account
 from eth_account.messages import encode_intended_validator, encode_structured_data
 from eth_utils import encode_hex, keccak
 from web3 import Web3
+from hashlib import sha3_256
 
 ZERO_ADDRESS = boa.eval("empty(address)")
 ZERO_BYTES32 = boa.eval("empty(bytes32)")
@@ -106,6 +107,7 @@ class Offer(NamedTuple):
     token_id: int = 0
     token_range_min: int = 0
     token_range_max: int = 0
+    collection_key_hash: str = ZERO_BYTES32
     trait_hash: str = ZERO_BYTES32
     expiration: int = 0
     lender: str = ZERO_ADDRESS
@@ -258,6 +260,7 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
                 {"name": "token_id", "type": "uint256"},
                 {"name": "token_range_min", "type": "uint256"},
                 {"name": "token_range_max", "type": "uint256"},
+                {"name": "collection_key_hash", "type": "bytes32"},
                 {"name": "trait_hash", "type": "bytes32"},
                 {"name": "expiration", "type": "uint256"},
                 {"name": "lender", "type": "address"},
@@ -325,29 +328,40 @@ def get_loan_mutations(loan):
         )
 
 
-class TokenTree:
+class TokenTraitTree:
 
-    def __init__(self, token_ids, trait_key="key"):
-        self.trait_key_hash = keccak(trait_key.encode())
-        self.token_ids = sorted(set(token_ids))
-        size = len(token_ids)
-        self.proofs = [ZERO_BYTES32] * size + [keccak(encode(["uint256"], [token_id])) for token_id in token_ids]
+    def __init__(self, token_with_traits: list[tuple[str, str, int]]):
+        self.token_nodes = sorted(set(starmap(self.token_node, token_with_traits)))
+        size = len(self.token_nodes)
+        self.proofs = [ZERO_BYTES32] * size + self.token_nodes
         for i in range(size - 1, 0, -1):
-            self.proofs[i] = keccak(self._merge(keccak(self.proofs[i * 2]), keccak(self.proofs[i * 2 + 1])))
-        self.token_index = dict(zip(token_ids, [size + i for i in range(size)]))
+            self.proofs[i] = self._merge(self.proofs[i * 2], self.proofs[i * 2 + 1])
+        self.token_index = dict(zip(self.token_nodes, [size + i for i in range(size)]))
 
     def root(self):
         return self.proofs[1]
 
-    def proof(self, token_id):
-        if token_id not in self.token_index:
+    def proof(self, token_node):
+        if token_node not in self.token_index:
             return []
-        index = self.token_index[token_id]
+        index = self.token_index[token_node]
         proof_list = []
         while index > 1:
             proof_list.append(self.proofs[index ^ 1])
             index //= 2
         return proof_list
 
-    def _merge(self, b1, b2):
-        return bytes(b1[i] ^ b2[i] for i in range(len(b1)))
+    @staticmethod
+    def _merge(b1, b2):
+        h1 = keccak(b1)
+        h2 = keccak(b2)
+        return keccak(bytes(h1[i] ^ h2[i] for i in range(32)))
+        # return bytes(b1[i] ^ b2[i] for i in range(len(b1)))
+
+    @staticmethod
+    def trait_hash(trait_name, trait_value):
+        return sha3_256(sha3_256(trait_name.encode()).digest() + sha3_256(trait_value.encode()).digest()).digest()
+
+    @staticmethod
+    def token_node(trait_name, trait_value, token_id):
+        return keccak(encode(["bytes32", "uint256"], [TokenTraitTree.trait_hash(trait_name, trait_value), token_id]))
