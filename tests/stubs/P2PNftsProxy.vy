@@ -6,12 +6,28 @@ from vyper.interfaces import ERC20 as IERC20
 
 
 interface P2PLendingNfts:
-    def create_loan(offer: SignedOffer, collateral_token_id: uint256, delegate: address, borrower_broker_upfront_fee_amount: uint256, borrower_broker_settlement_fee_bps: uint256, borrower_broker: address) -> bytes32: nonpayable
-    def settle_loan(loan: Loan): payable
+    def create_loan(
+        offer: SignedOffer,
+        collateral_token_id: uint256,
+        collateral_proof: DynArray[bytes32, 32],
+        delegate: address,
+        borrower_broker_upfront_fee_amount: uint256,
+        borrower_broker_settlement_fee_bps: uint256,
+        borrower_broker: address
+    ) -> bytes32: nonpayable
+    def settle_loan(loan: Loan): nonpayable
     def claim_defaulted_loan_collateral(loan: Loan): nonpayable
-    def replace_loan(loan: Loan, offer: SignedOffer, borrower_broker_upfront_fee_amount: uint256, borrower_broker_settlement_fee_bps: uint256, borrower_broker: address) -> bytes32: payable
-    def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32: payable
+    def replace_loan(
+        loan: Loan,
+        offer: SignedOffer,
+        collateral_proof: DynArray[bytes32, 32],
+        borrower_broker_upfront_fee_amount: uint256,
+        borrower_broker_settlement_fee_bps: uint256,
+        borrower_broker: address
+    ) -> bytes32: nonpayable
+    def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArray[bytes32, 32]) -> bytes32: nonpayable
     def revoke_offer(offer: SignedOffer): nonpayable
+    def onERC721Received(_operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]) -> bytes4: view
 
 
 enum FeeType:
@@ -35,6 +51,7 @@ struct FeeAmount:
 enum OfferType:
     TOKEN
     COLLECTION
+    TRAIT
 
 struct Offer:
     principal: uint256
@@ -47,11 +64,16 @@ struct Offer:
     broker_address: address
     collateral_contract: address
     offer_type: OfferType
-    token_ids: DynArray[uint256, TOKEN_IDS_BATCH]
+    token_id: uint256
+    token_range_min: uint256
+    token_range_max: uint256
+    collection_key_hash: bytes32
+    trait_hash: bytes32
     expiration: uint256
     lender: address
     pro_rata: bool
     size: uint256
+
 
 struct Signature:
     v: uint256
@@ -91,6 +113,7 @@ def __init__(_p2p_lending_nfts: address):
 def create_loan(
     offer: SignedOffer,
     collateral_token_id: uint256,
+    proof: DynArray[bytes32, 32],
     delegate: address,
     borrower_broker_upfront_fee_amount: uint256,
     borrower_broker_settlement_fee_bps: uint256,
@@ -99,26 +122,26 @@ def create_loan(
     return P2PLendingNfts(self.p2p_lending_nfts).create_loan(
         offer,
         collateral_token_id,
+        proof,
         delegate,
         borrower_broker_upfront_fee_amount,
         borrower_broker_settlement_fee_bps,
         borrower_broker
     )
 
-@payable
 @external
 def settle_loan(loan: Loan):
-    P2PLendingNfts(self.p2p_lending_nfts).settle_loan(loan, value=msg.value)
+    P2PLendingNfts(self.p2p_lending_nfts).settle_loan(loan)
 
 @external
 def claim_defaulted_loan_collateral(loan: Loan):
     P2PLendingNfts(self.p2p_lending_nfts).claim_defaulted_loan_collateral(loan)
 
-@payable
 @external
 def replace_loan(
     loan: Loan,
     offer: SignedOffer,
+    proof: DynArray[bytes32, 32],
     borrower_broker_upfront_fee_amount: uint256,
     borrower_broker_settlement_fee_bps: uint256,
     borrower_broker: address
@@ -126,16 +149,15 @@ def replace_loan(
     return P2PLendingNfts(self.p2p_lending_nfts).replace_loan(
         loan,
         offer,
+        proof,
         borrower_broker_upfront_fee_amount,
         borrower_broker_settlement_fee_bps,
-        borrower_broker,
-        value=msg.value
+        borrower_broker
     )
 
-@payable
 @external
-def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
-    return P2PLendingNfts(self.p2p_lending_nfts).replace_loan_lender(loan, offer, value=msg.value)
+def replace_loan_lender(loan: Loan, offer: SignedOffer, proof: DynArray[bytes32, 32]) -> bytes32:
+    return P2PLendingNfts(self.p2p_lending_nfts).replace_loan_lender(loan, offer, proof)
 
 
 @external

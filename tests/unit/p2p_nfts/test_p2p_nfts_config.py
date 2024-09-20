@@ -1,7 +1,8 @@
 import boa
 import pytest
 
-from ...conftest_base import ZERO_ADDRESS, get_last_event, WhitelistRecord, TokenTree
+from ...conftest_base import ZERO_ADDRESS, get_last_event, WhitelistRecord, TokenTraitTree
+from hashlib import sha3_256
 
 FOREVER = 2**256 - 1
 
@@ -198,9 +199,12 @@ def test_change_whitelisted_collections_logs_event(p2p_nfts_usdc, collections, o
 
 def test_change_trait_roots(p2p_nfts_usdc, owner):
 
-    trait_roots = {boa.eval(f"""keccak256(_abi_encode("trait-{i}"))"""): boa.eval(f"""keccak256(_abi_encode("{i}"))""") for i in range(1024)}
-
-    p2p_nfts_usdc.change_trait_roots(list(trait_roots.items()), sender=owner)
-
-    for key, root in trait_roots.items():
-        assert p2p_nfts_usdc.trait_roots(key) == root
+    collection_roots = {sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(128)}
+    p2p_nfts_usdc.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
+    for key, root in collection_roots.items():
+        assert p2p_nfts_usdc.collection_trait_roots(key) == root
+    
+    collection_roots = {sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(1)}
+    p2p_nfts_usdc.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
+    for key, root in collection_roots.items():
+        assert p2p_nfts_usdc.collection_trait_roots(key) == root

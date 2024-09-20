@@ -72,7 +72,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc):
         broker_settlement_fee_bps=2000,
         broker_address=broker,
         collateral_contract=bayc.address,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -94,7 +94,7 @@ def offer_bayc2(now, lender2, lender2_key, bayc, broker, p2p_nfts_usdc, usdc):
         broker_settlement_fee_bps=2000,
         broker_address=broker,
         collateral_contract=bayc.address,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender2,
         pro_rata=False,
@@ -106,7 +106,7 @@ def offer_bayc2(now, lender2, lender2_key, bayc, broker, p2p_nfts_usdc, usdc):
 @pytest.fixture
 def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, borrower_broker_fee, protocol_fee):
     offer = offer_bayc.offer
-    token_id = offer.token_ids[0]
+    token_id = offer.token_id
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
 
@@ -118,6 +118,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
     loan_id = p2p_nfts_usdc.create_loan(
         offer_bayc,
         token_id,
+        [],
         borrower,
         borrower_broker_fee.upfront_amount,
         borrower_broker_fee.settlement_bps,
@@ -148,7 +149,7 @@ def ongoing_loan_prorata(
     p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, lender_key, borrower_broker_fee, protocol_fee
 ):
     offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
-    token_id = offer.token_ids[0]
+    token_id = offer.token_id
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
 
@@ -161,6 +162,7 @@ def ongoing_loan_prorata(
     loan_id = p2p_nfts_usdc.create_loan(
         signed_offer,
         token_id,
+        [],
         borrower,
         borrower_broker_fee.upfront_amount,
         borrower_broker_fee.settlement_bps,
@@ -190,7 +192,7 @@ def test_replace_loan_reverts_if_loan_invalid(p2p_nfts_usdc, ongoing_loan_bayc, 
     for loan in get_loan_mutations(ongoing_loan_bayc):
         print(f"{loan=}")
         with boa.reverts("invalid loan"):
-            p2p_nfts_usdc.replace_loan(loan, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+            p2p_nfts_usdc.replace_loan(loan, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_loan_defaulted(p2p_nfts_usdc, ongoing_loan_bayc, now, offer_bayc2):
@@ -198,7 +200,7 @@ def test_replace_loan_reverts_if_loan_defaulted(p2p_nfts_usdc, ongoing_loan_bayc
     boa.env.time_travel(seconds=time_to_default + 1)
 
     with boa.reverts("loan defaulted"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_loan_already_settled(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, usdc):
@@ -210,14 +212,14 @@ def test_replace_loan_reverts_if_loan_already_settled(p2p_nfts_usdc, ongoing_loa
     p2p_nfts_usdc.settle_loan(loan, sender=loan.borrower)
 
     with boa.reverts("invalid loan"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_offer_not_signed_by_lender(p2p_nfts_usdc, borrower_key, ongoing_loan_bayc, offer_bayc2):
     signed_offer = sign_offer(offer_bayc2.offer, borrower_key, p2p_nfts_usdc.address)
 
     with boa.reverts("offer not signed by lender"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, lender_key):
@@ -234,9 +236,7 @@ def test_replace_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_usdc, ongo
         replace_namedtuple_field(offer, broker_settlement_fee_bps=offer.broker_settlement_fee_bps + 1),
         replace_namedtuple_field(offer, broker_address=boa.env.generate_address("random")),
         replace_namedtuple_field(offer, collateral_contract=boa.env.generate_address("random")),
-        replace_namedtuple_field(offer, token_ids=[offer.token_ids[0] + 1]),
-        replace_namedtuple_field(offer, token_ids=[*offer.token_ids, 1]),
-        replace_namedtuple_field(offer, token_ids=[]),
+        replace_namedtuple_field(offer, token_id=offer.token_id + 1),
         replace_namedtuple_field(offer, expiration=offer.expiration + 1),
         replace_namedtuple_field(offer, lender=boa.env.generate_address("random")),
         replace_namedtuple_field(offer, pro_rata=not offer.pro_rata),
@@ -247,7 +247,7 @@ def test_replace_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_usdc, ongo
         print(f"{invalid_offer=}")
         with boa.reverts("offer not signed by lender"):
             signed_offer = SignedOffer(invalid_offer, signed_offer.signature)
-            p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+            p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_offer_expired(p2p_nfts_usdc, now, lender, lender_key, bayc, ongoing_loan_bayc, usdc):
@@ -262,7 +262,7 @@ def test_replace_loan_reverts_if_offer_expired(p2p_nfts_usdc, now, lender, lende
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now,
         lender=lender,
         pro_rata=False,
@@ -270,7 +270,7 @@ def test_replace_loan_reverts_if_offer_expired(p2p_nfts_usdc, now, lender, lende
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("offer expired"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_payment_token_invalid(p2p_nfts_usdc, ongoing_loan_bayc, now, lender, lender_key, bayc):
@@ -285,7 +285,7 @@ def test_replace_loan_reverts_if_payment_token_invalid(p2p_nfts_usdc, ongoing_lo
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -293,14 +293,14 @@ def test_replace_loan_reverts_if_payment_token_invalid(p2p_nfts_usdc, ongoing_lo
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("invalid payment token"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_collateral_not_whitelisted(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, bayc):
     p2p_nfts_usdc.change_whitelisted_collections([(bayc.address, False)], sender=p2p_nfts_usdc.owner())
 
     with boa.reverts("collateral not whitelisted"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_token_id_below_offer_range(
@@ -318,7 +318,8 @@ def test_replace_loan_reverts_if_token_id_below_offer_range(
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
         offer_type=OfferType.COLLECTION,
-        token_ids=[token_id + 1, token_id + 1],
+        token_range_min=token_id + 1,
+        token_range_max=token_id + 1,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -326,7 +327,7 @@ def test_replace_loan_reverts_if_token_id_below_offer_range(
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("tokenid below offer range"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_token_id_above_offer_range(
@@ -344,7 +345,8 @@ def test_replace_loan_reverts_if_token_id_above_offer_range(
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
         offer_type=OfferType.COLLECTION,
-        token_ids=[token_id - 1, token_id - 1],
+        token_range_min=token_id - 1,
+        token_range_max=token_id - 1,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -352,7 +354,7 @@ def test_replace_loan_reverts_if_token_id_above_offer_range(
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("tokenid above offer range"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_token_id_not_in_list(
@@ -370,7 +372,7 @@ def test_replace_loan_reverts_if_token_id_not_in_list(
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
         offer_type=OfferType.TOKEN,
-        token_ids=[token_id - 1],
+        token_id=token_id - 1,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -378,14 +380,14 @@ def test_replace_loan_reverts_if_token_id_not_in_list(
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("token id not in offer"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_offer_is_revoked(p2p_nfts_usdc, borrower, now, ongoing_loan_bayc, offer_bayc2):
     p2p_nfts_usdc.revoke_offer(offer_bayc2, sender=offer_bayc2.offer.lender)
 
     with boa.reverts("offer revoked"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_offer_exceeds_count(p2p_nfts_usdc, ongoing_loan_bayc, now, lender, lender_key, bayc, usdc):
@@ -401,7 +403,8 @@ def test_replace_loan_reverts_if_offer_exceeds_count(p2p_nfts_usdc, ongoing_loan
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
         offer_type=OfferType.COLLECTION,
-        token_ids=[token_id, token_id],
+        token_range_min=token_id,
+        token_range_max=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -410,7 +413,7 @@ def test_replace_loan_reverts_if_offer_exceeds_count(p2p_nfts_usdc, ongoing_loan
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("offer fully utilized"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_origination_fee_exceeds_principal(
@@ -427,7 +430,7 @@ def test_replace_loan_reverts_if_origination_fee_exceeds_principal(
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -435,7 +438,7 @@ def test_replace_loan_reverts_if_origination_fee_exceeds_principal(
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("origination fee gt principal"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_broker_fee_without_address(
@@ -452,7 +455,7 @@ def test_replace_loan_reverts_if_broker_fee_without_address(
         broker_settlement_fee_bps=100,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -460,7 +463,7 @@ def test_replace_loan_reverts_if_broker_fee_without_address(
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
     with boa.reverts("broker fee without address"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_collateral_contract_mismatch(
@@ -479,7 +482,7 @@ def test_replace_loan_reverts_if_collateral_contract_mismatch(
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=dummy_contract,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -489,7 +492,7 @@ def test_replace_loan_reverts_if_collateral_contract_mismatch(
     p2p_nfts_usdc.change_whitelisted_collections([(dummy_contract, True)], sender=p2p_nfts_usdc.owner())
 
     with boa.reverts("collateral contract mismatch"):
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, [], 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
 def test_replace_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc):
@@ -505,7 +508,7 @@ def test_replace_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, borrow
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -516,7 +519,16 @@ def test_replace_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, borrow
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
 
     with boa.reverts():
-        p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+        p2p_nfts_usdc.create_loan(
+            signed_offer,
+            token_id,
+            [],
+            ZERO_ADDRESS,
+            0,
+            0,
+            ZERO_ADDRESS,
+            sender=borrower
+        )
 
 
 def test_replace_loan_reverts_if_funds_not_sent(p2p_nfts_usdc, ongoing_loan_bayc, usdc, offer_bayc2):
@@ -529,7 +541,7 @@ def test_replace_loan_reverts_if_funds_not_sent(p2p_nfts_usdc, ongoing_loan_bayc
 
     with boa.reverts():
         usdc.approve(p2p_nfts_usdc.address, amount_to_settle - 1, sender=borrower)
-        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+        p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
 def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc):
@@ -543,7 +555,7 @@ def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, 
     )
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    loan_id = p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    loan_id = p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     loan = Loan(
         id=loan_id,
@@ -584,7 +596,7 @@ def test_replace_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, 
     )
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    loan_id = p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    loan_id = p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     event = get_last_event(p2p_nfts_usdc, "LoanReplaced")
     assert event.id == loan_id
@@ -629,7 +641,7 @@ def test_replace_loan_keeps_delegation(p2p_nfts_usdc, ongoing_loan_bayc, offer_b
     assert delegation_registry.checkDelegateForERC721(delegate, p2p_nfts_usdc.address, bayc.address, token_id, b"")
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert delegation_registry.checkDelegateForERC721(delegate, p2p_nfts_usdc.address, bayc.address, token_id, b"")
 
@@ -648,7 +660,7 @@ def test_replace_loan_keeps_collateral_to_escrow(p2p_nfts_usdc, ongoing_loan_bay
     assert bayc.ownerOf(token_id) == p2p_nfts_usdc.address
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert bayc.ownerOf(token_id) == p2p_nfts_usdc.address
 
@@ -668,7 +680,7 @@ def test_replace_loan_transfers_principal_to_borrower(p2p_nfts_usdc, ongoing_loa
     initial_borrower_balance = usdc.balanceOf(borrower)
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert (
         usdc.balanceOf(borrower)
@@ -690,7 +702,7 @@ def test_replace_loan_transfers_origination_fee_to_lender(p2p_nfts_usdc, ongoing
     )
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert usdc.balanceOf(new_lender) == initial_lender_balance - principal + origination_fee - offer.broker_upfront_fee_amount
 
@@ -710,7 +722,7 @@ def test_replace_loan_updates_offer_usage_count(p2p_nfts_usdc, ongoing_loan_bayc
     assert p2p_nfts_usdc.offer_count(compute_signed_offer_id(offer_bayc2)) == 0
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert p2p_nfts_usdc.offer_count(compute_signed_offer_id(offer_bayc2)) == 1
 
@@ -736,7 +748,7 @@ def test_replace_loan_pays_lender(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2,
     )
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert usdc.balanceOf(loan.lender) == initial_lender_balance + amount_to_receive
 
@@ -760,7 +772,7 @@ def test_replace_loan_pays_borrower_if_amount_to_settle_negative(
     )
 
     p2p_nfts_usdc.replace_loan(
-        ongoing_loan_bayc, sign_offer(offer, lender_key, p2p_nfts_usdc.address), 0, 0, ZERO_ADDRESS, sender=borrower
+        ongoing_loan_bayc, sign_offer(offer, lender_key, p2p_nfts_usdc.address), [], 0, 0, ZERO_ADDRESS, sender=borrower
     )
 
     assert amount_to_settle < 0
@@ -786,7 +798,7 @@ def test_replace_loan_pays_broker_fees(p2p_nfts_usdc, ongoing_loan_bayc, offer_b
     )
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert (
         usdc.balanceOf(broker_address)
@@ -812,7 +824,7 @@ def test_replace_loan_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_bayc, usdc,
     )
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     protocol_upfront_fee_amount = ongoing_loan_bayc.amount * p2p_nfts_usdc.protocol_upfront_fee() // 10000
     assert (
@@ -859,7 +871,7 @@ def test_replace_loan_prorata_logs_event(p2p_nfts_usdc, ongoing_loan_prorata, us
     print(f"{amount_to_settle=}")
     boa.env.time_travel(seconds=actual_duration)
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    loan_id = p2p_nfts_usdc.replace_loan(loan, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    loan_id = p2p_nfts_usdc.replace_loan(loan, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     event = get_last_event(p2p_nfts_usdc, "LoanReplaced")
     assert event.id == loan_id
@@ -915,7 +927,7 @@ def test_replace_loan_prorata_pays_lender(p2p_nfts_usdc, ongoing_loan_prorata, u
     print(f"{amount_to_settle=}")
     boa.env.time_travel(seconds=actual_duration)
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(loan, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(loan, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert usdc.balanceOf(loan.lender) == initial_lender_balance + amount_to_receive
 
@@ -944,7 +956,7 @@ def test_replace_loan_prorata_pays_broker_fees(p2p_nfts_usdc, ongoing_loan_prora
     print(f"{amount_to_settle=}")
     boa.env.time_travel(seconds=actual_duration)
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(loan, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(loan, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert usdc.balanceOf(broker_address) == initial_broker_balance + broker_fee_amount + offer.broker_upfront_fee_amount
 
@@ -972,7 +984,7 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pro
     print(f"{amount_to_settle=}")
     boa.env.time_travel(seconds=actual_duration)
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(loan, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(loan, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     protocol_upfront_fee_amount = p2p_nfts_usdc.protocol_upfront_fee() * amount // 10000
     assert (
@@ -1034,7 +1046,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
         broker_settlement_fee_bps=lender_broker_settlement_fee,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
-    token_id = offer.token_ids[0]
+    token_id = offer.token_id
     origination_fee = offer.origination_fee_amount
 
     bayc.mint(borrower, token_id)
@@ -1046,6 +1058,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     loan_id = p2p_nfts_usdc.create_loan(
         signed_offer,
         token_id,
+        [],
         borrower,
         borrower_broker_upfront_fee,
         borrower_broker_settlement_fee,
@@ -1127,7 +1140,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     initial_lender2_balance = usdc.balanceOf(lender2)
 
     loan2_id = p2p_nfts_usdc.replace_loan(
-        loan1, signed_offer2, borrower_broker_upfront_fee, borrower_broker_settlement_fee, borrower_broker, sender=borrower
+        loan1, signed_offer2, [], borrower_broker_upfront_fee, borrower_broker_settlement_fee, borrower_broker, sender=borrower
     )
 
     loan2 = Loan(

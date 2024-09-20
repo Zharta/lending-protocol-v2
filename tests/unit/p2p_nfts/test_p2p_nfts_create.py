@@ -11,7 +11,7 @@ from ...conftest_base import (
     Offer,
     OfferType,
     SignedOffer,
-    TokenTree,
+    TokenTraitTree,
     compute_loan_hash,
     compute_signed_offer_id,
     get_last_event,
@@ -81,7 +81,7 @@ def test_create_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_usdc, borro
         replace_namedtuple_field(offer, token_id=offer.token_id + 1),
         replace_namedtuple_field(offer, token_range_min=offer.token_range_min + 1),
         replace_namedtuple_field(offer, token_range_max=offer.token_range_max + 1),
-        replace_namedtuple_field(offer, trait_hash=b'\1'*32),
+        replace_namedtuple_field(offer, trait_hash=b"\1" * 32),
         replace_namedtuple_field(offer, offer_type=OfferType.COLLECTION),
         replace_namedtuple_field(offer, offer_type=OfferType.TRAIT),
         replace_namedtuple_field(offer, expiration=offer.expiration + 1),
@@ -432,9 +432,26 @@ def test_create_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, borrowe
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_token_not_in_trait(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, debug_precompile):
+def test_create_loan_reverts_if_token_not_in_trait(
+    p2p_nfts_usdc,
+    borrower,
+    now,
+    lender,
+    lender_key,
+    bayc,
+    usdc,
+    debug_precompile,
+    traits,
+    bayc_key_hash
+):
     token_id = 1
-    trait_tree = TokenTree([token_id + 1 + i for i in range(10)])
+    tree = TokenTraitTree([
+        (trait_name, trait_value, token_id + 1 + i)
+        for i in range(10)
+        for trait_name, trait_values in traits.items()
+        for trait_value in trait_values
+    ])
+    trait_name, trait_value = next((k, v[0]) for k, v in traits.items())
     principal = 1000
     offer = Offer(
         principal=principal,
@@ -447,7 +464,8 @@ def test_create_loan_reverts_if_token_not_in_trait(p2p_nfts_usdc, borrower, now,
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
         offer_type=OfferType.TRAIT,
-        trait_hash=trait_tree.trait_key_hash,
+        collection_key_hash=bayc_key_hash,
+        trait_hash=TokenTraitTree.trait_hash(trait_name, trait_value),
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -455,18 +473,15 @@ def test_create_loan_reverts_if_token_not_in_trait(p2p_nfts_usdc, borrower, now,
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
-    p2p_nfts_usdc.change_trait_roots([(trait_tree.trait_key_hash, trait_tree.root())], sender=p2p_nfts_usdc.owner())
+    p2p_nfts_usdc.change_collections_trait_roots([(bayc_key_hash, tree.root())], sender=p2p_nfts_usdc.owner())
 
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
 
-    # print(boa.eval(f"keccak256(_abi_encode({token_id}))"))
-    print(f"{[p.hex() for p in trait_tree.proofs]=}")
-    print(f"{[p.hex() for p in trait_tree.proof(token_id)]=}")
-    print(f"{p2p_nfts_usdc.trait_roots(trait_tree.trait_key_hash).hex()=}")
+    proof = tree.proof(TokenTraitTree.token_node(trait_name, trait_value, token_id))
 
     with boa.reverts("proof invalid"):
-        p2p_nfts_usdc.create_loan(signed_offer, token_id, trait_tree.proof(token_id), ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+        p2p_nfts_usdc.create_loan(signed_offer, token_id, proof, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
 def test_create_loan(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc):
@@ -516,9 +531,15 @@ def test_create_loan(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usd
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
 
 
-def test_create_loan_with_trait_offer(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc):
+def test_create_loan_with_trait_offer(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, traits, bayc_key_hash, debug_precompile):
     token_id = 1
-    trait_tree = TokenTree([token_id + i for i in range(10000)])
+    tree = TokenTraitTree([
+        (trait_name, trait_value, token_id + i)
+        for i in range(100)
+        for trait_name, trait_values in traits.items()
+        for trait_value in trait_values
+    ])
+    trait_name, trait_value = next((k, v[0]) for k, v in traits.items())
     principal = 1000
     offer = Offer(
         principal=principal,
@@ -531,7 +552,8 @@ def test_create_loan_with_trait_offer(p2p_nfts_usdc, borrower, now, lender, lend
         broker_address=ZERO_ADDRESS,
         collateral_contract=bayc.address,
         offer_type=OfferType.TRAIT,
-        trait_hash=trait_tree.trait_key_hash,
+        collection_key_hash=bayc_key_hash,
+        trait_hash=TokenTraitTree.trait_hash(trait_name, trait_value),
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -543,8 +565,23 @@ def test_create_loan_with_trait_offer(p2p_nfts_usdc, borrower, now, lender, lend
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
     usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
 
-    p2p_nfts_usdc.change_trait_roots([(trait_tree.trait_key_hash, trait_tree.root())], sender=p2p_nfts_usdc.owner())
-    loan_id = p2p_nfts_usdc.create_loan(signed_offer, token_id, trait_tree.proof(token_id), ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.change_collections_trait_roots([(bayc_key_hash, tree.root())], sender=p2p_nfts_usdc.owner())
+    proof = tree.proof(TokenTraitTree.token_node(trait_name, trait_value, token_id))
+
+
+    # token_node = TokenTraitTree.token_node(trait_name, trait_value, token_id)
+    # print(f"{[p.hex() for p in proof]=}")
+    # print(f"{tree.root().hex()=}")
+    # print(f"{p2p_nfts_usdc.collection_trait_roots(bayc_key_hash).hex()=}")
+    # print(f"{token_node.hex()=}")
+    # _hash = token_node
+    # print(f"{_hash.hex()=}")
+    # for p in proof:
+    #     _hash = TokenTraitTree._merge(_hash, p)
+    #     print(f"{_hash.hex()=}")
+
+
+    loan_id = p2p_nfts_usdc.create_loan(signed_offer, token_id, proof, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
     # assert len(trait_tree.proof(token_id)) == 1
 

@@ -47,9 +47,9 @@ interface DelegationRegistry:
 
 # Structs
 
-PROOF_MAX_SIZE: constant(uint256) = 16
+PROOF_MAX_SIZE: constant(uint256) = 32
 WHITELIST_BATCH: constant(uint256) = 100
-TRAIT_ROOT_BATCH: constant(uint256) = 1024
+TRAIT_ROOT_BATCH: constant(uint256) = 128
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
@@ -89,6 +89,7 @@ struct Offer:
     token_id: uint256
     token_range_min: uint256
     token_range_max: uint256
+    collection_key_hash: bytes32
     trait_hash: bytes32
     expiration: uint256
     lender: address
@@ -125,7 +126,7 @@ struct WhitelistRecord:
     whitelisted: bool
 
 struct TraitRoot:
-    trait_key_hash: bytes32
+    collection_key_hash: bytes32
     root_hash: bytes32
 
 struct PunkOffer:
@@ -257,7 +258,12 @@ revoked_offers: public(HashMap[bytes32, bool])
 
 authorized_proxies: public(HashMap[address, bool])
 whitelisted: public(HashMap[address, bool])
-trait_roots: public(HashMap[bytes32, bytes32])
+
+# leafs are calculated as keccak256(_abi_encode(trait_hash, token_id))
+# all valid (trait, token_id) pairs are stored in the tree and the root 
+# is stored in the contract for each collection. 
+# The collection key is hashed and must match the collection key hash in the offer.
+collection_trait_roots: public(HashMap[bytes32, bytes32])
 
 VERSION: constant(String[30]) = "P2PLendingNfts.20240916"
 
@@ -265,10 +271,10 @@ ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
 
 DOMAIN_TYPE_HASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-OFFER_TYPE_DEF: constant(String[394]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
+OFFER_TYPE_DEF: constant(String[422]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
                                         "uint256 broker_upfront_fee_amount,uint256 broker_settlement_fee_bps,address broker_address,address collateral_contract," \
-                                        "uint256 offer_type,uint256 token_id,uint256 token_range_min,uint256 token_range_max,bytes32 trait_hash," \
-                                        "uint256 expiration,address lender,bool pro_rata,uint256 size)"
+                                        "uint256 offer_type,uint256 token_id,uint256 token_range_min,uint256 token_range_max,bytes32 collection_key_hash," \
+                                        "bytes32 trait_hash,uint256 expiration,address lender,bool pro_rata,uint256 size)"
 OFFER_TYPE_HASH: constant(bytes32) = keccak256(OFFER_TYPE_DEF)
 
 offer_sig_domain_separator: immutable(bytes32)
@@ -414,14 +420,14 @@ def change_whitelisted_collections(collections: DynArray[WhitelistRecord, WHITEL
     log WhitelistChanged(collections)
 
 @external
-def change_trait_roots(roots: DynArray[TraitRoot, TRAIT_ROOT_BATCH]):
+def change_collections_trait_roots(roots: DynArray[TraitRoot, TRAIT_ROOT_BATCH]):
     """
     @notice Set trait roots
     @param roots array of bytes32
     """
     assert msg.sender == self.owner, "sender not owner"
     for r in roots:
-        self.trait_roots[r.trait_key_hash] = r.root_hash
+        self.collection_trait_roots[r.collection_key_hash] = r.root_hash
 
     log TraitRootChanged(roots)
 
@@ -1109,8 +1115,9 @@ def _validate_token_ids(offer: Offer, collateral_token_id: uint256, collateral_p
         assert collateral_token_id >= offer.token_range_min, "tokenid below offer range"
         assert collateral_token_id <= offer.token_range_max, "tokenid above offer range"
     else:
-        _hash: bytes32 = keccak256(_abi_encode(collateral_token_id))
+        _hash: bytes32 = keccak256(_abi_encode(offer.trait_hash, collateral_token_id))
+        # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_hash))
         for p in collateral_proof:
             _hash = keccak256(_abi_encode(convert(keccak256(_hash), uint256) ^ convert(keccak256(p), uint256)))
-        raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_hash))
-        assert self.trait_roots[offer.trait_hash] == _hash, "proof invalid"
+            # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_hash))
+        assert self.collection_trait_roots[offer.collection_key_hash] == _hash, "proof invalid"
