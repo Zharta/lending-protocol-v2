@@ -3,6 +3,7 @@ from textwrap import dedent
 import boa
 import pytest
 from eth_utils import decode_hex
+from hashlib import sha3_256
 
 from ...conftest_base import ZERO_ADDRESS, WhitelistRecord
 
@@ -37,3 +38,74 @@ def p2p_nfts_usdc(p2p_lending_nfts_contract_def, max_lock_expiration, usdc, dele
 @pytest.fixture
 def now():
     return boa.eval("block.timestamp")
+
+
+@pytest.fixture
+def traits():
+    return {
+        "openness": [
+            "curious",
+            "inventive",
+            "artistic",
+            "wide interests",
+            "excitable",
+            "unconventional",
+            "imaginative",
+            "traditional",
+            "prefer routine",
+            "practical"
+        ],
+        "conscientiousness": [
+            "organized",
+            "efficient",
+            "dependable",
+            "thorough",
+            "self-disciplined",
+            "careful",
+            "lazy",
+            "impulsive",
+            "careless",
+            "easy-going"
+        ],
+        "extraversion": [
+            "outgoing",
+            "energetic",
+            "assertive",
+            "sociable",
+            "talkative",
+            "enthusiastic",
+            "reserved",
+            "shy",
+            "quiet",
+            "solitary"
+        ],
+        "agreeableness": [
+            "friendly",
+            "compassionate",
+            "cooperative",
+            "trusting",
+            "helpful",
+            "empathetic",
+            "critical",
+            "uncooperative",
+            "suspicious",
+            "competitive"
+        ],
+        "neuroticism": [
+            "sensitive",
+            "nervous",
+            "anxious",
+            "moody",
+            "easily upset",
+            "insecure",
+            "stable",
+            "calm",
+            "confident",
+            "resilient"
+        ]
+    }
+
+
+@pytest.fixture
+def bayc_key_hash():
+    return sha3_256("bayc".encode()).digest()
