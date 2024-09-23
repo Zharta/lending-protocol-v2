@@ -113,6 +113,7 @@ struct Loan:
     collateral_token_id: uint256
     fees: DynArray[Fee, MAX_FEES]
     pro_rata: bool
+    delegate: address
 
 
 struct WhitelistRecord:
@@ -452,7 +453,8 @@ def create_loan(
         collateral_contract: offer.offer.collateral_contract,
         collateral_token_id: collateral_token_id,
         fees: fees,
-        pro_rata: offer.offer.pro_rata
+        pro_rata: offer.offer.pro_rata,
+        delegate: delegate
     })
     loan.id = self._compute_loan_id(loan)
 
@@ -514,6 +516,9 @@ def settle_loan(loan: Loan):
 
     self._transfer_collateral(loan.borrower, loan.collateral_contract, loan.collateral_token_id)
 
+    if loan.delegate != empty(address):
+        self._set_delegation(loan.delegate, loan.collateral_contract, loan.collateral_token_id, False)
+
     log LoanPaid(
         loan.id,
         loan.borrower,
@@ -540,6 +545,9 @@ def claim_defaulted_loan_collateral(loan: Loan):
     self.loans[loan.id] = empty(bytes32)
 
     self._transfer_collateral(loan.lender, loan.collateral_contract, loan.collateral_token_id)
+
+    if loan.delegate != empty(address):
+        self._set_delegation(loan.delegate, loan.collateral_contract, loan.collateral_token_id, False)
 
     log LoanCollateralClaimed(
         loan.id,
@@ -637,7 +645,8 @@ def replace_loan(
         collateral_contract: offer.offer.collateral_contract,
         collateral_token_id: loan.collateral_token_id,
         fees: new_loan_fees,
-        pro_rata: offer.offer.pro_rata
+        pro_rata: offer.offer.pro_rata,
+        delegate: loan.delegate
     })
     new_loan.id = self._compute_loan_id(new_loan)
 
@@ -754,7 +763,8 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         collateral_contract: offer.offer.collateral_contract,
         collateral_token_id: loan.collateral_token_id,
         fees: new_loan_fees,
-        pro_rata: offer.offer.pro_rata
+        pro_rata: offer.offer.pro_rata,
+        delegate: loan.delegate
     })
     new_loan.id = self._compute_loan_id(new_loan)
 
