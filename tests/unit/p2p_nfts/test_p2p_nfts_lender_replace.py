@@ -1,11 +1,8 @@
-from textwrap import dedent
-
 import boa
 import pytest
 
 from ...conftest_base import (
     ZERO_ADDRESS,
-    CollateralStatus,
     Fee,
     FeeAmount,
     FeeType,
@@ -140,6 +137,7 @@ def ongoing_loan_bayc(
         collateral_token_id=token_id,
         fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
     return loan
@@ -194,6 +192,7 @@ def ongoing_loan_prorata(
         collateral_token_id=token_id,
         fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
     return loan
@@ -515,31 +514,10 @@ def test_replace_loan_reverts_if_collateral_contract_mismatch(
         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, signed_offer, sender=ongoing_loan_bayc.lender)
 
 
-def test_replace_loan_reverts_if_lender_funds_not_approved(
-    p2p_nfts_usdc,
-    borrower,
-    now,
-    lender,
-    lender_key,
-    bayc,
-    usdc,
-    ongoing_loan_bayc,
-    offer_bayc2
-):
-    token_id = 1
+def test_replace_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, lender, usdc, ongoing_loan_bayc, offer_bayc2):
     offer = offer_bayc2.offer
     lender = offer.lender
     principal = offer.principal
-    interest = ongoing_loan_bayc.get_interest(now)
-
-    max_interest_delta = _max_interest_delta(ongoing_loan_bayc, offer, now)
-    borrower_compensation = max(max_interest_delta, interest + ongoing_loan_bayc.amount - principal)
-
-    protocol_fee_amount = ongoing_loan_bayc.get_protocol_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
-    broker_fee_amount = ongoing_loan_bayc.get_lender_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
-    borrower_broker_fee_amount = (
-        ongoing_loan_bayc.get_borrower_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
-    )
 
     lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
     usdc.deposit(value=lender_approval, sender=lender)
@@ -596,6 +574,7 @@ def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, 
             Fee.borrower_broker(ZERO_ADDRESS),
         ],
         pro_rata=offer.pro_rata,
+        delegate=ongoing_loan_bayc.borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
 
@@ -681,6 +660,7 @@ def test_replace_loan_works_with_proxy(p2p_nfts_usdc, ongoing_loan_bayc, offer_b
             Fee.borrower_broker(ZERO_ADDRESS),
         ],
         pro_rata=offer.pro_rata,
+        delegate=ongoing_loan_bayc.borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
 
@@ -754,10 +734,7 @@ def test_replace_loan_transfers_origination_fee_to_lender(p2p_nfts_usdc, ongoing
 
     p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
-    assert (
-        usdc.balanceOf(new_lender)
-        == initial_lender_balance - principal + origination_fee - offer.broker_upfront_fee_amount
-    )
+    assert usdc.balanceOf(new_lender) == initial_lender_balance - principal + origination_fee - offer.broker_upfront_fee_amount
 
 
 def test_replace_loan_updates_offer_usage_count(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, usdc):
@@ -1120,6 +1097,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
             Fee.borrower_broker(borrower_broker, borrower_broker_upfront_fee, borrower_broker_settlement_fee),
         ],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan1) == p2p_nfts_usdc.loans(loan_id)
 
@@ -1208,6 +1186,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
             Fee.borrower_broker(ZERO_ADDRESS, 0, 0),
         ],
         pro_rata=offer2.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan2) == p2p_nfts_usdc.loans(loan2_id)
 

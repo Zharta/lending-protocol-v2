@@ -1,10 +1,7 @@
-from textwrap import dedent
-
 import boa
 import pytest
-from eth_utils import decode_hex
 
-from ...conftest_base import ZERO_ADDRESS, WhitelistRecord
+from ...conftest_base import WhitelistRecord
 
 
 @pytest.fixture(scope="module")

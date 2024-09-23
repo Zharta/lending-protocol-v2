@@ -1,9 +1,8 @@
 import contextlib
 from collections import namedtuple
-from dataclasses import dataclass, field
+from dataclasses import field
 from enum import IntEnum
 from functools import cached_property
-from itertools import starmap
 from textwrap import dedent
 from typing import NamedTuple
 
@@ -13,10 +12,8 @@ import vyper
 from boa.contracts.vyper.event import Event
 from boa.contracts.vyper.vyper_contract import VyperContract
 from eth.exceptions import Revert
-from eth_abi import encode
 from eth_account import Account
-from eth_account.messages import encode_intended_validator, encode_structured_data
-from eth_utils import encode_hex, keccak
+from eth_account.messages import encode_structured_data
 from web3 import Web3
 
 ZERO_ADDRESS = boa.eval("empty(address)")
@@ -85,9 +82,11 @@ class FeeType(IntEnum):
     LENDER_BROKER = 1 << 2
     BORROWER_BROKER = 1 << 3
 
+
 class OfferType(IntEnum):
     TOKEN = 1 << 0
     COLLECTION = 1 << 1
+
 
 class Offer(NamedTuple):
     principal: int = 0
@@ -159,6 +158,7 @@ class Loan(NamedTuple):
     collateral_token_id: int = 0
     fees: list[Fee] = field(default_factory=list)
     pro_rata: bool = False
+    delegate: str = ZERO_ADDRESS
 
     def get_protocol_fee(self):
         return next((f for f in self.fees if f.type == FeeType.PROTOCOL), None)
@@ -209,7 +209,7 @@ def compute_loan_hash(loan: Loan):
     print(f"compute_loan_hash {loan=}")
     encoded = eth_abi.encode(
         [
-            "(bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"
+            "(bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool,address)"
         ],
         [loan],
     )

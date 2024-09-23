@@ -75,6 +75,7 @@ struct Loan:
     collateral_token_id: uint256
     fees: DynArray[Fee, MAX_FEES]
     pro_rata: bool
+    delegate: address
 
 
 TOKEN_IDS_BATCH: constant(uint256) = 1 << 14
@@ -141,4 +142,3 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
 @external
 def revoke_offer(offer: SignedOffer):
     P2PLendingNfts(self.p2p_lending_nfts).revoke_offer(offer)
-
