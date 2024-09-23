@@ -12,6 +12,7 @@ from ...conftest_base import (
     FeeType,
     Loan,
     Offer,
+    WhitelistRecord,
     compute_loan_hash,
     compute_signed_offer_id,
     get_last_event,
@@ -138,6 +139,50 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
         collateral_token_id=token_id,
         fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
+    )
+    assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
+    return loan
+
+
+@pytest.fixture
+def ongoing_loan_bayc_no_delegate(
+    p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, protocol_fees, borrower_broker_fee
+):
+    offer = offer_bayc.offer
+    token_id = offer.token_ids[0]
+    principal = offer.principal
+    origination_fee = offer.origination_fee_amount
+
+    bayc.mint(borrower, token_id)
+    bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
+
+    loan_id = p2p_nfts_usdc.create_loan(
+        offer_bayc,
+        token_id,
+        ZERO_ADDRESS,
+        borrower_broker_fee.upfront_amount,
+        borrower_broker_fee.settlement_bps,
+        borrower_broker_fee.wallet,
+        sender=borrower,
+    )
+
+    loan = Loan(
+        id=loan_id,
+        amount=offer.principal,
+        interest=offer.interest,
+        payment_token=offer.payment_token,
+        maturity=now + offer.duration,
+        start_time=now,
+        borrower=borrower,
+        lender=lender,
+        collateral_contract=bayc.address,
+        collateral_token_id=token_id,
+        fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
+        pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
     return loan
@@ -186,6 +231,7 @@ def ongoing_loan_punk(p2p_nfts_usdc, offer_punk, usdc, borrower, lender, cryptop
             borrower_broker_fee,
         ],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
     return loan
@@ -235,6 +281,7 @@ def ongoing_loan_prorata(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc
             borrower_broker_fee,
         ],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
     return loan
@@ -293,7 +340,15 @@ def test_settle_loan_prorata_reverts_if_funds_not_approved(p2p_nfts_usdc, ongoin
         p2p_nfts_usdc.settle_loan(loan, sender=loan.borrower)
 
 
-def test_settle_loan(p2p_nfts_usdc, ongoing_loan_bayc, usdc, now):
+def test_settle_loan(p2p_nfts_usdc, delegation_registry, ongoing_loan_bayc, usdc, now):
+    assert delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc.collateral_contract,
+        ongoing_loan_bayc.collateral_token_id,
+        ZERO_BYTES32,
+    )
+
     loan = ongoing_loan_bayc
     interest = loan.interest
     borrower_broker_fee = loan.calc_borrower_broker_settlement_fee(now)
@@ -304,6 +359,40 @@ def test_settle_loan(p2p_nfts_usdc, ongoing_loan_bayc, usdc, now):
 
     assert p2p_nfts_usdc.loans(loan.id) == ZERO_BYTES32
     assert usdc.balanceOf(p2p_nfts_usdc.address) == 0
+    assert not delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc.collateral_contract,
+        ongoing_loan_bayc.collateral_token_id,
+        ZERO_BYTES32,
+    )
+
+
+def test_settle_loan_no_delegate(p2p_nfts_usdc, delegation_registry, ongoing_loan_bayc_no_delegate, usdc):
+    assert not delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc_no_delegate.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc_no_delegate.collateral_contract,
+        ongoing_loan_bayc_no_delegate.collateral_token_id,
+        ZERO_BYTES32,
+    )
+
+    loan = ongoing_loan_bayc_no_delegate
+    interest = loan.interest
+    amount_to_settle = loan.amount + interest
+
+    usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=loan.borrower)
+    p2p_nfts_usdc.settle_loan(loan, sender=loan.borrower)
+
+    assert p2p_nfts_usdc.loans(loan.id) == ZERO_BYTES32
+    assert usdc.balanceOf(p2p_nfts_usdc.address) == 0
+    assert not delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc_no_delegate.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc_no_delegate.collateral_contract,
+        ongoing_loan_bayc_no_delegate.collateral_token_id,
+        ZERO_BYTES32,
+    )
 
 
 def test_settle_loan_decreases_offer_count(p2p_nfts_usdc, ongoing_loan_bayc, usdc):
@@ -437,6 +526,7 @@ def test_settle_loan_logs_fees(
             Fee.borrower_broker(borrower_broker, borrower_broker_upfront_fee, borrower_broker_settlement_fee),
         ],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
 
@@ -734,6 +824,7 @@ def test_settle_loan_creates_pending_transfer_on_erc20_transfer_fail(
             Fee.borrower_broker(ZERO_ADDRESS),
         ],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_erc20.loans(loan_id)
 

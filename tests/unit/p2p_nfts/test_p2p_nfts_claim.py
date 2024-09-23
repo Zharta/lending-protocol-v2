@@ -97,6 +97,48 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
         collateral_token_id=token_id,
         fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
+    )
+    assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
+    return loan
+
+
+@pytest.fixture
+def ongoing_loan_bayc_no_delegate(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, borrower_broker_fee):
+    offer = offer_bayc.offer
+    token_id = offer.token_ids[0]
+    principal = offer.principal
+    origination_fee = offer.origination_fee_amount
+
+    bayc.mint(borrower, token_id)
+    bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
+    lender_approval = principal - origination_fee + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
+
+    loan_id = p2p_nfts_usdc.create_loan(
+        offer_bayc,
+        token_id,
+        ZERO_ADDRESS,
+        borrower_broker_fee.upfront_amount,
+        borrower_broker_fee.settlement_bps,
+        borrower_broker_fee.wallet,
+        sender=borrower,
+    )
+
+    loan = Loan(
+        id=loan_id,
+        amount=offer.principal,
+        interest=offer.interest,
+        payment_token=offer.payment_token,
+        maturity=now + offer.duration,
+        start_time=now,
+        borrower=borrower,
+        lender=lender,
+        collateral_contract=bayc.address,
+        collateral_token_id=token_id,
+        fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
+        pro_rata=offer.pro_rata,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
     return loan
@@ -164,6 +206,7 @@ def ongoing_loan_punk(p2p_nfts_usdc, offer_punk, usdc, borrower, lender, cryptop
         collateral_token_id=token_id,
         fees=[Fee.protocol(p2p_nfts_usdc, principal), Fee.origination(offer), Fee.lender_broker(offer), borrower_broker_fee],
         pro_rata=offer.pro_rata,
+        delegate=borrower,
     )
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
     return loan
@@ -204,7 +247,41 @@ def test_claim_defaulted_reverts_with_unauth_proxy(p2p_nfts_usdc, ongoing_loan_b
         p2p_nfts_proxy.claim_defaulted_loan_collateral(ongoing_loan_bayc, sender=ongoing_loan_bayc.lender)
 
 
-def test_claim_defaulted(p2p_nfts_usdc, ongoing_loan_bayc, now, usdc):
+def test_claim_defaulted_no_delegate(p2p_nfts_usdc, delegation_registry, ongoing_loan_bayc_no_delegate, now, usdc):
+    assert not delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc_no_delegate.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc_no_delegate.collateral_contract,
+        ongoing_loan_bayc_no_delegate.collateral_token_id,
+        ZERO_BYTES32,
+    )
+
+    time_to_default = ongoing_loan_bayc_no_delegate.maturity - now
+
+    boa.env.time_travel(seconds=time_to_default + 1)
+
+    p2p_nfts_usdc.claim_defaulted_loan_collateral(ongoing_loan_bayc_no_delegate, sender=ongoing_loan_bayc_no_delegate.lender)
+
+    assert p2p_nfts_usdc.loans(ongoing_loan_bayc_no_delegate.id) == ZERO_BYTES32
+    assert boa.env.get_balance(p2p_nfts_usdc.address) == 0
+    assert not delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc_no_delegate.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc_no_delegate.collateral_contract,
+        ongoing_loan_bayc_no_delegate.collateral_token_id,
+        ZERO_BYTES32,
+    )
+
+
+def test_claim_defaulted(p2p_nfts_usdc, delegation_registry, ongoing_loan_bayc, now, usdc):
+    assert delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc.collateral_contract,
+        ongoing_loan_bayc.collateral_token_id,
+        ZERO_BYTES32,
+    )
+
     time_to_default = ongoing_loan_bayc.maturity - now
 
     boa.env.time_travel(seconds=time_to_default + 1)
@@ -213,6 +290,13 @@ def test_claim_defaulted(p2p_nfts_usdc, ongoing_loan_bayc, now, usdc):
 
     assert p2p_nfts_usdc.loans(ongoing_loan_bayc.id) == ZERO_BYTES32
     assert boa.env.get_balance(p2p_nfts_usdc.address) == 0
+    assert not delegation_registry.checkDelegateForERC721(
+        ongoing_loan_bayc.delegate,
+        p2p_nfts_usdc.address,
+        ongoing_loan_bayc.collateral_contract,
+        ongoing_loan_bayc.collateral_token_id,
+        ZERO_BYTES32,
+    )
 
 
 def test_claim_defaulted_works_with_proxy(p2p_nfts_usdc, ongoing_loan_bayc, now, usdc, p2p_nfts_proxy):
