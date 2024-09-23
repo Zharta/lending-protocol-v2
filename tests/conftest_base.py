@@ -14,10 +14,10 @@ import vyper
 from boa.contracts.vyper.event import Event
 from boa.contracts.vyper.vyper_contract import VyperContract
 from eth.exceptions import Revert
-from eth_abi import keccak
+from eth_abi import encode
 from eth_account import Account
 from eth_account.messages import encode_structured_data
-from eth_utils import encode
+from eth_utils import keccak
 from web3 import Web3
 
 ZERO_ADDRESS = boa.eval("empty(address)")

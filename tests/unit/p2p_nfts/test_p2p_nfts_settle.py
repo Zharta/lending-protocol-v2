@@ -12,7 +12,6 @@ from ...conftest_base import (
     FeeType,
     Loan,
     Offer,
-    WhitelistRecord,
     compute_loan_hash,
     compute_signed_offer_id,
     get_last_event,
@@ -150,7 +149,7 @@ def ongoing_loan_bayc_no_delegate(
     p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, protocol_fees, borrower_broker_fee
 ):
     offer = offer_bayc.offer
-    token_id = offer.token_ids[0]
+    token_id = offer.token_id
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
 
@@ -163,6 +162,7 @@ def ongoing_loan_bayc_no_delegate(
     loan_id = p2p_nfts_usdc.create_loan(
         offer_bayc,
         token_id,
+        [],
         ZERO_ADDRESS,
         borrower_broker_fee.upfront_amount,
         borrower_broker_fee.settlement_bps,
@@ -172,6 +172,8 @@ def ongoing_loan_bayc_no_delegate(
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -368,7 +370,7 @@ def test_settle_loan(p2p_nfts_usdc, delegation_registry, ongoing_loan_bayc, usdc
     )
 
 
-def test_settle_loan_no_delegate(p2p_nfts_usdc, delegation_registry, ongoing_loan_bayc_no_delegate, usdc):
+def test_settle_loan_no_delegate(p2p_nfts_usdc, delegation_registry, ongoing_loan_bayc_no_delegate, usdc, now):
     assert not delegation_registry.checkDelegateForERC721(
         ongoing_loan_bayc_no_delegate.delegate,
         p2p_nfts_usdc.address,
@@ -379,7 +381,8 @@ def test_settle_loan_no_delegate(p2p_nfts_usdc, delegation_registry, ongoing_loa
 
     loan = ongoing_loan_bayc_no_delegate
     interest = loan.interest
-    amount_to_settle = loan.amount + interest
+    borrower_broker_fee = loan.calc_borrower_broker_settlement_fee(now)
+    amount_to_settle = loan.amount + interest + borrower_broker_fee
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=loan.borrower)
     p2p_nfts_usdc.settle_loan(loan, sender=loan.borrower)

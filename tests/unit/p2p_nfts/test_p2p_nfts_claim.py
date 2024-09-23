@@ -106,7 +106,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 @pytest.fixture
 def ongoing_loan_bayc_no_delegate(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, now, borrower_broker_fee):
     offer = offer_bayc.offer
-    token_id = offer.token_ids[0]
+    token_id = offer.token_id
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
 
@@ -119,6 +119,7 @@ def ongoing_loan_bayc_no_delegate(p2p_nfts_usdc, offer_bayc, usdc, borrower, len
     loan_id = p2p_nfts_usdc.create_loan(
         offer_bayc,
         token_id,
+        [],
         ZERO_ADDRESS,
         borrower_broker_fee.upfront_amount,
         borrower_broker_fee.settlement_bps,
@@ -128,6 +129,8 @@ def ongoing_loan_bayc_no_delegate(p2p_nfts_usdc, offer_bayc, usdc, borrower, len
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
