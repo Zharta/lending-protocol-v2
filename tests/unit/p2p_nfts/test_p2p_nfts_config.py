@@ -1,16 +1,17 @@
 import boa
 import pytest
 
-from ...conftest_base import ZERO_ADDRESS, get_last_event, WhitelistRecord, TokenTraitTree
+from ...conftest_base import ZERO_ADDRESS, get_last_event, CollectionContract, TokenTraitTree
 from hashlib import sha3_256
+from itertools import starmap
 
 FOREVER = 2**256 - 1
 
 
 @pytest.fixture
 def collections():
-    return ["0x" + str(i) * 40 for i in range(1, 6)]
-
+    return {sha3_256(f"{i}".encode()).digest(): "0x" + str(i) * 40 for i in range(1, 6)}
+    # return ["0x" + str(i) * 40 for i in range(1, 6)]
 
 
 def test_initial_state(
@@ -170,41 +171,41 @@ def test_claim_ownership_logs_event(p2p_nfts_usdc, owner):
     assert event.new_owner == new_owner
 
 
-def test_change_whitelisted_collections_reverts_if_wrong_caller(p2p_nfts_usdc):
+def test_change_collections_contracts_reverts_if_wrong_caller(p2p_control):
     with boa.reverts("sender not owner"):
-        p2p_nfts_usdc.change_whitelisted_collections([], sender=boa.env.generate_address("random"))
+        p2p_control.change_collections_contracts([], sender=boa.env.generate_address("random"))
 
 
-def test_change_whitelisted_collections(p2p_nfts_usdc, collections, owner):
-    whitelist = [WhitelistRecord(c, i % 2 == 0) for i, c in enumerate(collections)]
-    p2p_nfts_usdc.change_whitelisted_collections(whitelist, sender=owner)
+def test_change_collections_contracts(p2p_control, collections, owner):
+    contracts = list(starmap(CollectionContract, collections.items()))
+    p2p_control.change_collections_contracts(contracts, sender=owner)
 
-    for c, w in whitelist:
-        assert p2p_nfts_usdc.whitelisted(c) == w
+    for k, c in collections.items():
+        assert p2p_control.contracts(k) == c
 
-    whitelist = [WhitelistRecord(c, i % 2 == 1) for i, c in enumerate(collections)]
-    p2p_nfts_usdc.change_whitelisted_collections(whitelist, sender=owner)
+    contracts = [CollectionContract(k, ZERO_ADDRESS) for k, v in collections.items()]
+    p2p_control.change_collections_contracts(contracts, sender=owner)
 
-    for c, w in whitelist:
-        assert p2p_nfts_usdc.whitelisted(c) == w
-
-
-def test_change_whitelisted_collections_logs_event(p2p_nfts_usdc, collections, owner):
-    whitelist = [WhitelistRecord(c, i % 2 == 0) for i, c in enumerate(collections)]
-    p2p_nfts_usdc.change_whitelisted_collections(whitelist, sender=owner)
-    event = get_last_event(p2p_nfts_usdc, "WhitelistChanged")
-
-    assert event.changed == whitelist
+    for k in collections:
+        assert p2p_control.contracts(k) == ZERO_ADDRESS
 
 
-def test_change_trait_roots(p2p_nfts_usdc, owner):
+def test_change_collections_contracts_logs_event(p2p_control, collections, owner):
+    contracts = list(starmap(CollectionContract, collections.items()))
+    p2p_control.change_collections_contracts(contracts, sender=owner)
+    event = get_last_event(p2p_control, "ContractsChanged")
+
+    assert event.changed == contracts
+
+
+def test_change_trait_roots(p2p_control, owner):
 
     collection_roots = {sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(128)}
-    p2p_nfts_usdc.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
+    p2p_control.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
     for key, root in collection_roots.items():
-        assert p2p_nfts_usdc.collection_trait_roots(key) == root
-    
+        assert p2p_control.trait_roots(key) == root
+
     collection_roots = {sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(1)}
-    p2p_nfts_usdc.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
+    p2p_control.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
     for key, root in collection_roots.items():
-        assert p2p_nfts_usdc.collection_trait_roots(key) == root
+        assert p2p_control.trait_roots(key) == root
