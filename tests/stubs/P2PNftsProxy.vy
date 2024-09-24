@@ -62,7 +62,6 @@ struct Offer:
     broker_upfront_fee_amount: uint256
     broker_settlement_fee_bps: uint256
     broker_address: address
-    collateral_contract: address
     offer_type: OfferType
     token_id: uint256
     token_range_min: uint256

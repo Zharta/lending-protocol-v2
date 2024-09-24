@@ -15,7 +15,7 @@ from ...conftest_base import (
     get_last_event,
     get_loan_mutations,
     sign_offer,
-    WhitelistRecord,
+    CollectionContract,
 )
 
 FOREVER = 2**256 - 1
@@ -56,7 +56,7 @@ def protocol_fees(p2p_nfts_usdc):
 
 
 @pytest.fixture
-def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc):
+def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc, bayc_key_hash):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -67,7 +67,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc):
         broker_upfront_fee_amount=15,
         broker_settlement_fee_bps=200,
         broker_address=broker,
-        collateral_contract=bayc.address,
+        collection_key_hash=bayc_key_hash,
         token_id=token_id,
         expiration=now + 100,
         lender=lender,
@@ -78,7 +78,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc):
 
 
 @pytest.fixture
-def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_usdc, usdc):
+def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_usdc, usdc, punks_key_hash):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -89,7 +89,7 @@ def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_usdc, usdc
         broker_upfront_fee_amount=15,
         broker_settlement_fee_bps=200,
         broker_address=broker,
-        collateral_contract=cryptopunks.address,
+        collection_key_hash=punks_key_hash,
         token_id=token_id,
         expiration=now + 100,
         lender=lender,
@@ -334,6 +334,7 @@ def test_settle_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, usdc):
 @pytest.mark.parametrize("origination_fee", [0, 10])
 def test_settle_loan_logs_fees(
     bayc,
+    bayc_key_hash,
     borrower,
     lender,
     lender_key,
@@ -370,7 +371,7 @@ def test_settle_loan_logs_fees(
         broker_upfront_fee_amount=lender_broker_upfront_fee,
         broker_settlement_fee_bps=lender_broker_settlement_fee,
         broker_address=lender_broker,
-        collateral_contract=bayc.address,
+        collection_key_hash=bayc_key_hash,
         token_id=token_id,
         expiration=now + 100,
         lender=lender,
@@ -636,8 +637,10 @@ def test_settle_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pror
 
 def test_settle_loan_fails_on_erc20_transfer_fail(
     p2p_lending_nfts_contract_def,
+    p2p_control,
     weth,
     bayc,
+    bayc_key_hash,
     delegation_registry,
     cryptopunks,
     owner,
@@ -658,8 +661,8 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
 
             """)
     erc20 = boa.loads(failing_erc20_code)
-    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, delegation_registry, cryptopunks, 0, 0, owner)
-    p2p_nfts_erc20.change_whitelisted_collections([WhitelistRecord(bayc.address, True)])
+    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, p2p_control, delegation_registry, cryptopunks, 0, 0, owner)
+    p2p_control.change_collections_contracts([CollectionContract(bayc_key_hash, bayc.address)])
 
     token_id = 1
     offer = Offer(
@@ -671,7 +674,7 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
         broker_upfront_fee_amount=0,
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
-        collateral_contract=bayc.address,
+        collection_key_hash=bayc_key_hash,
         token_id=token_id,
         expiration=now + 100,
         lender=lender,

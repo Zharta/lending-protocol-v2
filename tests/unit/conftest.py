@@ -144,6 +144,11 @@ def p2p_lending_nfts_contract_def(boa_env):
 
 
 @pytest.fixture(scope="session")
+def p2p_lending_control_contract_def(boa_env):
+    return boa.load_partial("contracts/P2PLendingControl.vy")
+
+
+@pytest.fixture(scope="session")
 def p2p_lending_nfts_proxy_contract_def(boa_env):
     return boa.load_partial("tests/stubs/P2PNftsProxy.vy")
 
