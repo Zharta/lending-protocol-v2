@@ -85,9 +85,11 @@ class FeeType(IntEnum):
     LENDER_BROKER = 1 << 2
     BORROWER_BROKER = 1 << 3
 
+
 class OfferType(IntEnum):
     TOKEN = 1 << 0
     COLLECTION = 1 << 1
+
 
 class Offer(NamedTuple):
     principal: int = 0
@@ -180,6 +182,11 @@ class Loan(NamedTuple):
         if self.pro_rata:
             return self.interest * (timestamp - self.start_time) // (self.maturity - self.start_time)
         return self.interest
+
+    def calc_borrower_broker_settlement_fee(self, timestamp):
+        interest = self.get_interest(timestamp)
+        fee = self.get_borrower_broker_fee()
+        return interest * fee.settlement_bps // 10000
 
 
 BrokerLock = namedtuple("BrokerLock", ["broker", "expiration"], defaults=[ZERO_ADDRESS, 0])

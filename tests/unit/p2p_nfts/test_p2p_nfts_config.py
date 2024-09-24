@@ -1,7 +1,7 @@
 import boa
 import pytest
 
-from ...conftest_base import ZERO_ADDRESS, get_last_event, WhitelistRecord
+from ...conftest_base import ZERO_ADDRESS, WhitelistRecord, get_last_event
 
 FOREVER = 2**256 - 1
 
@@ -9,7 +9,6 @@ FOREVER = 2**256 - 1
 @pytest.fixture
 def collections():
     return ["0x" + str(i) * 40 for i in range(1, 6)]
-
 
 
 def test_initial_state(
@@ -194,4 +193,3 @@ def test_change_whitelisted_collections_logs_event(p2p_nfts_usdc, collections, o
     event = get_last_event(p2p_nfts_usdc, "WhitelistChanged")
 
     assert event.changed == whitelist
-
