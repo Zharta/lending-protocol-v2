@@ -3,6 +3,7 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import cached_property
+from hashlib import sha3_256
 from itertools import starmap
 from textwrap import dedent
 from typing import NamedTuple
@@ -85,9 +86,11 @@ class FeeType(IntEnum):
     LENDER_BROKER = 1 << 2
     BORROWER_BROKER = 1 << 3
 
+
 class OfferType(IntEnum):
     TOKEN = 1 << 0
     COLLECTION = 1 << 1
+
 
 class Offer(NamedTuple):
     principal: int = 0

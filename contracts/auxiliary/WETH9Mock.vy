@@ -39,6 +39,7 @@ allowance: public(HashMap[address, HashMap[address, uint256]])
 totalSupply: public(uint256)
 minter: address
 
+blacklisted: public(HashMap[address, bool])
 
 @external
 def __init__(_name: String[32], _symbol: String[32], _decimals: uint8, _supply: uint256):
@@ -60,6 +61,9 @@ def transfer(_to : address, _value : uint256) -> bool:
     @param _to The address to transfer to.
     @param _value The amount to be transferred.
     """
+    assert not self.blacklisted[msg.sender]
+    assert not self.blacklisted[_to]
+
     self.balanceOf[msg.sender] -= _value
     self.balanceOf[_to] += _value
     log Transfer(msg.sender, _to, _value)
@@ -74,6 +78,9 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
      @param _to address The address which you want to transfer to
      @param _value uint256 the amount of tokens to be transferred
     """
+    assert not self.blacklisted[_from]
+    assert not self.blacklisted[_to]
+
     self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value
     self.allowance[_from][msg.sender] -= _value
@@ -159,3 +166,8 @@ def withdraw(amount: uint256):
     self.balanceOf[msg.sender] -= amount
     send(msg.sender, amount)
     log Withdrawal(msg.sender, amount)
+
+@external
+def blacklist(_address: address, _value: bool):
+    assert msg.sender == self.minter
+    self.blacklisted[_address] = _value

@@ -1,3 +1,4 @@
+from hashlib import sha3_256
 from textwrap import dedent
 
 import boa
