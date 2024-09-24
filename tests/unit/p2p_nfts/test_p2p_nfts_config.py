@@ -1,9 +1,10 @@
+from hashlib import sha3_256
+from itertools import starmap
+
 import boa
 import pytest
 
-from ...conftest_base import ZERO_ADDRESS, get_last_event, CollectionContract, TokenTraitTree
-from hashlib import sha3_256
-from itertools import starmap
+from ...conftest_base import ZERO_ADDRESS, CollectionContract, get_last_event
 
 FOREVER = 2**256 - 1
 
@@ -259,13 +260,16 @@ def test_change_collections_contracts_logs_event(p2p_control, collections, owner
 
 
 def test_change_trait_roots(p2p_control, owner):
-
-    collection_roots = {sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(128)}
+    collection_roots = {
+        sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(128)
+    }
     p2p_control.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
     for key, root in collection_roots.items():
         assert p2p_control.trait_roots(key) == root
 
-    collection_roots = {sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(1)}
+    collection_roots = {
+        sha3_256(f"collection_{i}".encode()).digest(): sha3_256(f"root_{i}".encode()).digest() for i in range(1)
+    }
     p2p_control.change_collections_trait_roots(list(collection_roots.items()), sender=owner)
     for key, root in collection_roots.items():
         assert p2p_control.trait_roots(key) == root

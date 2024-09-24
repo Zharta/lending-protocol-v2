@@ -6,6 +6,7 @@ import pytest
 from ...conftest_base import (
     ZERO_ADDRESS,
     ZERO_BYTES32,
+    CollectionContract,
     Fee,
     FeeAmount,
     FeeType,
@@ -15,7 +16,6 @@ from ...conftest_base import (
     get_last_event,
     get_loan_mutations,
     sign_offer,
-    CollectionContract,
 )
 
 FOREVER = 2**256 - 1
