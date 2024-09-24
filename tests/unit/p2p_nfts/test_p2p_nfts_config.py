@@ -202,6 +202,35 @@ def test_claim_ownership_logs_event(p2p_nfts_usdc, owner):
     assert event.new_owner == new_owner
 
 
+def test_p2p_control_claim_ownership_reverts_if_wrong_caller(p2p_control, owner):
+    new_owner = boa.env.generate_address("new_owner")
+    p2p_control.propose_owner(new_owner, sender=owner)
+
+    with boa.reverts("not the proposed owner"):
+        p2p_control.claim_ownership(sender=owner)
+
+
+def test_p2p_control_claim_ownership(p2p_control, owner):
+    new_owner = boa.env.generate_address("new_owner")
+    p2p_control.propose_owner(new_owner, sender=owner)
+
+    p2p_control.claim_ownership(sender=new_owner)
+
+    assert p2p_control.proposed_owner() == ZERO_ADDRESS
+    assert p2p_control.owner() == new_owner
+
+
+def test_p2p_control_claim_ownership_logs_event(p2p_control, owner):
+    new_owner = boa.env.generate_address("new_owner")
+    p2p_control.propose_owner(new_owner, sender=owner)
+
+    p2p_control.claim_ownership(sender=new_owner)
+    event = get_last_event(p2p_control, "OwnershipTransferred")
+
+    assert event.old_owner == owner
+    assert event.new_owner == new_owner
+
+
 def test_change_collections_contracts_reverts_if_wrong_caller(p2p_control):
     with boa.reverts("sender not owner"):
         p2p_control.change_collections_contracts([], sender=boa.env.generate_address("random"))
