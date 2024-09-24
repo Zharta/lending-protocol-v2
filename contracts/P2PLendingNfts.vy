@@ -523,13 +523,14 @@ def settle_loan(loan: Loan):
     interest: uint256 = self._compute_settlement_interest(loan)
     settlement_fees_total: uint256 = 0
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
-    settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
+    borrower_broker_fee_amount: uint256 = 0
+    settlement_fees, settlement_fees_total, borrower_broker_fee_amount = self._get_settlement_fees(loan, interest)
 
     self.loans[loan.id] = empty(bytes32)
 
-    self._receive_funds(loan.borrower, loan.amount + interest)
+    self._receive_funds(loan.borrower, loan.amount + interest + borrower_broker_fee_amount)
 
-    self._send_funds(loan.lender, loan.amount + interest - settlement_fees_total)
+    self._send_funds(loan.lender, loan.amount + interest - settlement_fees_total + borrower_broker_fee_amount)
     for fee in settlement_fees:
         self._send_funds(fee.wallet, fee.amount)
 
@@ -612,7 +613,8 @@ def replace_loan(
 
     settlement_fees_total: uint256 = 0
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
-    settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
+    borrower_broker_fee_amount: uint256 = 0
+    settlement_fees, settlement_fees_total, borrower_broker_fee_amount = self._get_settlement_fees(loan, interest)
 
     new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_upfront_fee_amount, borrower_broker_settlement_fee_bps, borrower_broker)
     total_upfront_fees: uint256 = 0
@@ -621,8 +623,8 @@ def replace_loan(
 
     self.loans[loan.id] = empty(bytes32)
 
-    borrower_delta: int256 = principal_delta - convert(total_upfront_fees, int256) + convert(offer.offer.broker_upfront_fee_amount, int256) - convert(interest, int256)
-    current_lender_delta: uint256 = loan.amount + interest - settlement_fees_total
+    borrower_delta: int256 = principal_delta - convert(total_upfront_fees + interest + borrower_broker_fee_amount, int256) + convert(offer.offer.broker_upfront_fee_amount, int256)
+    current_lender_delta: uint256 = loan.amount + interest - settlement_fees_total + borrower_broker_fee_amount
     new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount + offer.offer.broker_upfront_fee_amount
 
     if borrower_delta < 0:
@@ -720,7 +722,8 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArr
 
     settlement_fees_total: uint256 = 0
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
-    settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
+    borrower_broker_fee_amount: uint256 = 0
+    settlement_fees, settlement_fees_total, borrower_broker_fee_amount = self._get_settlement_fees(loan, interest)
 
     new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, 0, 0, empty(address))
     total_upfront_fees: uint256 = 0
@@ -729,11 +732,11 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArr
 
     self.loans[loan.id] = empty(bytes32)
 
-    max_interest_delta: uint256 = self._compute_max_interest_delta(loan, offer.offer, interest)
-    borrower_compensation: uint256 = convert(max(convert(max_interest_delta, int256), convert(interest, int256) - principal_delta), uint256)
+    max_interest_delta: uint256 = self._compute_max_interest_delta(loan, offer.offer, interest, borrower_broker_fee_amount)
+    borrower_compensation: uint256 = convert(max(convert(max_interest_delta, int256), convert(interest + borrower_broker_fee_amount, int256) - principal_delta), uint256)
 
-    borrower_delta: int256 = principal_delta - convert(interest, int256) + convert(borrower_compensation, int256)
-    current_lender_delta: int256 = convert(loan.amount + interest + offer.offer.broker_upfront_fee_amount, int256) - convert(total_upfront_fees + settlement_fees_total + borrower_compensation, int256)
+    borrower_delta: int256 = principal_delta - convert(interest, int256) - convert(borrower_broker_fee_amount, int256) + convert(borrower_compensation, int256)
+    current_lender_delta: int256 = convert(loan.amount + interest + borrower_broker_fee_amount + offer.offer.broker_upfront_fee_amount, int256) - convert(total_upfront_fees + settlement_fees_total + borrower_compensation, int256)
     new_lender_delta_abs: uint256 = offer.offer.principal - offer.offer.origination_fee_amount + offer.offer.broker_upfront_fee_amount
 
     assert borrower_delta >= 0, "borrower delta < 0"
@@ -959,16 +962,19 @@ def _get_loan_fees(offer: Offer, borrower_broker_upfront_fee_amount: uint256, bo
     return fees
 
 @internal
-def _get_settlement_fees(loan: Loan, settlement_interest: uint256) -> (DynArray[FeeAmount, MAX_FEES], uint256):
+def _get_settlement_fees(loan: Loan, settlement_interest: uint256) -> (DynArray[FeeAmount, MAX_FEES], uint256, uint256):
     total: uint256 = 0
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
+    borrower_broker_fee_amount: uint256 = 0
     for fee in loan.fees:
         if fee.interest_bps > 0:
             fee_amount: uint256 = settlement_interest * fee.interest_bps / BPS
             settlement_fees.append(FeeAmount({type: fee.type, amount: fee_amount, wallet: fee.wallet}))
             total += fee_amount
+            if fee.type == FeeType.BORROWER_BROKER_FEE:
+                borrower_broker_fee_amount = fee_amount
 
-    return (settlement_fees, total)
+    return (settlement_fees, total, borrower_broker_fee_amount)
 
 
 @internal
@@ -980,19 +986,25 @@ def _compute_settlement_interest(loan: Loan) -> uint256:
 
 
 @internal
-def _compute_max_interest_delta(loan: Loan, offer: Offer, interest: uint256) -> uint256:
+def _compute_max_interest_delta(loan: Loan, offer: Offer, interest: uint256, borrower_broker_fee_amount: uint256) -> uint256:
     """
     Computes the maximum interest difference between the new offer and the current loan.
     That max difference can be reached either at the refinance timestamp or at the original loan maturity.
     The difference can never be negative because at the refinance timestamp the delta is just the offer interest.
     """
+
+    borrower_broker_fee_bps: uint256 = 0
+    for fee in loan.fees:
+        if fee.type == FeeType.BORROWER_BROKER_FEE:
+            borrower_broker_fee_bps = fee.interest_bps
     delta_at_refinance: uint256 = 0 if offer.pro_rata else offer.interest
+    borrower_broker_fee_delta_at_maturity: uint256 = (loan.interest - interest) * borrower_broker_fee_bps / BPS if offer.pro_rata else 0
     loan_interest_delta_at_maturity: uint256 = loan.interest - interest
     offer_interest_at_loan_maturity: uint256 = offer.interest * (loan.maturity - block.timestamp) / offer.duration if offer.pro_rata else offer.interest
 
     return convert(max(
         convert(delta_at_refinance, int256),
-        convert(offer_interest_at_loan_maturity, int256) - convert(loan_interest_delta_at_maturity, int256)
+        convert(offer_interest_at_loan_maturity, int256) - convert(loan_interest_delta_at_maturity, int256) - convert(borrower_broker_fee_delta_at_maturity, int256)
     ), uint256)
 
 

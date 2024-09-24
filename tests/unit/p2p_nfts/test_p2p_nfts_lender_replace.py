@@ -233,10 +233,11 @@ def test_replace_loan_reverts_if_loan_defaulted(p2p_nfts_usdc, ongoing_loan_bayc
         p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, [], sender=ongoing_loan_bayc.lender)
 
 
-def test_replace_loan_reverts_if_loan_already_settled(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, usdc):
+def test_replace_loan_reverts_if_loan_already_settled(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, usdc, now):
     loan = ongoing_loan_bayc
     interest = loan.interest
-    amount_to_settle = loan.amount + interest
+    borrower_broker_fee = loan.calc_borrower_broker_settlement_fee(now)
+    amount_to_settle = loan.amount + interest + borrower_broker_fee
 
     usdc.deposit(value=amount_to_settle, sender=loan.borrower)
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=loan.borrower)
@@ -552,6 +553,10 @@ def _max_interest_delta(loan: Loan, offer: Offer, refinance_timestamp: int):
     assert refinance_timestamp <= loan.maturity
     print(f"_max_interest_delta: {loan=}, {offer=}, {refinance_timestamp=}")
 
+    borrower_broker_fee_at_maturity = loan.calc_borrower_broker_settlement_fee(loan.maturity)
+    borrower_broker_fee_at_refinance = loan.calc_borrower_broker_settlement_fee(refinance_timestamp)
+    borrower_broker_fee_delta_at_maturity = borrower_broker_fee_at_maturity - borrower_broker_fee_at_refinance
+
     loan_duration = loan.maturity - loan.start_time
     refinance_timestamp_interest = (
         loan.interest * (refinance_timestamp - loan.start_time) // loan_duration if loan.pro_rata else loan.interest
@@ -562,7 +567,10 @@ def _max_interest_delta(loan: Loan, offer: Offer, refinance_timestamp: int):
         offer.interest * (loan.maturity - refinance_timestamp) // offer.duration if offer.pro_rata else offer.interest
     )
 
-    return max(delta_at_refinance, offer_interest_at_loan_maturity - loan_interest_delta_at_maturity)
+    return max(
+        delta_at_refinance,
+        offer_interest_at_loan_maturity - loan_interest_delta_at_maturity - borrower_broker_fee_delta_at_maturity,
+    )
 
 
 def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc):
@@ -604,9 +612,10 @@ def test_replace_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, 
     lender = offer.lender
     principal = offer.principal
     interest = ongoing_loan_bayc.get_interest(now)
+    borrower_broker_fee = ongoing_loan_bayc.calc_borrower_broker_settlement_fee(now)
 
     max_interest_delta = _max_interest_delta(ongoing_loan_bayc, offer, now)
-    borrower_compensation = max(max_interest_delta, interest + ongoing_loan_bayc.amount - principal)
+    borrower_compensation = max(max_interest_delta, interest + borrower_broker_fee + ongoing_loan_bayc.amount - principal)
 
     protocol_fee_amount = ongoing_loan_bayc.get_protocol_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
     broker_fee_amount = ongoing_loan_bayc.get_lender_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
@@ -851,6 +860,7 @@ def test_replace_loan_pays_borrower_if_needed(
     new_lender = offer.lender
     interest = loan.interest
 
+    borrower_broker_fee = loan.calc_borrower_broker_settlement_fee(now)
     protocol_upfront_fee_amount = p2p_nfts_usdc.protocol_upfront_fee() * offer.principal // 10000
     upfront_fees = protocol_upfront_fee_amount + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(loan, offer, now)
@@ -863,7 +873,7 @@ def test_replace_loan_pays_borrower_if_needed(
         + offer.broker_upfront_fee_amount
     )
     new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
-    borrower_delta = offer.principal - loan.amount - upfront_fees - interest + borrower_compensation
+    borrower_delta = offer.principal - loan.amount - upfront_fees - interest - borrower_broker_fee + borrower_compensation
 
     print(f"{upfront_fees=} {borrower_compensation=} {settlement_fees=}")
     print(f"{current_lender_delta=} {borrower_delta=}")
@@ -992,11 +1002,19 @@ def test_replace_loan_prorata_pays_lender(p2p_nfts_usdc, ongoing_loan_prorata, u
     initial_lender_balance = usdc.balanceOf(loan.lender)
     new_lender_delta = offer.origination_fee_amount - offer.principal - offer.broker_upfront_fee_amount
 
+    borrower_broker_fee = loan.calc_borrower_broker_settlement_fee(now + actual_duration)
     protocol_upfront_fee_amount = p2p_nfts_usdc.protocol_upfront_fee() * offer.principal // 10000
     upfront_fees = protocol_upfront_fee_amount + offer.origination_fee_amount + offer.broker_upfront_fee_amount
     borrower_compensation = upfront_fees + _max_interest_delta(loan, offer, now)
     settlement_fees = loan.get_settlement_fees(now + actual_duration)
-    current_lender_delta = loan.amount + interest - settlement_fees - borrower_compensation + offer.broker_upfront_fee_amount
+    current_lender_delta = (
+        loan.amount
+        + interest
+        - settlement_fees
+        + borrower_broker_fee
+        - borrower_compensation
+        + offer.broker_upfront_fee_amount
+    )
 
     lender_approval = max(0, -new_lender_delta)
     usdc.deposit(value=lender_approval, sender=new_lender)
@@ -1186,9 +1204,9 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
         + offer2.broker_upfront_fee_amount
     )
     max_interest_delta = _max_interest_delta(loan1, offer2, now + actual_duration)
-    borrower_compensation = max(max_interest_delta, interest + loan1.amount - offer2.principal)
+    borrower_compensation = max(max_interest_delta, interest + borrower_broker_fee_amount + loan1.amount - offer2.principal)
     settlement_fees = loan1.get_settlement_fees(now + actual_duration)
-    borrower_delta = offer2.principal - loan1.amount - interest + borrower_compensation
+    borrower_delta = offer2.principal - loan1.amount - interest - borrower_broker_fee_amount + borrower_compensation
     current_lender_delta = (
         loan1.amount
         + interest
@@ -1196,6 +1214,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
         - settlement_fees
         - borrower_compensation
         + offer2.broker_upfront_fee_amount
+        + borrower_broker_fee_amount
     )
     new_lender_delta = offer2.origination_fee_amount - offer2.principal - offer2.broker_upfront_fee_amount
 
