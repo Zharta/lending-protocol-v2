@@ -1083,9 +1083,6 @@ def _validate_token_ids(
         assert collateral_token_id <= offer.token_range_max, "tokenid above offer range"
     else:
         _hash: bytes32 = keccak256(_abi_encode(collection_status.contract, offer.trait_hash, collateral_token_id))
-        # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_hash))
         for p in collateral_proof:
             _hash = keccak256(_abi_encode(convert(keccak256(_hash), uint256) ^ convert(keccak256(p), uint256)))
-            # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_hash))
-        # assert self.collection_trait_roots[offer.collection_key_hash] == _hash, "proof invalid"
         assert collection_status.trait_root == _hash, "proof invalid"

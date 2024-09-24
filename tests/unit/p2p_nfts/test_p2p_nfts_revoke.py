@@ -1,7 +1,7 @@
 import boa
 import pytest
 
-from ...conftest_base import ZERO_ADDRESS, ZERO_BYTES32, Offer, compute_signed_offer_id, get_last_event, sign_offer, OfferType
+from ...conftest_base import ZERO_ADDRESS, ZERO_BYTES32, Offer, OfferType, compute_signed_offer_id, get_last_event, sign_offer
 
 
 @pytest.fixture

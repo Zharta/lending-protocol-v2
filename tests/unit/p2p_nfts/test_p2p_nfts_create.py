@@ -118,7 +118,9 @@ def test_create_loan_reverts_if_offer_expired(p2p_nfts_usdc, borrower, now, lend
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_payment_token_invalid(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_payment_token_invalid(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
@@ -170,7 +172,9 @@ def test_create_loan_reverts_if_collateral_not_whitelisted(
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_token_id_below_offer_range(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_token_id_below_offer_range(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -195,7 +199,9 @@ def test_create_loan_reverts_if_token_id_below_offer_range(p2p_nfts_usdc, borrow
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_token_id_above_offer_range(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_token_id_above_offer_range(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -220,7 +226,9 @@ def test_create_loan_reverts_if_token_id_above_offer_range(p2p_nfts_usdc, borrow
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_token_id_not_in_list(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_token_id_not_in_list(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -269,7 +277,9 @@ def test_create_loan_reverts_if_offer_is_revoked(p2p_nfts_usdc, borrower, now, l
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_offer_exceeds_count(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_offer_exceeds_count(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -321,7 +331,9 @@ def test_create_loan_reverts_if_origination_fee_exceeds_principal(
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_broker_fee_without_address(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_broker_fee_without_address(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -344,7 +356,9 @@ def test_create_loan_reverts_if_broker_fee_without_address(p2p_nfts_usdc, borrow
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_collateral_not_approved_erc721(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_collateral_not_approved_erc721(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     principal = 1000
     offer = Offer(
@@ -402,7 +416,9 @@ def test_create_loan_reverts_if_collateral_not_approved_punks(
         p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
-def test_create_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_reverts_if_lender_funds_not_approved(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     principal = 1000
     offer = Offer(
@@ -430,25 +446,17 @@ def test_create_loan_reverts_if_lender_funds_not_approved(p2p_nfts_usdc, borrowe
 
 
 def test_create_loan_reverts_if_token_not_in_trait(
-    p2p_nfts_usdc,
-    p2p_control,
-    borrower,
-    now,
-    lender,
-    lender_key,
-    bayc,
-    usdc,
-    debug_precompile,
-    traits,
-    bayc_key_hash
+    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc, debug_precompile, traits, bayc_key_hash
 ):
     token_id = 1
-    tree = TokenTraitTree([
-        (bayc.address, trait_name, trait_value, token_id + 1 + i)
-        for i in range(10)
-        for trait_name, trait_values in traits.items()
-        for trait_value in trait_values
-    ])
+    tree = TokenTraitTree(
+        [
+            (bayc.address, trait_name, trait_value, token_id + 1 + i)
+            for i in range(10)
+            for trait_name, trait_values in traits.items()
+            for trait_value in trait_values
+        ]
+    )
     trait_name, trait_value = next((k, v[0]) for k, v in traits.items())
     principal = 1000
     offer = Offer(
@@ -528,14 +536,18 @@ def test_create_loan(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bay
     assert compute_loan_hash(loan) == p2p_nfts_usdc.loans(loan_id)
 
 
-def test_create_loan_with_trait_offer(p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc, traits, bayc_key_hash, debug_precompile):
+def test_create_loan_with_trait_offer(
+    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc, traits, bayc_key_hash, debug_precompile
+):
     token_id = 1
-    tree = TokenTraitTree([
-        (bayc.address, trait_name, trait_value, token_id + i)
-        for i in range(100)
-        for trait_name, trait_values in traits.items()
-        for trait_value in trait_values
-    ])
+    tree = TokenTraitTree(
+        [
+            (bayc.address, trait_name, trait_value, token_id + i)
+            for i in range(100)
+            for trait_name, trait_values in traits.items()
+            for trait_value in trait_values
+        ]
+    )
     trait_name, trait_value = next((k, v[0]) for k, v in traits.items())
     principal = 1000
     offer = Offer(
@@ -564,22 +576,7 @@ def test_create_loan_with_trait_offer(p2p_nfts_usdc, p2p_control, borrower, now,
     p2p_control.change_collections_trait_roots([(bayc_key_hash, tree.root())], sender=p2p_nfts_usdc.owner())
     proof = tree.proof(TokenTraitTree.token_node(bayc.address, trait_name, trait_value, token_id))
 
-
-    # token_node = TokenTraitTree.token_node(trait_name, trait_value, token_id)
-    # print(f"{[p.hex() for p in proof]=}")
-    # print(f"{tree.root().hex()=}")
-    # print(f"{p2p_nfts_usdc.collection_trait_roots(bayc_key_hash).hex()=}")
-    # print(f"{token_node.hex()=}")
-    # _hash = token_node
-    # print(f"{_hash.hex()=}")
-    # for p in proof:
-    #     _hash = TokenTraitTree._merge(_hash, p)
-    #     print(f"{_hash.hex()=}")
-
-
     loan_id = p2p_nfts_usdc.create_loan(signed_offer, token_id, proof, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
-
-    # assert len(trait_tree.proof(token_id)) == 1
 
     loan = Loan(
         id=loan_id,
@@ -648,7 +645,9 @@ def test_create_loan_logs_event(p2p_nfts_usdc, borrower, now, lender, lender_key
     assert event.pro_rata == offer.pro_rata
 
 
-def test_create_loan_creates_delegation(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc, delegation_registry):
+def test_create_loan_creates_delegation(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc, delegation_registry
+):
     token_id = 1
     principal = 1000
     delegate = boa.env.generate_address("delegate")
@@ -678,7 +677,9 @@ def test_create_loan_creates_delegation(p2p_nfts_usdc, borrower, now, lender, le
     assert delegation_registry.checkDelegateForERC721(delegate, p2p_nfts_usdc.address, bayc.address, token_id, b"")
 
 
-def test_create_loan_transfers_collateral_to_escrow(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_transfers_collateral_to_escrow(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     principal = 1000
     bayc.mint(borrower, token_id)
@@ -707,7 +708,9 @@ def test_create_loan_transfers_collateral_to_escrow(p2p_nfts_usdc, borrower, now
     assert bayc.ownerOf(token_id) == p2p_nfts_usdc.address
 
 
-def test_create_loan_transfers_principal_to_borrower(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_transfers_principal_to_borrower(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     principal = 1000
     origination_fee = 100
@@ -738,7 +741,9 @@ def test_create_loan_transfers_principal_to_borrower(p2p_nfts_usdc, borrower, no
     assert usdc.balanceOf(borrower) == initial_borrower_balance + principal - origination_fee
 
 
-def test_create_loan_transfers_origination_fee_to_lender(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
+def test_create_loan_transfers_origination_fee_to_lender(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc
+):
     token_id = 1
     principal = 1000
     origination_fee = 100

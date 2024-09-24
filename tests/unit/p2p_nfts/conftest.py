@@ -1,11 +1,9 @@
-from textwrap import dedent
+from hashlib import sha3_256
 
 import boa
 import pytest
-from eth_utils import decode_hex
-from hashlib import sha3_256
 
-from ...conftest_base import ZERO_ADDRESS, CollectionContract
+from ...conftest_base import CollectionContract
 
 
 @pytest.fixture(scope="module")
@@ -41,10 +39,9 @@ def punks_key_hash():
 @pytest.fixture
 def p2p_control(p2p_lending_control_contract_def, owner, cryptopunks, bayc, bayc_key_hash, punks_key_hash):
     p2p_control = p2p_lending_control_contract_def.deploy()
-    p2p_control.change_collections_contracts([
-        CollectionContract(punks_key_hash, cryptopunks.address),
-        CollectionContract(bayc_key_hash, bayc.address)
-    ])
+    p2p_control.change_collections_contracts(
+        [CollectionContract(punks_key_hash, cryptopunks.address), CollectionContract(bayc_key_hash, bayc.address)]
+    )
     return p2p_control
 
 
@@ -71,7 +68,7 @@ def traits():
             "imaginative",
             "traditional",
             "prefer routine",
-            "practical"
+            "practical",
         ],
         "conscientiousness": [
             "organized",
@@ -83,7 +80,7 @@ def traits():
             "lazy",
             "impulsive",
             "careless",
-            "easy-going"
+            "easy-going",
         ],
         "extraversion": [
             "outgoing",
@@ -95,7 +92,7 @@ def traits():
             "reserved",
             "shy",
             "quiet",
-            "solitary"
+            "solitary",
         ],
         "agreeableness": [
             "friendly",
@@ -107,7 +104,7 @@ def traits():
             "critical",
             "uncooperative",
             "suspicious",
-            "competitive"
+            "competitive",
         ],
         "neuroticism": [
             "sensitive",
@@ -119,8 +116,6 @@ def traits():
             "stable",
             "calm",
             "confident",
-            "resilient"
-        ]
+            "resilient",
+        ],
     }
-
-
