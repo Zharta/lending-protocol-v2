@@ -229,6 +229,14 @@ event ProxyAuthorizationChanged:
     proxy: address
     value: bool
 
+event TransferFailed:
+    _to: address
+    amount: uint256
+
+event PendingTransfersClaimed:
+    _to: address
+    amount: uint256
+
 
 # Global variables
 
@@ -248,6 +256,7 @@ offer_count: public(HashMap[bytes32, uint256])
 revoked_offers: public(HashMap[bytes32, bool])
 
 authorized_proxies: public(HashMap[address, bool])
+pending_transfers: public(HashMap[address, uint256])
 
 VERSION: constant(String[30]) = "P2PLendingNfts.20240916"
 
@@ -801,6 +810,17 @@ def revoke_offer(offer: SignedOffer):
     )
 
 
+@external
+def claim_pending_transfers():
+    assert self.pending_transfers[msg.sender] > 0, "no pending transfers"
+    _amount: uint256 = self.pending_transfers[msg.sender]
+    self.pending_transfers[msg.sender] = 0
+
+    assert IERC20(payment_token).transfer(msg.sender, _amount), "error sending funds"
+    log PendingTransfersClaimed(msg.sender, _amount)
+
+
+
 @view
 @external
 def onERC721Received(_operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]) -> bytes4:
@@ -999,7 +1019,19 @@ def _transfer_collateral(wallet: address, collateral_contract: address, token_id
 
 @internal
 def _send_funds(_to: address, _amount: uint256):
-    assert IERC20(payment_token).transfer(_to, _amount), "error sending funds"
+    success: bool = False
+    response: Bytes[32] = b""
+
+    success, response = raw_call(
+        payment_token,
+        _abi_encode(_to, _amount, method_id=method_id("transfer(address,uint256)")),
+        max_outsize=32,
+        revert_on_failure=False
+    )
+
+    if not success and convert(response, bool):
+        log TransferFailed(_to, _amount)
+        self.pending_transfers[_to] += _amount
 
 
 @internal
