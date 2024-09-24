@@ -836,6 +836,40 @@ def test_replace_loan_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_bayc, usdc,
     )
 
 
+def test_replace_loan_transfer_failures_keeps_pending_transfer(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, usdc):
+    loan = ongoing_loan_bayc
+    offer = offer_bayc2.offer
+    borrower = ongoing_loan_bayc.borrower
+    lender = ongoing_loan_bayc.lender
+    new_lender = offer.lender
+    principal = offer.principal
+    interest = loan.interest
+    protocol_fee_amount = interest * ongoing_loan_bayc.get_protocol_fee().settlement_bps // 10000
+    broker_fee_amount = interest * ongoing_loan_bayc.get_lender_broker_fee().settlement_bps // 10000
+    lender_fee_amount = interest * ongoing_loan_bayc.get_borrower_broker_fee().settlement_bps // 10000
+    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
+    amount_to_receive = loan.amount + interest - protocol_fee_amount - broker_fee_amount - lender_fee_amount
+
+    initial_lender_balance = usdc.balanceOf(lender)
+
+    usdc.approve(
+        p2p_nfts_usdc.address, principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount, sender=new_lender
+    )
+
+    usdc.blacklist(lender, True)
+    usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
+
+    assert usdc.balanceOf(loan.lender) == initial_lender_balance
+    assert p2p_nfts_usdc.pending_transfers(loan.lender) == amount_to_receive
+
+    usdc.blacklist(lender, False)
+    p2p_nfts_usdc.claim_pending_transfers(sender=loan.lender)
+
+    assert p2p_nfts_usdc.pending_transfers(loan.lender) == 0
+    assert usdc.balanceOf(loan.lender) == initial_lender_balance + amount_to_receive
+
+
 def test_replace_loan_prorata_reverts_if_funds_not_approved(p2p_nfts_usdc, ongoing_loan_prorata, usdc):
     loan = ongoing_loan_prorata
     loan_duration = loan.maturity - loan.start_time

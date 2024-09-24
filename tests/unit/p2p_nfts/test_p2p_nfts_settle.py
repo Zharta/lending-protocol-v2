@@ -635,7 +635,7 @@ def test_settle_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pror
     assert usdc.balanceOf(p2p_nfts_usdc.protocol_wallet()) == initial_protocol_wallet_balance + protocol_fee_amount
 
 
-def test_settle_loan_fails_on_erc20_transfer_fail(
+def test_settle_loan_creates_pending_transfer_on_erc20_transfer_fail(
     p2p_lending_nfts_contract_def,
     p2p_control,
     weth,
@@ -708,5 +708,26 @@ def test_settle_loan_fails_on_erc20_transfer_fail(
     )
     assert compute_loan_hash(loan) == p2p_nfts_erc20.loans(loan_id)
 
-    with boa.reverts("error sending funds"):
-        p2p_nfts_erc20.settle_loan(loan, sender=loan.borrower)
+    p2p_nfts_erc20.settle_loan(loan, sender=loan.borrower)
+
+    assert p2p_nfts_erc20.pending_transfers(lender) == loan.amount + loan.interest
+
+
+def test_claim_pending_transactions(p2p_nfts_usdc, usdc):
+    user = boa.env.generate_address()
+    value = 10**6
+
+    p2p_nfts_usdc.eval(f"self.pending_transfers[{user}] = {value}")
+    boa.env.set_balance(p2p_nfts_usdc.address, value)
+    usdc.deposit(value=value, sender=p2p_nfts_usdc.address)
+
+    assert usdc.balanceOf(user) == 0
+    assert p2p_nfts_usdc.pending_transfers(user) == value
+
+    p2p_nfts_usdc.claim_pending_transfers(sender=user)
+
+    assert usdc.balanceOf(user) == value
+    assert p2p_nfts_usdc.pending_transfers(user) == 0
+
+    with boa.reverts("no pending transfers"):
+        p2p_nfts_usdc.claim_pending_transfers(sender=user)

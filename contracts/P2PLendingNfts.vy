@@ -1029,7 +1029,7 @@ def _send_funds(_to: address, _amount: uint256):
         revert_on_failure=False
     )
 
-    if not success and convert(response, bool):
+    if not success or not convert(response, bool):
         log TransferFailed(_to, _amount)
         self.pending_transfers[_to] += _amount
 
