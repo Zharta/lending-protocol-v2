@@ -102,7 +102,7 @@ class Offer(NamedTuple):
     broker_upfront_fee_amount: int = 0
     broker_settlement_fee_bps: int = 0
     broker_address: str = ZERO_ADDRESS
-    collateral_contract: str = ZERO_ADDRESS
+    # collateral_contract: str = ZERO_ADDRESS
     offer_type: OfferType = OfferType.TOKEN
     token_id: int = 0
     token_range_min: int = 0
@@ -210,7 +210,7 @@ PunkOffer = namedtuple(
 )
 
 
-WhitelistRecord = namedtuple("WhitelistRecord", ["collection", "whitelisted"], defaults=[ZERO_ADDRESS, False])
+CollectionContract = namedtuple("CollectionContract", ["collection", "contract"], defaults=[ZERO_BYTES32, ZERO_ADDRESS])
 
 
 def compute_loan_hash(loan: Loan):
@@ -255,7 +255,6 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
                 {"name": "broker_upfront_fee_amount", "type": "uint256"},
                 {"name": "broker_settlement_fee_bps", "type": "uint256"},
                 {"name": "broker_address", "type": "address"},
-                {"name": "collateral_contract", "type": "address"},
                 {"name": "offer_type", "type": "uint256"},
                 {"name": "token_id", "type": "uint256"},
                 {"name": "token_range_min", "type": "uint256"},
@@ -330,7 +329,7 @@ def get_loan_mutations(loan):
 
 class TokenTraitTree:
 
-    def __init__(self, token_with_traits: list[tuple[str, str, int]]):
+    def __init__(self, token_with_traits: list[tuple[str, str, str, int]]):
         self.token_nodes = sorted(set(starmap(self.token_node, token_with_traits)))
         size = len(self.token_nodes)
         self.proofs = [ZERO_BYTES32] * size + self.token_nodes
@@ -356,12 +355,14 @@ class TokenTraitTree:
         h1 = keccak(b1)
         h2 = keccak(b2)
         return keccak(bytes(h1[i] ^ h2[i] for i in range(32)))
-        # return bytes(b1[i] ^ b2[i] for i in range(len(b1)))
 
     @staticmethod
     def trait_hash(trait_name, trait_value):
         return sha3_256(sha3_256(trait_name.encode()).digest() + sha3_256(trait_value.encode()).digest()).digest()
 
     @staticmethod
-    def token_node(trait_name, trait_value, token_id):
-        return keccak(encode(["bytes32", "uint256"], [TokenTraitTree.trait_hash(trait_name, trait_value), token_id]))
+    def token_node(contract, trait_name, trait_value, token_id):
+        return keccak(encode(
+            ["address", "bytes32", "uint256"],
+            [contract, TokenTraitTree.trait_hash(trait_name, trait_value), token_id]
+        ))

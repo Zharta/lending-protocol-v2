@@ -44,12 +44,12 @@ interface CryptoPunksMarket:
 interface DelegationRegistry:
     def delegateERC721(delegate: address, contract: address, token_id: uint256, rights: bytes32, _value: bool) -> bytes32: nonpayable
 
+interface P2PLendingControl:
+    def get_collection_status(collection_key_hash: bytes32) -> CollectionStatus: nonpayable
 
 # Structs
 
 PROOF_MAX_SIZE: constant(uint256) = 32
-WHITELIST_BATCH: constant(uint256) = 100
-TRAIT_ROOT_BATCH: constant(uint256) = 128
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
@@ -84,7 +84,6 @@ struct Offer:
     broker_upfront_fee_amount: uint256
     broker_settlement_fee_bps: uint256
     broker_address: address
-    collateral_contract: address
     offer_type: OfferType
     token_id: uint256
     token_range_min: uint256
@@ -121,13 +120,9 @@ struct Loan:
     pro_rata: bool
 
 
-struct WhitelistRecord:
-    collection: address
-    whitelisted: bool
-
-struct TraitRoot:
-    collection_key_hash: bytes32
-    root_hash: bytes32
+struct CollectionStatus:
+    contract: address
+    trait_root: bytes32
 
 struct PunkOffer:
     isForSale: bool
@@ -209,7 +204,7 @@ event LoanCollateralClaimed:
 event OfferRevoked:
     offer_id: bytes32
     lender: address
-    collateral_contract: address
+    collection_key_hash: bytes32
     offer_type: OfferType
 
 event OwnerProposed:
@@ -234,11 +229,6 @@ event ProxyAuthorizationChanged:
     proxy: address
     value: bool
 
-event WhitelistChanged:
-    changed: DynArray[WhitelistRecord, WHITELIST_BATCH]
-
-event TraitRootChanged:
-    changed: DynArray[TraitRoot, TRAIT_ROOT_BATCH]
 
 # Global variables
 
@@ -249,6 +239,7 @@ payment_token: public(immutable(address))
 loans: public(HashMap[bytes32, bytes32])
 delegation_registry: public(immutable(DelegationRegistry))
 cryptopunks: public(immutable(CryptoPunksMarket))
+p2p_control: public(immutable(P2PLendingControl))
 
 protocol_wallet: public(address)
 protocol_upfront_fee: public(uint256)
@@ -257,13 +248,6 @@ offer_count: public(HashMap[bytes32, uint256])
 revoked_offers: public(HashMap[bytes32, bool])
 
 authorized_proxies: public(HashMap[address, bool])
-whitelisted: public(HashMap[address, bool])
-
-# leafs are calculated as keccak256(_abi_encode(trait_hash, token_id))
-# all valid (trait, token_id) pairs are stored in the tree and the root 
-# is stored in the contract for each collection. 
-# The collection key is hashed and must match the collection key hash in the offer.
-collection_trait_roots: public(HashMap[bytes32, bytes32])
 
 VERSION: constant(String[30]) = "P2PLendingNfts.20240916"
 
@@ -271,8 +255,8 @@ ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
 
 DOMAIN_TYPE_HASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-OFFER_TYPE_DEF: constant(String[422]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
-                                        "uint256 broker_upfront_fee_amount,uint256 broker_settlement_fee_bps,address broker_address,address collateral_contract," \
+OFFER_TYPE_DEF: constant(String[394]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
+                                        "uint256 broker_upfront_fee_amount,uint256 broker_settlement_fee_bps,address broker_address," \
                                         "uint256 offer_type,uint256 token_id,uint256 token_range_min,uint256 token_range_max,bytes32 collection_key_hash," \
                                         "bytes32 trait_hash,uint256 expiration,address lender,bool pro_rata,uint256 size)"
 OFFER_TYPE_HASH: constant(bytes32) = keccak256(OFFER_TYPE_DEF)
@@ -283,6 +267,7 @@ offer_sig_domain_separator: immutable(bytes32)
 @external
 def __init__(
     _payment_token: address,
+    _p2p_control: address,
     _delegation_registry: address,
     _cryptopunks: address,
     _protocol_upfront_fee: uint256,
@@ -302,9 +287,11 @@ def __init__(
 
     assert _protocol_wallet != empty(address), "wallet is the zero address"
     assert _payment_token != empty(address), "payment token is zero"
+    assert _p2p_control != empty(address), "p2p control is zero"
 
     self.owner = msg.sender
     payment_token = _payment_token
+    p2p_control = P2PLendingControl(_p2p_control)
     delegation_registry = DelegationRegistry(_delegation_registry)
     cryptopunks = CryptoPunksMarket(_cryptopunks)
     self.protocol_upfront_fee = _protocol_upfront_fee
@@ -407,30 +394,6 @@ def claim_ownership():
     self.proposed_owner = empty(address)
 
 
-@external
-def change_whitelisted_collections(collections: DynArray[WhitelistRecord, WHITELIST_BATCH]):
-    """
-    @notice Set whitelisted collections
-    @param collections array of WhitelistRecord
-    """
-    assert msg.sender == self.owner, "sender not owner"
-    for c in collections:
-        self.whitelisted[c.collection] = c.whitelisted
-
-    log WhitelistChanged(collections)
-
-@external
-def change_collections_trait_roots(roots: DynArray[TraitRoot, TRAIT_ROOT_BATCH]):
-    """
-    @notice Set trait roots
-    @param roots array of bytes32
-    """
-    assert msg.sender == self.owner, "sender not owner"
-    for r in roots:
-        self.collection_trait_roots[r.collection_key_hash] = r.root_hash
-
-    log TraitRootChanged(roots)
-
 # Core functions
 
 @external
@@ -461,8 +424,8 @@ def create_loan(
     assert offer.offer.payment_token == payment_token, "invalid payment token"
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
 
-    assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
-    self._validate_token_ids(offer.offer, collateral_token_id, collateral_proof)
+    collection_status: CollectionStatus = p2p_control.get_collection_status(offer.offer.collection_key_hash)
+    self._validate_token_ids(offer.offer, collateral_token_id, collection_status, collateral_proof)
 
     fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_upfront_fee_amount, borrower_broker_settlement_fee_bps, borrower_broker)
     total_upfront_fees: uint256 = 0
@@ -478,7 +441,7 @@ def create_loan(
         start_time: block.timestamp,
         borrower: msg.sender if not self.authorized_proxies[msg.sender] else tx.origin,
         lender: offer.offer.lender,
-        collateral_contract: offer.offer.collateral_contract,
+        collateral_contract: collection_status.contract,
         collateral_token_id: collateral_token_id,
         fees: fees,
         pro_rata: offer.offer.pro_rata
@@ -609,10 +572,9 @@ def replace_loan(
     assert offer.offer.payment_token == payment_token, "invalid payment token"
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
 
-    assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
-
-    self._validate_token_ids(offer.offer, loan.collateral_token_id, collateral_proof)
-    assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
+    collection_status: CollectionStatus = p2p_control.get_collection_status(offer.offer.collection_key_hash)
+    self._validate_token_ids(offer.offer, loan.collateral_token_id, collection_status, collateral_proof)
+    assert collection_status.contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
 
@@ -664,7 +626,7 @@ def replace_loan(
         start_time: block.timestamp,
         borrower: loan.borrower,
         lender: offer.offer.lender,
-        collateral_contract: offer.offer.collateral_contract,
+        collateral_contract: collection_status.contract,
         collateral_token_id: loan.collateral_token_id,
         fees: new_loan_fees,
         pro_rata: offer.offer.pro_rata
@@ -718,10 +680,9 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArr
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
     assert block.timestamp + offer.offer.duration >= loan.maturity, "maturity before loan maturity"
 
-    assert self.whitelisted[offer.offer.collateral_contract], "collateral not whitelisted"
-
-    self._validate_token_ids(offer.offer, loan.collateral_token_id, collateral_proof)
-    assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
+    collection_status: CollectionStatus = p2p_control.get_collection_status(offer.offer.collection_key_hash)
+    self._validate_token_ids(offer.offer, loan.collateral_token_id, collection_status, collateral_proof)
+    assert collection_status.contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
 
@@ -781,7 +742,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArr
         start_time: block.timestamp,
         borrower: loan.borrower,
         lender: offer.offer.lender,
-        collateral_contract: offer.offer.collateral_contract,
+        collateral_contract: collection_status.contract,
         collateral_token_id: loan.collateral_token_id,
         fees: new_loan_fees,
         pro_rata: offer.offer.pro_rata
@@ -835,7 +796,7 @@ def revoke_offer(offer: SignedOffer):
     log OfferRevoked(
         offer_id,
         offer.offer.lender,
-        offer.offer.collateral_contract,
+        offer.offer.collection_key_hash,
         offer.offer.offer_type,
     )
 
@@ -1108,16 +1069,23 @@ def _check_user(user: address) -> bool:
     return msg.sender == user or (self.authorized_proxies[msg.sender] and user == tx.origin)
 
 @internal
-def _validate_token_ids(offer: Offer, collateral_token_id: uint256, collateral_proof: DynArray[bytes32, PROOF_MAX_SIZE]):
+def _validate_token_ids(
+    offer: Offer,
+    collateral_token_id: uint256,
+    collection_status: CollectionStatus,
+    collateral_proof: DynArray[bytes32, PROOF_MAX_SIZE]
+):
+    assert collection_status.contract != empty(address), "collateral not whitelisted"
     if offer.offer_type == OfferType.TOKEN:
         assert offer.token_id == collateral_token_id, "token id not in offer"
     elif offer.offer_type == OfferType.COLLECTION:
         assert collateral_token_id >= offer.token_range_min, "tokenid below offer range"
         assert collateral_token_id <= offer.token_range_max, "tokenid above offer range"
     else:
-        _hash: bytes32 = keccak256(_abi_encode(offer.trait_hash, collateral_token_id))
+        _hash: bytes32 = keccak256(_abi_encode(collection_status.contract, offer.trait_hash, collateral_token_id))
         # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_hash))
         for p in collateral_proof:
             _hash = keccak256(_abi_encode(convert(keccak256(_hash), uint256) ^ convert(keccak256(p), uint256)))
             # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(_hash))
-        assert self.collection_trait_roots[offer.collection_key_hash] == _hash, "proof invalid"
+        # assert self.collection_trait_roots[offer.collection_key_hash] == _hash, "proof invalid"
+        assert collection_status.trait_root == _hash, "proof invalid"

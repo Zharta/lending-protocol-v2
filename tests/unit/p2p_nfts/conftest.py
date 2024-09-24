@@ -5,7 +5,7 @@ import pytest
 from eth_utils import decode_hex
 from hashlib import sha3_256
 
-from ...conftest_base import ZERO_ADDRESS, WhitelistRecord
+from ...conftest_base import ZERO_ADDRESS, CollectionContract
 
 
 @pytest.fixture(scope="module")
@@ -29,10 +29,28 @@ def delegation_registry(delegation_registry_contract_def, owner):
 
 
 @pytest.fixture
-def p2p_nfts_usdc(p2p_lending_nfts_contract_def, max_lock_expiration, usdc, delegation_registry, bayc, cryptopunks, owner):
-    contract = p2p_lending_nfts_contract_def.deploy(usdc, delegation_registry, cryptopunks, 0, 0, owner)
-    contract.change_whitelisted_collections([WhitelistRecord(cryptopunks.address, True), WhitelistRecord(bayc.address, True)])
-    return contract
+def bayc_key_hash():
+    return sha3_256(b"bayc").digest()
+
+
+@pytest.fixture
+def punks_key_hash():
+    return sha3_256(b"cryptopunks").digest()
+
+
+@pytest.fixture
+def p2p_control(p2p_lending_control_contract_def, owner, cryptopunks, bayc, bayc_key_hash, punks_key_hash):
+    p2p_control = p2p_lending_control_contract_def.deploy()
+    p2p_control.change_collections_contracts([
+        CollectionContract(punks_key_hash, cryptopunks.address),
+        CollectionContract(bayc_key_hash, bayc.address)
+    ])
+    return p2p_control
+
+
+@pytest.fixture
+def p2p_nfts_usdc(p2p_lending_nfts_contract_def, usdc, delegation_registry, cryptopunks, owner, p2p_control):
+    return p2p_lending_nfts_contract_def.deploy(usdc, p2p_control, delegation_registry, cryptopunks, 0, 0, owner)
 
 
 @pytest.fixture
@@ -106,6 +124,3 @@ def traits():
     }
 
 
-@pytest.fixture
-def bayc_key_hash():
-    return sha3_256("bayc".encode()).digest()

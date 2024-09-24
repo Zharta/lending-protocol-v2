@@ -35,7 +35,7 @@ def borrower_broker_fee(borrower_broker):
 
 
 @pytest.fixture
-def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc):
+def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc, bayc_key_hash):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -46,7 +46,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc):
         broker_upfront_fee_amount=15,
         broker_settlement_fee_bps=2000,
         broker_address=broker,
-        collateral_contract=bayc.address,
+        collection_key_hash=bayc_key_hash,
         token_id=token_id,
         expiration=now + 100,
         lender=lender,
@@ -99,7 +99,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 
 
 @pytest.fixture
-def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_usdc, usdc):
+def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_usdc, usdc, punks_key_hash):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -110,7 +110,7 @@ def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_usdc, usdc
         broker_upfront_fee_amount=15,
         broker_settlement_fee_bps=2000,
         broker_address=broker,
-        collateral_contract=cryptopunks.address,
+        collection_key_hash=punks_key_hash,
         token_id=token_id,
         expiration=now + 100,
         lender=lender,
