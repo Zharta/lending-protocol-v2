@@ -3,6 +3,7 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import IntEnum
 from functools import cached_property
+from hashlib import sha3_256
 from itertools import starmap
 from textwrap import dedent
 from typing import NamedTuple
@@ -18,15 +19,12 @@ from eth_account import Account
 from eth_account.messages import encode_intended_validator, encode_structured_data
 from eth_utils import encode_hex, keccak
 from web3 import Web3
-from hashlib import sha3_256
 
 ZERO_ADDRESS = boa.eval("empty(address)")
 ZERO_BYTES32 = boa.eval("empty(bytes32)")
 
 
 def get_last_event(contract: VyperContract, name: str | None = None):
-    # print("CONTRACT LOGS", contract.get_logs())
-    # print("\n\n\n")
     matching_events = [e for e in contract.get_logs() if isinstance(e, Event) and (name is None or name == e.event_type.name)]
     return EventWrapper(matching_events[-1])
 
@@ -50,7 +48,6 @@ class EventWrapper:
 
     @cached_property
     def args_dict(self):
-        # print(f"{self.event=} {self.event.event_type.arguments=}")
         args = self.event.event_type.arguments.keys()
         indexed = self.event.event_type.indexed
         topic_values = (v for v in self.event.topics)
@@ -60,7 +57,6 @@ class EventWrapper:
         return {k: self._format_value(v, self.event.event_type.arguments[k]) for k, v in _args}
 
     def _format_value(self, v, _type):  # noqa: PLR6301
-        # print(f"_format_value {v=} {_type=} {type(v).__name__=} {type(_type)=}")
         if isinstance(_type, vyper.semantics.types.primitives.AddressT):
             return Web3.to_checksum_address(v)
         if isinstance(_type, vyper.semantics.types.primitives.BytesT):
@@ -102,7 +98,6 @@ class Offer(NamedTuple):
     broker_upfront_fee_amount: int = 0
     broker_settlement_fee_bps: int = 0
     broker_address: str = ZERO_ADDRESS
-    # collateral_contract: str = ZERO_ADDRESS
     offer_type: OfferType = OfferType.TOKEN
     token_id: int = 0
     token_range_min: int = 0
@@ -328,7 +323,6 @@ def get_loan_mutations(loan):
 
 
 class TokenTraitTree:
-
     def __init__(self, token_with_traits: list[tuple[str, str, str, int]]):
         self.token_nodes = sorted(set(starmap(self.token_node, token_with_traits)))
         size = len(self.token_nodes)
@@ -362,7 +356,6 @@ class TokenTraitTree:
 
     @staticmethod
     def token_node(contract, trait_name, trait_value, token_id):
-        return keccak(encode(
-            ["address", "bytes32", "uint256"],
-            [contract, TokenTraitTree.trait_hash(trait_name, trait_value), token_id]
-        ))
+        return keccak(
+            encode(["address", "bytes32", "uint256"], [contract, TokenTraitTree.trait_hash(trait_name, trait_value), token_id])
+        )
