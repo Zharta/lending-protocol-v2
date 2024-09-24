@@ -16,6 +16,7 @@ def collections():
 
 def test_initial_state(
     p2p_nfts_usdc,
+    p2p_control,
     weth,
     usdc,
     delegation_registry,
@@ -24,11 +25,14 @@ def test_initial_state(
 ):
     assert p2p_nfts_usdc.owner() == owner
     assert p2p_nfts_usdc.payment_token() == usdc.address
+    assert p2p_nfts_usdc.p2p_control() == p2p_control.address
     assert p2p_nfts_usdc.delegation_registry() == delegation_registry.address
     assert p2p_nfts_usdc.cryptopunks() == cryptopunks.address
     assert p2p_nfts_usdc.protocol_upfront_fee() == 0
     assert p2p_nfts_usdc.protocol_settlement_fee() == 0
     assert p2p_nfts_usdc.protocol_wallet() == owner
+
+    assert p2p_control.owner() == owner
 
 
 def test_set_protocol_fee_reverts_if_not_owner(p2p_nfts_usdc):
@@ -137,6 +141,33 @@ def test_propose_owner_logs_event(p2p_nfts_usdc, owner):
     new_owner = boa.env.generate_address("new_owner")
     p2p_nfts_usdc.propose_owner(new_owner, sender=owner)
     event = get_last_event(p2p_nfts_usdc, "OwnerProposed")
+
+    assert event.owner == owner
+    assert event.proposed_owner == new_owner
+
+
+def test_p2p_control_propose_owner_reverts_if_wrong_caller(p2p_control):
+    new_owner = boa.env.generate_address("new_owner")
+    with boa.reverts("not owner"):
+        p2p_control.propose_owner(new_owner, sender=new_owner)
+
+
+def test_p2p_control_propose_owner_reverts_if_zero_address(p2p_control, owner):
+    with boa.reverts("address is zero"):
+        p2p_control.propose_owner(ZERO_ADDRESS, sender=owner)
+
+
+def test_p2p_control_propose_owner(p2p_control, owner):
+    new_owner = boa.env.generate_address("new_owner")
+    p2p_control.propose_owner(new_owner, sender=owner)
+
+    assert p2p_control.proposed_owner() == new_owner
+
+
+def test_p2p_control_propose_owner_logs_event(p2p_control, owner):
+    new_owner = boa.env.generate_address("new_owner")
+    p2p_control.propose_owner(new_owner, sender=owner)
+    event = get_last_event(p2p_control, "OwnerProposed")
 
     assert event.owner == owner
     assert event.proposed_owner == new_owner
