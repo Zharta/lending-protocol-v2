@@ -51,6 +51,8 @@ class P2PLendingNfts(ContractConfig):
         protocol_upfront_fee: int,
         protocol_settlement_fee: int,
         protocol_wallet: str,
+        max_protocol_upfront_fee: int,
+        max_protocol_settlement_fee: int,
     ):
         payment_token_deps = [payment_token_key] if payment_token_key else []
         super().__init__(
@@ -67,6 +69,8 @@ class P2PLendingNfts(ContractConfig):
                 protocol_upfront_fee,
                 protocol_settlement_fee,
                 protocol_wallet,
+                max_protocol_upfront_fee,
+                max_protocol_settlement_fee,
             ],
         )
         if address:
