@@ -12,7 +12,6 @@ FOREVER = 2**256 - 1
 @pytest.fixture
 def collections():
     return {sha3_256(f"{i}".encode()).digest(): "0x" + str(i) * 40 for i in range(1, 6)}
-    # return ["0x" + str(i) * 40 for i in range(1, 6)]
 
 
 def test_initial_state(
@@ -39,6 +38,14 @@ def test_initial_state(
 def test_set_protocol_fee_reverts_if_not_owner(p2p_nfts_usdc):
     with boa.reverts("not owner"):
         p2p_nfts_usdc.set_protocol_fee(1, 1, sender=boa.env.generate_address("random"))
+
+
+def test_set_protocol_fee_reverts_if_gt_max(p2p_nfts_usdc, owner):
+    with boa.reverts("upfront fee exceeds max"):
+        p2p_nfts_usdc.set_protocol_fee(p2p_nfts_usdc.max_protocol_upfront_fee() + 1, 0, sender=owner)
+
+    with boa.reverts("settlement fee exceeds max"):
+        p2p_nfts_usdc.set_protocol_fee(0, p2p_nfts_usdc.max_protocol_settlement_fee() + 1, sender=owner)
 
 
 def test_set_protocol_fee(p2p_nfts_usdc, owner):

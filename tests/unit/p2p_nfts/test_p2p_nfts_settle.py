@@ -661,7 +661,9 @@ def test_settle_loan_creates_pending_transfer_on_erc20_transfer_fail(
 
             """)
     erc20 = boa.loads(failing_erc20_code)
-    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(erc20, p2p_control, delegation_registry, cryptopunks, 0, 0, owner)
+    p2p_nfts_erc20 = p2p_lending_nfts_contract_def.deploy(
+        erc20, p2p_control, delegation_registry, cryptopunks, 0, 0, owner, 0, 0
+    )
     p2p_control.change_collections_contracts([CollectionContract(bayc_key_hash, bayc.address)])
 
     token_id = 1
