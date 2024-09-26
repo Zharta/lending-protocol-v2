@@ -302,6 +302,8 @@ def __init__(
     assert _protocol_wallet != empty(address), "wallet is the zero address"
     assert _payment_token != empty(address), "payment token is zero"
     assert _p2p_control != empty(address), "p2p control is zero"
+    assert _delegation_registry != empty(address), "delegation registry is zero"
+    assert _cryptopunks != empty(address), "cryptopunks is zero"
 
     assert _protocol_upfront_fee <= _max_protocol_upfront_fee, "upfront fee exceeds max"
     assert _protocol_settlement_fee <= _max_protocol_settlement_fee, "settlement fee exceeds max"
