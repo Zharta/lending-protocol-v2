@@ -243,6 +243,9 @@ cryptopunks: public(immutable(CryptoPunksMarket))
 protocol_wallet: public(address)
 protocol_upfront_fee: public(uint256)
 protocol_settlement_fee: public(uint256)
+max_protocol_upfront_fee: public(immutable(uint256))
+max_protocol_settlement_fee: public(immutable(uint256))
+
 offer_count: public(HashMap[bytes32, uint256])
 revoked_offers: public(HashMap[bytes32, bool])
 
@@ -270,7 +273,9 @@ def __init__(
     _cryptopunks: address,
     _protocol_upfront_fee: uint256,
     _protocol_settlement_fee: uint256,
-    _protocol_wallet: address
+    _protocol_wallet: address,
+    _max_protocol_upfront_fee: uint256,
+    _max_protocol_settlement_fee: uint256,
 ):
 
     """
@@ -286,10 +291,15 @@ def __init__(
     assert _protocol_wallet != empty(address), "wallet is the zero address"
     assert _payment_token != empty(address), "payment token is zero"
 
+    assert _protocol_upfront_fee <= _max_protocol_upfront_fee, "upfront fee exceeds max"
+    assert _protocol_settlement_fee <= _max_protocol_settlement_fee, "settlement fee exceeds max"
+
     self.owner = msg.sender
     payment_token = _payment_token
     delegation_registry = DelegationRegistry(_delegation_registry)
     cryptopunks = CryptoPunksMarket(_cryptopunks)
+    max_protocol_upfront_fee = _max_protocol_upfront_fee
+    max_protocol_settlement_fee = _max_protocol_settlement_fee
     self.protocol_upfront_fee = _protocol_upfront_fee
     self.protocol_settlement_fee = _protocol_settlement_fee
     self.protocol_wallet = _protocol_wallet
@@ -320,6 +330,8 @@ def set_protocol_fee(protocol_upfront_fee: uint256, protocol_settlement_fee: uin
     """
 
     assert msg.sender == self.owner, "not owner"
+    assert protocol_upfront_fee <= max_protocol_upfront_fee, "upfront fee exceeds max"
+    assert protocol_settlement_fee <= max_protocol_settlement_fee, "settlement fee exceeds max"
 
     log ProtocolFeeSet(self.protocol_upfront_fee, self.protocol_settlement_fee, protocol_upfront_fee, protocol_settlement_fee)
     self.protocol_upfront_fee = protocol_upfront_fee

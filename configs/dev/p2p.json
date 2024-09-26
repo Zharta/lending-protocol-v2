@@ -39,6 +39,8 @@
                 "cryptopunks_key": "punk",
                 "delegation_registry_key": "common.delegation_registry",
                 "payment_token_key": "common.weth",
+                "max_protocol_settlement_fee": 1000,
+                "max_protocol_upfront_fee": 1000,
                 "protocol_settlement_fee": 0,
                 "protocol_upfront_fee": 0,
                 "protocol_wallet": "0x66aB6D9362d4F35596279692F0251Db635165871"
@@ -58,6 +60,8 @@
                 "cryptopunks_key": "punk",
                 "delegation_registry_key": "common.delegation_registry",
                 "payment_token_key": "common.usdc",
+                "max_protocol_settlement_fee": 1000,
+                "max_protocol_upfront_fee": 1000,
                 "protocol_settlement_fee": 0,
                 "protocol_upfront_fee": 0,
                 "protocol_wallet": "0x66aB6D9362d4F35596279692F0251Db635165871"
