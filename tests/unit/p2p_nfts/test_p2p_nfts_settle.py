@@ -13,6 +13,7 @@ from ...conftest_base import (
     Loan,
     Offer,
     compute_loan_hash,
+    compute_signed_offer_id,
     get_last_event,
     get_loan_mutations,
     sign_offer,
@@ -125,6 +126,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -167,6 +169,7 @@ def ongoing_loan_punk(p2p_nfts_usdc, offer_punk, usdc, borrower, lender, cryptop
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_punk),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -215,6 +218,7 @@ def ongoing_loan_prorata(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -300,6 +304,19 @@ def test_settle_loan(p2p_nfts_usdc, ongoing_loan_bayc, usdc, now):
 
     assert p2p_nfts_usdc.loans(loan.id) == ZERO_BYTES32
     assert usdc.balanceOf(p2p_nfts_usdc.address) == 0
+
+
+def test_settle_loan_decreases_offer_count(p2p_nfts_usdc, ongoing_loan_bayc, usdc):
+    loan = ongoing_loan_bayc
+    interest = loan.interest
+    borrower_broker_fee_amount = interest * loan.get_borrower_broker_fee().settlement_bps // 10000
+    amount_to_settle = loan.amount + interest + borrower_broker_fee_amount
+
+    offer_count_before = p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id)
+    usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=loan.borrower)
+    p2p_nfts_usdc.settle_loan(loan, sender=loan.borrower)
+
+    assert p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id) == offer_count_before - 1
 
 
 def test_settle_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, usdc, now):
@@ -403,6 +420,7 @@ def test_settle_loan_logs_fees(
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -699,6 +717,7 @@ def test_settle_loan_creates_pending_transfer_on_erc20_transfer_fail(
     loan_id = p2p_nfts_erc20.create_loan(signed_offer, token_id, [], borrower, 0, 0, ZERO_ADDRESS, sender=borrower)
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,

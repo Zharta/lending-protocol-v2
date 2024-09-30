@@ -85,6 +85,7 @@ struct SignedOffer:
 
 struct Loan:
     id: bytes32
+    offer_id: bytes32
     amount: uint256  # principal - origination_fee_amount
     interest: uint256
     payment_token: address
@@ -162,4 +163,3 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, proof: DynArray[bytes32,
 @external
 def revoke_offer(offer: SignedOffer):
     P2PLendingNfts(self.p2p_lending_nfts).revoke_offer(offer)
-

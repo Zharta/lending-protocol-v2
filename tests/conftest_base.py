@@ -151,6 +151,7 @@ FeeAmount = namedtuple("FeeAmount", ["type", "amount", "wallet"], defaults=[0, 0
 
 class Loan(NamedTuple):
     id: bytes = ZERO_BYTES32
+    offer_id: bytes = ZERO_BYTES32
     amount: int = 0
     interest: int = 0
     payment_token: str = ZERO_ADDRESS
@@ -217,7 +218,7 @@ def compute_loan_hash(loan: Loan):
     print(f"compute_loan_hash {loan=}")
     encoded = eth_abi.encode(
         [
-            "(bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"
+            "(bytes32,bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"
         ],
         [loan],
     )
