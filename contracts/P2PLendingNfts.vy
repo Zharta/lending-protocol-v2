@@ -254,6 +254,8 @@ protocol_upfront_fee: public(uint256)
 protocol_settlement_fee: public(uint256)
 max_protocol_upfront_fee: public(immutable(uint256))
 max_protocol_settlement_fee: public(immutable(uint256))
+max_lender_broker_settlement_fee: public(immutable(uint256))
+max_borrower_broker_settlement_fee: public(immutable(uint256))
 
 offer_count: public(HashMap[bytes32, uint256])
 revoked_offers: public(HashMap[bytes32, bool])
@@ -287,6 +289,8 @@ def __init__(
     _protocol_wallet: address,
     _max_protocol_upfront_fee: uint256,
     _max_protocol_settlement_fee: uint256,
+    _max_lender_broker_settlement_fee: uint256,
+    _max_borrower_broker_settlement_fee: uint256,
 ):
 
     """
@@ -315,6 +319,8 @@ def __init__(
     cryptopunks = CryptoPunksMarket(_cryptopunks)
     max_protocol_upfront_fee = _max_protocol_upfront_fee
     max_protocol_settlement_fee = _max_protocol_settlement_fee
+    max_lender_broker_settlement_fee = _max_lender_broker_settlement_fee
+    max_borrower_broker_settlement_fee = _max_borrower_broker_settlement_fee
     self.protocol_upfront_fee = _protocol_upfront_fee
     self.protocol_settlement_fee = _protocol_settlement_fee
     self.protocol_wallet = _protocol_wallet
@@ -924,6 +930,8 @@ def _get_loan_fees(offer: Offer, borrower_broker_upfront_fee_amount: uint256, bo
         assert offer.broker_address != empty(address), "broker fee without address"
     if borrower_broker_upfront_fee_amount > 0 or borrower_broker_settlement_fee_bps > 0:
         assert borrower_broker != empty(address), "broker fee without address"
+    assert offer.broker_settlement_fee_bps <= max_lender_broker_settlement_fee, "lender broker fee exceeds max"
+    assert borrower_broker_settlement_fee_bps <= max_borrower_broker_settlement_fee, "borrower broker fee exceeds max"
     fees.append(Fee({
         type: FeeType.PROTOCOL_FEE,
         upfront_amount: self.protocol_upfront_fee * offer.principal / BPS,
