@@ -129,6 +129,7 @@ def ongoing_loan_bayc(
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -183,6 +184,7 @@ def ongoing_loan_prorata(
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -516,15 +518,7 @@ def test_replace_loan_reverts_if_collateral_contract_mismatch(
 
 
 def test_replace_loan_reverts_if_lender_funds_not_approved(
-    p2p_nfts_usdc,
-    borrower,
-    now,
-    lender,
-    lender_key,
-    bayc,
-    usdc,
-    ongoing_loan_bayc,
-    offer_bayc2
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, ongoing_loan_bayc, offer_bayc2
 ):
     token_id = 1
     offer = offer_bayc2.offer
@@ -580,6 +574,7 @@ def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, 
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc2),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -652,6 +647,32 @@ def test_replace_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, 
     assert event.offer_id == compute_signed_offer_id(offer_bayc2)
 
 
+def test_replace_loan_decreases_offer_count(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc):
+    token_id = 1
+    offer = offer_bayc2.offer
+    lender = offer.lender
+    principal = offer.principal
+    interest = ongoing_loan_bayc.get_interest(now)
+
+    max_interest_delta = _max_interest_delta(ongoing_loan_bayc, offer, now)
+    borrower_compensation = max(max_interest_delta, interest + ongoing_loan_bayc.amount - principal)
+
+    protocol_fee_amount = ongoing_loan_bayc.get_protocol_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    broker_fee_amount = ongoing_loan_bayc.get_lender_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    borrower_broker_fee_amount = (
+        ongoing_loan_bayc.get_borrower_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    )
+
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
+
+    offer_count_before = p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id)
+    loan_id = p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
+
+    assert p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id) == offer_count_before - 1
+
+
 def test_replace_loan_works_with_proxy(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc, p2p_nfts_proxy):
     offer = offer_bayc2.offer
     lender = offer.lender
@@ -665,6 +686,7 @@ def test_replace_loan_works_with_proxy(p2p_nfts_usdc, ongoing_loan_bayc, offer_b
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc2),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -754,10 +776,7 @@ def test_replace_loan_transfers_origination_fee_to_lender(p2p_nfts_usdc, ongoing
 
     p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
 
-    assert (
-        usdc.balanceOf(new_lender)
-        == initial_lender_balance - principal + origination_fee - offer.broker_upfront_fee_amount
-    )
+    assert usdc.balanceOf(new_lender) == initial_lender_balance - principal + origination_fee - offer.broker_upfront_fee_amount
 
 
 def test_replace_loan_updates_offer_usage_count(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, usdc):
@@ -1104,6 +1123,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
 
     loan1 = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -1192,6 +1212,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
 
     loan2 = Loan(
         id=loan2_id,
+        offer_id=compute_signed_offer_id(signed_offer2),
         amount=offer2.principal,
         interest=offer2.interest,
         payment_token=offer2.payment_token,

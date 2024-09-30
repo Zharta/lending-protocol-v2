@@ -127,6 +127,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -170,6 +171,7 @@ def ongoing_loan_prorata(
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -355,9 +357,7 @@ def test_replace_loan_reverts_if_token_id_above_offer_range(
         p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
-def test_replace_loan_reverts_if_token_id_not_in_list(
-    p2p_nfts_usdc, now, ongoing_loan_bayc, lender, lender_key, bayc, usdc
-):
+def test_replace_loan_reverts_if_token_id_not_in_list(p2p_nfts_usdc, now, ongoing_loan_bayc, lender, lender_key, bayc, usdc):
     token_id = 1
     offer = Offer(
         principal=1000,
@@ -463,9 +463,7 @@ def test_replace_loan_reverts_if_broker_fee_without_address(
         p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, signed_offer, 0, 0, ZERO_ADDRESS, sender=ongoing_loan_bayc.borrower)
 
 
-def test_replace_loan_reverts_if_collateral_contract_mismatch(
-    p2p_nfts_usdc, ongoing_loan_bayc, now, lender, lender_key, usdc
-):
+def test_replace_loan_reverts_if_collateral_contract_mismatch(p2p_nfts_usdc, ongoing_loan_bayc, now, lender, lender_key, usdc):
     token_id = 1
     principal = 1000
     dummy_contract = boa.env.generate_address("random")
@@ -547,6 +545,7 @@ def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, 
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc2),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -612,6 +611,30 @@ def test_replace_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, 
         Fee.lender_broker(offer),
         Fee.borrower_broker(ZERO_ADDRESS),
     ]
+
+
+def test_replace_loan_decreases_offer_count(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc):
+    token_id = 1
+    offer = offer_bayc2.offer
+    borrower = ongoing_loan_bayc.borrower
+    lender = offer.lender
+    principal = offer.principal
+    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
+    protocol_fee_amount = ongoing_loan_bayc.get_protocol_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    broker_fee_amount = ongoing_loan_bayc.get_lender_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    borrower_broker_fee_amount = (
+        ongoing_loan_bayc.get_borrower_broker_fee().settlement_bps * ongoing_loan_bayc.interest // 10000
+    )
+    usdc.approve(
+        p2p_nfts_usdc.address, principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount, sender=lender
+    )
+
+    offer_count_before = p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id)
+
+    usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
+    loan_id = p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+
+    assert p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id) == offer_count_before - 1
 
 
 def test_replace_loan_keeps_delegation(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, bayc, delegation_registry, usdc):
@@ -1055,6 +1078,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
 
     loan1 = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -1132,6 +1156,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
 
     loan2 = Loan(
         id=loan2_id,
+        offer_id=compute_signed_offer_id(signed_offer2),
         amount=offer2.principal,
         interest=offer2.interest,
         payment_token=offer2.payment_token,

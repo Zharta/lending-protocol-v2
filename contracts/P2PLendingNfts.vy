@@ -102,6 +102,7 @@ struct SignedOffer:
 
 struct Loan:
     id: bytes32
+    offer_id: bytes32
     amount: uint256  # principal - origination_fee_amount
     interest: uint256
     payment_token: address
@@ -440,8 +441,10 @@ def create_loan(
     for fee in fees:
         total_upfront_fees += fee.upfront_amount
 
+    offer_id: bytes32 = self._compute_signed_offer_id(offer)
     loan: Loan = Loan({
         id: empty(bytes32),
+        offer_id: offer_id,
         amount: offer.offer.principal,
         interest: offer.offer.interest,
         payment_token: offer.offer.payment_token,
@@ -482,7 +485,7 @@ def create_loan(
         loan.collateral_token_id,
         loan.fees,
         loan.pro_rata,
-        self._compute_signed_offer_id(offer)
+        offer_id
     )
     return loan.id
 
@@ -505,6 +508,7 @@ def settle_loan(loan: Loan):
     settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
 
     self.loans[loan.id] = empty(bytes32)
+    self._reduce_offer_count(loan.offer_id)
 
     self._receive_funds(loan.borrower, loan.amount + interest)
 
@@ -585,6 +589,7 @@ def replace_loan(
     assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
+    self._reduce_offer_count(loan.offer_id)
 
     principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
     interest: uint256 = self._compute_settlement_interest(loan)
@@ -625,8 +630,10 @@ def replace_loan(
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._send_funds(fee.wallet, fee.upfront_amount)
 
+    offer_id: bytes32 = self._compute_signed_offer_id(offer)
     new_loan: Loan = Loan({
         id: empty(bytes32),
+        offer_id: offer_id,
         amount: offer.offer.principal,
         interest: offer.offer.interest,
         payment_token: offer.offer.payment_token,
@@ -661,7 +668,7 @@ def replace_loan(
         loan.amount,
         interest,
         settlement_fees,
-        self._compute_signed_offer_id(offer)
+        offer_id
     )
 
     return new_loan.id
@@ -694,6 +701,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
     assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
+    self._reduce_offer_count(loan.offer_id)
 
     principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
     interest: uint256 = self._compute_settlement_interest(loan)
@@ -742,8 +750,10 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._send_funds(fee.wallet, fee.upfront_amount)
 
+    offer_id: bytes32 = self._compute_signed_offer_id(offer)
     new_loan: Loan = Loan({
         id: empty(bytes32),
+        offer_id: offer_id,
         amount: offer.offer.principal,
         interest: offer.offer.interest,
         payment_token: offer.offer.payment_token,
@@ -779,7 +789,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         interest,
         settlement_fees,
         borrower_compensation,
-        self._compute_signed_offer_id(offer)
+        offer_id
     )
 
     return new_loan.id
@@ -862,6 +872,11 @@ def _check_and_update_offer_state(offer: SignedOffer):
     count: uint256 = self.offer_count[offer_id]
     assert count < max_count, "offer fully utilized"
     self.offer_count[offer_id] = count + 1
+
+
+@internal
+def _reduce_offer_count(offer_id: bytes32):
+    self.offer_count[offer_id] -= 1
 
 @view
 @internal
