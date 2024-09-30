@@ -48,7 +48,9 @@ def p2p_control(p2p_lending_control_contract_def, owner, cryptopunks, bayc, bayc
 
 @pytest.fixture
 def p2p_nfts_usdc(p2p_lending_nfts_contract_def, usdc, delegation_registry, cryptopunks, owner, p2p_control):
-    return p2p_lending_nfts_contract_def.deploy(usdc, p2p_control, delegation_registry, cryptopunks, 0, 0, owner, 10000, 10000)
+    return p2p_lending_nfts_contract_def.deploy(
+        usdc, p2p_control, delegation_registry, cryptopunks, 0, 0, owner, 10000, 10000, 10000, 10000
+    )
 
 
 @pytest.fixture

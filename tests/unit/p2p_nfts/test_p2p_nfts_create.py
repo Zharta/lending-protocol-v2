@@ -489,6 +489,65 @@ def test_create_loan_reverts_if_token_not_in_trait(
         p2p_nfts_usdc.create_loan(signed_offer, token_id, proof, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
 
+def test_create_loan_reverts_if_broker_fee_too_high(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, bayc_key_hash
+):
+    token_id = 1
+    offer = Offer(
+        principal=1000,
+        interest=100,
+        payment_token=usdc.address,
+        duration=100,
+        origination_fee_amount=0,
+        broker_upfront_fee_amount=15,
+        broker_settlement_fee_bps=p2p_nfts_usdc.max_lender_broker_settlement_fee() + 1,
+        broker_address=boa.env.generate_address("broker"),
+        collection_key_hash=bayc_key_hash,
+        token_id=token_id,
+        expiration=now + 100,
+        lender=lender,
+        pro_rata=False,
+    )
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
+
+    with boa.reverts("lender broker fee exceeds max"):
+        p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+
+
+def test_create_loan_reverts_if_borrower_broker_fee_too_high(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, bayc_key_hash
+):
+    token_id = 1
+    offer = Offer(
+        principal=1000,
+        interest=100,
+        payment_token=usdc.address,
+        duration=100,
+        origination_fee_amount=0,
+        broker_upfront_fee_amount=0,
+        broker_settlement_fee_bps=0,
+        broker_address=ZERO_ADDRESS,
+        collection_key_hash=bayc_key_hash,
+        token_id=token_id,
+        expiration=now + 100,
+        lender=lender,
+        pro_rata=False,
+    )
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
+
+    with boa.reverts("borrower broker fee exceeds max"):
+        p2p_nfts_usdc.create_loan(
+            signed_offer,
+            token_id,
+            [],
+            ZERO_ADDRESS,
+            0,
+            p2p_nfts_usdc.max_borrower_broker_settlement_fee() + 1,
+            boa.env.generate_address("broker"),
+            sender=borrower,
+        )
+
+
 def test_create_loan(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bayc_key_hash, usdc):
     token_id = 1
     principal = 1000

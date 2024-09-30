@@ -31,6 +31,9 @@ def test_initial_state(
     assert p2p_nfts_usdc.protocol_upfront_fee() == 0
     assert p2p_nfts_usdc.protocol_settlement_fee() == 0
     assert p2p_nfts_usdc.protocol_wallet() == owner
+    assert p2p_nfts_usdc.max_protocol_settlement_fee() == 10000
+    assert p2p_nfts_usdc.max_lender_broker_settlement_fee() == 10000
+    assert p2p_nfts_usdc.max_borrower_broker_settlement_fee() == 10000
 
     assert p2p_control.owner() == owner
 
