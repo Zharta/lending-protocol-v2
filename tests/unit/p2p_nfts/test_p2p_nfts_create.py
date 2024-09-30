@@ -575,6 +575,7 @@ def test_create_loan(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bay
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -639,6 +640,7 @@ def test_create_loan_with_trait_offer(
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(signed_offer),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -686,6 +688,7 @@ def test_create_loan_logs_event(p2p_nfts_usdc, borrower, now, lender, lender_key
 
     event = get_last_event(p2p_nfts_usdc, "LoanCreated")
     assert event.id == loan_id
+    assert event.offer_id == compute_signed_offer_id(signed_offer)
     assert event.amount == offer.principal
     assert event.interest == offer.interest
     assert event.payment_token == offer.payment_token

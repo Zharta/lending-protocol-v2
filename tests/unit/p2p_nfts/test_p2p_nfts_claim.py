@@ -8,6 +8,7 @@ from ...conftest_base import (
     Loan,
     Offer,
     compute_loan_hash,
+    compute_signed_offer_id,
     get_last_event,
     get_loan_mutations,
     sign_offer,
@@ -82,6 +83,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_bayc),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -146,6 +148,7 @@ def ongoing_loan_punk(p2p_nfts_usdc, offer_punk, usdc, borrower, lender, cryptop
 
     loan = Loan(
         id=loan_id,
+        offer_id=compute_signed_offer_id(offer_punk),
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
