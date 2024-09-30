@@ -29,7 +29,9 @@ def delegation_registry(delegation_registry_contract_def, owner):
 
 @pytest.fixture
 def p2p_nfts_usdc(p2p_lending_nfts_contract_def, max_lock_expiration, usdc, delegation_registry, bayc, cryptopunks, owner):
-    contract = p2p_lending_nfts_contract_def.deploy(usdc, delegation_registry, cryptopunks, 0, 0, owner, 10000, 10000)
+    contract = p2p_lending_nfts_contract_def.deploy(
+        usdc, delegation_registry, cryptopunks, 0, 0, owner, 10000, 10000, 10000, 10000
+    )
     contract.change_whitelisted_collections([WhitelistRecord(cryptopunks.address, True), WhitelistRecord(bayc.address, True)])
     return contract
 
