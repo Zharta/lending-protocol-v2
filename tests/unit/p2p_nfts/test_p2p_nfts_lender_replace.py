@@ -68,6 +68,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, bayc_key_ha
         lender=lender,
         pro_rata=False,
         size=1,
+        tracing_id=b"offer_bayc".zfill(32),
     )
     return sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -90,6 +91,7 @@ def offer_bayc2(now, lender2, lender2_key, bayc, broker, p2p_nfts_usdc, bayc_key
         lender=lender2,
         pro_rata=False,
         size=1,
+        tracing_id=b"offer_bayc2".zfill(32),
     )
     return sign_offer(offer, lender2_key, p2p_nfts_usdc.address)
 
@@ -131,6 +133,7 @@ def ongoing_loan_bayc(
     loan = Loan(
         id=loan_id,
         offer_id=compute_signed_offer_id(offer_bayc),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -160,7 +163,13 @@ def ongoing_loan_prorata(
     borrower_broker_fee,
     protocol_fee,
 ):
-    offer = Offer(**offer_bayc.offer._asdict() | {"pro_rata": True})
+    offer = Offer(
+        **offer_bayc.offer._asdict()
+        | {
+            "pro_rata": True,
+            "tracing_id": b"offer_prorata".zfill(32),
+        }
+    )
     token_id = offer.token_id
     principal = offer.principal
     origination_fee = offer.origination_fee_amount
@@ -187,6 +196,7 @@ def ongoing_loan_prorata(
     loan = Loan(
         id=loan_id,
         offer_id=compute_signed_offer_id(signed_offer),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -589,6 +599,7 @@ def test_replace_loan(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, 
     loan = Loan(
         id=loan_id,
         offer_id=compute_signed_offer_id(offer_bayc2),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -634,6 +645,8 @@ def test_replace_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, 
 
     event = get_last_event(p2p_nfts_usdc, "LoanReplacedByLender")
     assert event.id == loan_id
+    assert event.offer_id == compute_signed_offer_id(offer_bayc2)
+    assert event.offer_tracing_id == offer.tracing_id
     assert event.amount == offer.principal
     assert event.interest == offer.interest
     assert event.payment_token == offer.payment_token
@@ -671,10 +684,10 @@ def test_replace_loan_decreases_offer_count(p2p_nfts_usdc, ongoing_loan_bayc, of
     usdc.deposit(value=lender_approval, sender=lender)
     usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=lender)
 
-    offer_count_before = p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id)
+    offer_count_before = p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_tracing_id)
     p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, [], sender=ongoing_loan_bayc.lender)
 
-    assert p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id) == offer_count_before - 1
+    assert p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_tracing_id) == offer_count_before - 1
 
 
 def test_replace_loan_works_with_proxy(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc, p2p_nfts_proxy):
@@ -691,6 +704,7 @@ def test_replace_loan_works_with_proxy(p2p_nfts_usdc, ongoing_loan_bayc, offer_b
     loan = Loan(
         id=loan_id,
         offer_id=compute_signed_offer_id(offer_bayc2),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -793,11 +807,11 @@ def test_replace_loan_updates_offer_usage_count(p2p_nfts_usdc, ongoing_loan_bayc
 
     principal = offer.principal
 
-    assert p2p_nfts_usdc.offer_count(compute_signed_offer_id(offer_bayc2)) == 0
+    assert p2p_nfts_usdc.offer_count(offer.tracing_id) == 0
 
     p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, [], sender=ongoing_loan_bayc.lender)
 
-    assert p2p_nfts_usdc.offer_count(compute_signed_offer_id(offer_bayc2)) == 1
+    assert p2p_nfts_usdc.offer_count(offer.tracing_id) == 1
 
 
 def test_replace_loan_pays_lender(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, usdc, now):
@@ -873,8 +887,16 @@ def test_replace_loan_pays_borrower_if_needed(
     p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc, usdc, lender, lender2, lender2_key, now
 ):
     loan = ongoing_loan_bayc
-    offer = Offer(**offer_bayc.offer._asdict() | {"principal": loan.amount * 2})
-    offer = replace_namedtuple_field(offer_bayc.offer, principal=loan.amount * 2, lender=lender2)
+    offer = Offer(
+        **offer_bayc.offer._asdict()
+        | {
+            "principal": loan.amount * 2,
+            "tracing_id": b"random".zfill(32),
+        }
+    )
+    offer = replace_namedtuple_field(
+        offer_bayc.offer, principal=loan.amount * 2, lender=lender2, tracing_id=b"random".zfill(32)
+    )
     borrower = ongoing_loan_bayc.borrower
     new_lender = offer.lender
     interest = loan.interest
@@ -1153,6 +1175,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
         origination_fee_amount=origination_fee,
         broker_upfront_fee_amount=lender_broker_upfront_fee,
         broker_settlement_fee_bps=lender_broker_settlement_fee,
+        tracing_id=b"offer1".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
     token_id = offer.token_id
@@ -1177,6 +1200,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     loan1 = Loan(
         id=loan_id,
         offer_id=compute_signed_offer_id(signed_offer),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -1214,6 +1238,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
         broker_upfront_fee_amount=lender_broker_upfront_fee,
         broker_settlement_fee_bps=lender_broker_settlement_fee,
         expiration=offer.expiration + actual_duration,
+        tracing_id=b"offer2".zfill(32),
     )
     signed_offer2 = sign_offer(offer2, key2, p2p_nfts_usdc.address)
 
@@ -1267,6 +1292,7 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     loan2 = Loan(
         id=loan2_id,
         offer_id=compute_signed_offer_id(signed_offer2),
+        offer_tracing_id=offer2.tracing_id,
         amount=offer2.principal,
         interest=offer2.interest,
         payment_token=offer2.payment_token,

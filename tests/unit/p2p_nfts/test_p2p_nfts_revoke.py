@@ -23,6 +23,7 @@ def test_revoke_offer_reverts_if_sender_is_not_lender(p2p_nfts_usdc, borrower, n
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -48,6 +49,7 @@ def test_revoke_offer_reverts_if_proxy_not_auth(p2p_nfts_usdc, borrower, now, le
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -70,6 +72,7 @@ def test_revoke_offer_reverts_if_offer_expired(p2p_nfts_usdc, borrower, now, len
         expiration=now,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -91,6 +94,7 @@ def test_revoke_offer_reverts_if_offer_not_signed_by_lender(p2p_nfts_usdc, borro
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, borrower_key, p2p_nfts_usdc.address)
 
@@ -112,6 +116,7 @@ def test_revoke_offer_reverts_if_offer_already_revoked(p2p_nfts_usdc, borrower, 
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -135,6 +140,7 @@ def test_revoke_offer(p2p_nfts_usdc, borrower, now, lender, lender_key):
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -157,6 +163,7 @@ def test_revoke_offer_logs_event(p2p_nfts_usdc, borrower, now, lender, lender_ke
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -183,6 +190,7 @@ def test_revoke_offer_works_with_proxy(p2p_nfts_usdc, borrower, now, lender, len
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
