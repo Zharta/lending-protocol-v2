@@ -53,6 +53,7 @@ def offer_bayc(now, lender, lender_key, bayc, broker, p2p_nfts_usdc, usdc, bayc_
         lender=lender,
         pro_rata=False,
         size=1,
+        tracing_id=b"offer_bayc".zfill(32),
     )
     return sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -84,6 +85,7 @@ def ongoing_loan_bayc(p2p_nfts_usdc, offer_bayc, usdc, borrower, lender, bayc, n
     loan = Loan(
         id=loan_id,
         offer_id=compute_signed_offer_id(offer_bayc),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,
@@ -118,6 +120,7 @@ def offer_punk(now, lender, lender_key, cryptopunks, broker, p2p_nfts_usdc, usdc
         lender=lender,
         pro_rata=False,
         size=1,
+        tracing_id=b"offer_punk".zfill(32),
     )
     return sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -149,6 +152,7 @@ def ongoing_loan_punk(p2p_nfts_usdc, offer_punk, usdc, borrower, lender, cryptop
     loan = Loan(
         id=loan_id,
         offer_id=compute_signed_offer_id(offer_punk),
+        offer_tracing_id=offer.tracing_id,
         amount=offer.principal,
         interest=offer.interest,
         payment_token=offer.payment_token,

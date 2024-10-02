@@ -107,7 +107,8 @@ class Offer(NamedTuple):
     expiration: int = 0
     lender: str = ZERO_ADDRESS
     pro_rata: bool = False
-    size: int = 0
+    size: int = 1
+    tracing_id: bytes = ZERO_BYTES32
 
 
 Signature = namedtuple("Signature", ["v", "r", "s"], defaults=[0, ZERO_BYTES32, ZERO_BYTES32])
@@ -152,6 +153,7 @@ FeeAmount = namedtuple("FeeAmount", ["type", "amount", "wallet"], defaults=[0, 0
 class Loan(NamedTuple):
     id: bytes = ZERO_BYTES32
     offer_id: bytes = ZERO_BYTES32
+    offer_tracing_id: bytes = ZERO_BYTES32
     amount: int = 0
     interest: int = 0
     payment_token: str = ZERO_ADDRESS
@@ -218,7 +220,7 @@ def compute_loan_hash(loan: Loan):
     print(f"compute_loan_hash {loan=}")
     encoded = eth_abi.encode(
         [
-            "(bytes32,bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"
+            "(bytes32,bytes32,bytes32,uint256,uint256,address,uint256,uint256,address,address,address,uint256,(uint256,uint256,uint256,address)[],bool)"
         ],
         [loan],
     )
@@ -266,6 +268,7 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
                 {"name": "lender", "type": "address"},
                 {"name": "pro_rata", "type": "bool"},
                 {"name": "size", "type": "uint256"},
+                {"name": "tracing_id", "type": "bytes32"},
             ],
         },
         "primaryType": "Offer",
