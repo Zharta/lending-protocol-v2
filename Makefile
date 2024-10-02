@@ -27,7 +27,7 @@ requirements-dev.txt: pyproject.toml
 	uv pip compile -o requirements-dev.txt --extra dev pyproject.toml
 
 test: ${VENV}
-	${VENV}/bin/pytest tests/unit --durations=5 -n auto --dist loadscope
+	${VENV}/bin/pytest tests/unit -n auto --dist loadscope
 
 coverage:
 	${VENV}/bin/coverage run -m pytest tests/unit --runslow
@@ -38,7 +38,7 @@ branch-coverage:
 	${VENV}/bin/coverage report
 
 unit-tests:
-	${VENV}/bin/pytest tests/unit --runslow --durations=0 -n auto --dist loadscope
+	${VENV}/bin/pytest tests/unit --runslow -n auto --dist loadscope
 
 gas:
 	${VENV}/bin/pytest tests/unit --gas-profile
