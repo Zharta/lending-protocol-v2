@@ -844,14 +844,7 @@ def revoke_offer(offer: SignedOffer):
     offer_id: bytes32 = self._compute_signed_offer_id(offer)
     assert not self.revoked_offers[offer_id], "offer already revoked"
 
-    self.revoked_offers[offer_id] = True
-
-    log OfferRevoked(
-        offer_id,
-        offer.offer.lender,
-        offer.offer.collection_key_hash,
-        offer.offer.offer_type,
-    )
+    self._revoke_offer(offer_id, offer)
 
 
 @external
@@ -913,6 +906,22 @@ def _check_and_update_offer_state(offer: SignedOffer):
     count: uint256 = self.offer_count[offer.offer.tracing_id]
     assert count < offer.offer.size, "offer fully utilized"
     self.offer_count[offer.offer.tracing_id] = count + 1
+
+    if offer.offer.offer_type == OfferType.TOKEN:
+        self._revoke_offer(offer_id, offer)
+
+
+@internal
+def _revoke_offer(offer_id: bytes32, offer: SignedOffer):
+
+    self.revoked_offers[offer_id] = True
+
+    log OfferRevoked(
+        offer_id,
+        offer.offer.lender,
+        offer.offer.collection_key_hash,
+        offer.offer.offer_type,
+    )
 
 
 @internal

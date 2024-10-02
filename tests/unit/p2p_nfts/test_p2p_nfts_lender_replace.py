@@ -1124,6 +1124,28 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pro
     )
 
 
+def test_replace_loan_for_token_offer_revokes_offer(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc):
+    offer = offer_bayc2.offer
+    new_lender = offer.lender
+    principal = offer.principal
+    offer_id = compute_signed_offer_id(offer_bayc2)
+
+    lender_approval = principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount
+    usdc.deposit(value=lender_approval, sender=new_lender)
+    usdc.approve(p2p_nfts_usdc.address, lender_approval, sender=new_lender)
+
+    p2p_nfts_usdc.replace_loan_lender(ongoing_loan_bayc, offer_bayc2, sender=ongoing_loan_bayc.lender)
+
+    event = get_last_event(p2p_nfts_usdc, "OfferRevoked")
+    assert event.offer_id == offer_id
+    assert event.lender == offer.lender
+    assert event.collateral_contract == offer.collateral_contract
+    assert event.offer_type == OfferType.TOKEN
+    assert event.token_ids == offer.token_ids
+
+    assert p2p_nfts_usdc.revoked_offers(offer_id)
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("pro_rata", [True, False])
 @pytest.mark.parametrize("same_lender", [True, False])

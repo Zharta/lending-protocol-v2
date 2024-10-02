@@ -1070,6 +1070,30 @@ def test_replace_loan_prorata_pays_protocol_fees(p2p_nfts_usdc, ongoing_loan_pro
     )
 
 
+def test_replace_loan_for_token_offer_revokes_offer(p2p_nfts_usdc, ongoing_loan_bayc, offer_bayc2, now, bayc, usdc):
+    offer = offer_bayc2.offer
+    lender = offer.lender
+    borrower = ongoing_loan_bayc.borrower
+    principal = offer.principal
+    offer_id = compute_signed_offer_id(offer_bayc2)
+    amount_to_settle = ongoing_loan_bayc.amount + ongoing_loan_bayc.interest
+    usdc.approve(
+        p2p_nfts_usdc.address, principal - offer.origination_fee_amount + offer.broker_upfront_fee_amount, sender=lender
+    )
+
+    usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+
+    event = get_last_event(p2p_nfts_usdc, "OfferRevoked")
+    assert event.offer_id == offer_id
+    assert event.lender == offer.lender
+    assert event.collateral_contract == offer.collateral_contract
+    assert event.offer_type == OfferType.TOKEN
+    assert event.token_ids == offer.token_ids
+
+    assert p2p_nfts_usdc.revoked_offers(offer_id)
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("pro_rata", [True, False])
 @pytest.mark.parametrize("same_lender", [True, False])
