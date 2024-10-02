@@ -101,7 +101,7 @@ class Offer(NamedTuple):
     offer_type: OfferType = OfferType.TOKEN
     token_id: int = 0
     token_range_min: int = 0
-    token_range_max: int = 0
+    token_range_max: int = 2**256 - 1
     collection_key_hash: str = ZERO_BYTES32
     trait_hash: str = ZERO_BYTES32
     expiration: int = 0

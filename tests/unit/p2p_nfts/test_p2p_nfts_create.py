@@ -77,7 +77,7 @@ def test_create_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_usdc, borro
         replace_namedtuple_field(offer, broker_address=boa.env.generate_address("random")),
         replace_namedtuple_field(offer, token_id=offer.token_id + 1),
         replace_namedtuple_field(offer, token_range_min=offer.token_range_min + 1),
-        replace_namedtuple_field(offer, token_range_max=offer.token_range_max + 1),
+        replace_namedtuple_field(offer, token_range_max=offer.token_range_max - 1),
         replace_namedtuple_field(offer, trait_hash=b"\1" * 32),
         replace_namedtuple_field(offer, offer_type=OfferType.COLLECTION),
         replace_namedtuple_field(offer, offer_type=OfferType.TRAIT),
@@ -85,6 +85,7 @@ def test_create_loan_reverts_if_offer_has_invalid_signature(p2p_nfts_usdc, borro
         replace_namedtuple_field(offer, lender=boa.env.generate_address("random")),
         replace_namedtuple_field(offer, pro_rata=not offer.pro_rata),
         replace_namedtuple_field(offer, size=offer.size + 1),
+        replace_namedtuple_field(offer, tracing_id=b"\1" * 32),
     ]
 
     for invalid_offer in invalid_offers:
@@ -867,7 +868,9 @@ def test_create_loan_updates_offer_usage_count(p2p_nfts_usdc, borrower, now, len
     assert p2p_nfts_usdc.offer_count(offer.tracing_id) == 1
 
 
-def test_create_loan_for_token_offer_revokes_offer(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc):
+def test_create_loan_for_token_offer_revokes_offer(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, bayc_key_hash
+):
     token_id = 1
     principal = 1000
     offer = Offer(
@@ -879,9 +882,9 @@ def test_create_loan_for_token_offer_revokes_offer(p2p_nfts_usdc, borrower, now,
         broker_upfront_fee_amount=0,
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
-        collateral_contract=bayc.address,
+        collection_key_hash=bayc_key_hash,
         offer_type=OfferType.TOKEN,
-        token_ids=[token_id],
+        token_id=token_id,
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -894,19 +897,20 @@ def test_create_loan_for_token_offer_revokes_offer(p2p_nfts_usdc, borrower, now,
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
     usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
-    p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
     event = get_last_event(p2p_nfts_usdc, "OfferRevoked")
     assert event.offer_id == offer_id
-    assert event.lender == lender
-    assert event.collateral_contract == offer.collateral_contract
+    assert event.lender == offer.lender
+    assert event.collection_key_hash == offer.collection_key_hash
     assert event.offer_type == OfferType.TOKEN
-    assert event.token_ids == offer.token_ids
 
     assert p2p_nfts_usdc.revoked_offers(offer_id)
 
 
-def test_create_loan_for_collection_offer_does_not_revoke_offer(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc):
+def test_create_loan_for_collection_offer_does_not_revoke_offer(
+    p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc, bayc_key_hash
+):
     token_id = 1
     principal = 1000
     offer = Offer(
@@ -918,9 +922,8 @@ def test_create_loan_for_collection_offer_does_not_revoke_offer(p2p_nfts_usdc, b
         broker_upfront_fee_amount=0,
         broker_settlement_fee_bps=0,
         broker_address=ZERO_ADDRESS,
-        collateral_contract=bayc.address,
+        collection_key_hash=bayc_key_hash,
         offer_type=OfferType.COLLECTION,
-        token_ids=[token_id, token_id + 1],
         expiration=now + 100,
         lender=lender,
         pro_rata=False,
@@ -933,6 +936,6 @@ def test_create_loan_for_collection_offer_does_not_revoke_offer(p2p_nfts_usdc, b
     bayc.mint(borrower, token_id)
     bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
     usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
-    p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert not p2p_nfts_usdc.revoked_offers(offer_id)

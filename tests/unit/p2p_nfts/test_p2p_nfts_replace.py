@@ -1082,14 +1082,13 @@ def test_replace_loan_for_token_offer_revokes_offer(p2p_nfts_usdc, ongoing_loan_
     )
 
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=borrower)
-    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, 0, 0, ZERO_ADDRESS, sender=borrower)
+    p2p_nfts_usdc.replace_loan(ongoing_loan_bayc, offer_bayc2, [], 0, 0, ZERO_ADDRESS, sender=borrower)
 
     event = get_last_event(p2p_nfts_usdc, "OfferRevoked")
     assert event.offer_id == offer_id
     assert event.lender == offer.lender
-    assert event.collateral_contract == offer.collateral_contract
+    assert event.collection_key_hash == offer.collection_key_hash
     assert event.offer_type == OfferType.TOKEN
-    assert event.token_ids == offer.token_ids
 
     assert p2p_nfts_usdc.revoked_offers(offer_id)
 
