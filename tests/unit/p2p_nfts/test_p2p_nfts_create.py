@@ -658,6 +658,7 @@ def test_create_loan_updates_offer_usage_count(p2p_nfts_usdc, borrower, now, len
         lender=lender,
         pro_rata=False,
         size=1,
+        tracing_id=b"random".zfill(32),
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
@@ -666,4 +667,4 @@ def test_create_loan_updates_offer_usage_count(p2p_nfts_usdc, borrower, now, len
     usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
     p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
-    assert p2p_nfts_usdc.offer_count(compute_signed_offer_id(signed_offer)) == 1
+    assert p2p_nfts_usdc.offer_count(offer.tracing_id) == 1

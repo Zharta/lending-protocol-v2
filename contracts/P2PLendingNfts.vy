@@ -89,6 +89,7 @@ struct Offer:
     lender: address
     pro_rata: bool
     size: uint256
+    tracing_id: bytes32
 
 
 struct Signature:
@@ -103,6 +104,7 @@ struct SignedOffer:
 struct Loan:
     id: bytes32
     offer_id: bytes32
+    offer_tracing_id: bytes32
     amount: uint256  # principal - origination_fee_amount
     interest: uint256
     payment_token: address
@@ -142,6 +144,7 @@ event LoanCreated:
     fees: DynArray[Fee, MAX_FEES]
     pro_rata: bool
     offer_id: bytes32
+    offer_tracing_id: bytes32
 
 event LoanReplaced:
     id: bytes32
@@ -161,6 +164,7 @@ event LoanReplaced:
     paid_interest: uint256
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
     offer_id: bytes32
+    offer_tracing_id: bytes32
 
 event LoanReplacedByLender:
     id: bytes32
@@ -181,6 +185,7 @@ event LoanReplacedByLender:
     paid_settlement_fees: DynArray[FeeAmount, MAX_FEES]
     borrower_compensation: uint256
     offer_id: bytes32
+    offer_tracing_id: bytes32
 
 event LoanPaid:
     id: bytes32
@@ -256,9 +261,9 @@ ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
 
 DOMAIN_TYPE_HASH: constant(bytes32) = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-OFFER_TYPE_DEF: constant(String[330]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
+OFFER_TYPE_DEF: constant(String[349]) = "Offer(uint256 principal,uint256 interest,address payment_token,uint256 duration,uint256 origination_fee_amount," \
                                         "uint256 broker_upfront_fee_amount,uint256 broker_settlement_fee_bps,address broker_address,address collateral_contract," \
-                                        "uint256 offer_type,uint256[] token_ids,uint256 expiration,address lender,bool pro_rata,uint256 size)"
+                                        "uint256 offer_type,uint256[] token_ids,uint256 expiration,address lender,bool pro_rata,uint256 size,bytes32 tracing_id)"
 OFFER_TYPE_HASH: constant(bytes32) = keccak256(OFFER_TYPE_DEF)
 
 offer_sig_domain_separator: immutable(bytes32)
@@ -445,6 +450,7 @@ def create_loan(
     loan: Loan = Loan({
         id: empty(bytes32),
         offer_id: offer_id,
+        offer_tracing_id: offer.offer.tracing_id,
         amount: offer.offer.principal,
         interest: offer.offer.interest,
         payment_token: offer.offer.payment_token,
@@ -485,7 +491,8 @@ def create_loan(
         loan.collateral_token_id,
         loan.fees,
         loan.pro_rata,
-        offer_id
+        offer_id,
+        offer.offer.tracing_id
     )
     return loan.id
 
@@ -508,7 +515,7 @@ def settle_loan(loan: Loan):
     settlement_fees, settlement_fees_total = self._get_settlement_fees(loan, interest)
 
     self.loans[loan.id] = empty(bytes32)
-    self._reduce_offer_count(loan.offer_id)
+    self._reduce_offer_count(loan.offer_tracing_id)
 
     self._receive_funds(loan.borrower, loan.amount + interest)
 
@@ -589,7 +596,7 @@ def replace_loan(
     assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
-    self._reduce_offer_count(loan.offer_id)
+    self._reduce_offer_count(loan.offer_tracing_id)
 
     principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
     interest: uint256 = self._compute_settlement_interest(loan)
@@ -634,6 +641,7 @@ def replace_loan(
     new_loan: Loan = Loan({
         id: empty(bytes32),
         offer_id: offer_id,
+        offer_tracing_id: offer.offer.tracing_id,
         amount: offer.offer.principal,
         interest: offer.offer.interest,
         payment_token: offer.offer.payment_token,
@@ -668,7 +676,8 @@ def replace_loan(
         loan.amount,
         interest,
         settlement_fees,
-        offer_id
+        offer_id,
+        offer.offer.tracing_id
     )
 
     return new_loan.id
@@ -701,7 +710,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
     assert offer.offer.collateral_contract == loan.collateral_contract, "collateral contract mismatch"
 
     self._check_and_update_offer_state(offer)
-    self._reduce_offer_count(loan.offer_id)
+    self._reduce_offer_count(loan.offer_tracing_id)
 
     principal_delta: int256 = convert(offer.offer.principal, int256) - convert(loan.amount, int256)
     interest: uint256 = self._compute_settlement_interest(loan)
@@ -754,6 +763,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
     new_loan: Loan = Loan({
         id: empty(bytes32),
         offer_id: offer_id,
+        offer_tracing_id: offer.offer.tracing_id,
         amount: offer.offer.principal,
         interest: offer.offer.interest,
         payment_token: offer.offer.payment_token,
@@ -789,7 +799,8 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer) -> bytes32:
         interest,
         settlement_fees,
         borrower_compensation,
-        offer_id
+        offer_id,
+        offer.offer.tracing_id
     )
 
     return new_loan.id
@@ -866,17 +877,14 @@ def _check_and_update_offer_state(offer: SignedOffer):
     offer_id: bytes32 = self._compute_signed_offer_id(offer)
     assert not self.revoked_offers[offer_id], "offer revoked"
 
-    single_token_offer: bool = offer.offer.offer_type == OfferType.TOKEN and len(offer.offer.token_ids) == 1
-    max_count: uint256 = 1 if single_token_offer else offer.offer.size
-
-    count: uint256 = self.offer_count[offer_id]
-    assert count < max_count, "offer fully utilized"
-    self.offer_count[offer_id] = count + 1
+    count: uint256 = self.offer_count[offer.offer.tracing_id]
+    assert count < offer.offer.size, "offer fully utilized"
+    self.offer_count[offer.offer.tracing_id] = count + 1
 
 
 @internal
-def _reduce_offer_count(offer_id: bytes32):
-    self.offer_count[offer_id] -= 1
+def _reduce_offer_count(tracing_id: bytes32):
+    self.offer_count[tracing_id] -= 1
 
 @view
 @internal
@@ -917,7 +925,8 @@ def _is_offer_signed_by_lender(signed_offer: SignedOffer, lender: address) -> bo
                         signed_offer.offer.expiration,
                         signed_offer.offer.lender,
                         signed_offer.offer.pro_rata,
-                        signed_offer.offer.size
+                        signed_offer.offer.size,
+                        signed_offer.offer.tracing_id
                     ))
                 )
             )

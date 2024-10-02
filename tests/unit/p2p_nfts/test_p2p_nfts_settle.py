@@ -305,11 +305,11 @@ def test_settle_loan_decreases_offer_count(p2p_nfts_usdc, ongoing_loan_bayc, usd
     interest = loan.interest
     amount_to_settle = loan.amount + interest
 
-    offer_count_before = p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id)
+    offer_count_before = p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_tracing_id)
     usdc.approve(p2p_nfts_usdc.address, amount_to_settle, sender=loan.borrower)
     p2p_nfts_usdc.settle_loan(loan, sender=loan.borrower)
 
-    assert p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_id) == offer_count_before - 1
+    assert p2p_nfts_usdc.offer_count(ongoing_loan_bayc.offer_tracing_id) == offer_count_before - 1
 
 
 def test_settle_loan_logs_event(p2p_nfts_usdc, ongoing_loan_bayc, usdc):
