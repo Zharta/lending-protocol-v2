@@ -865,3 +865,74 @@ def test_create_loan_updates_offer_usage_count(p2p_nfts_usdc, borrower, now, len
     p2p_nfts_usdc.create_loan(signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
 
     assert p2p_nfts_usdc.offer_count(offer.tracing_id) == 1
+
+
+def test_create_loan_for_token_offer_revokes_offer(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc):
+    token_id = 1
+    principal = 1000
+    offer = Offer(
+        principal=principal,
+        interest=100,
+        payment_token=usdc.address,
+        duration=100,
+        origination_fee_amount=0,
+        broker_upfront_fee_amount=0,
+        broker_settlement_fee_bps=0,
+        broker_address=ZERO_ADDRESS,
+        collateral_contract=bayc.address,
+        offer_type=OfferType.TOKEN,
+        token_ids=[token_id],
+        expiration=now + 100,
+        lender=lender,
+        pro_rata=False,
+        size=1,
+        tracing_id=b"random".zfill(32),
+    )
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
+    offer_id = compute_signed_offer_id(signed_offer)
+
+    bayc.mint(borrower, token_id)
+    bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
+    usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
+    p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+
+    event = get_last_event(p2p_nfts_usdc, "OfferRevoked")
+    assert event.offer_id == offer_id
+    assert event.lender == lender
+    assert event.collateral_contract == offer.collateral_contract
+    assert event.offer_type == OfferType.TOKEN
+    assert event.token_ids == offer.token_ids
+
+    assert p2p_nfts_usdc.revoked_offers(offer_id)
+
+
+def test_create_loan_for_collection_offer_does_not_revoke_offer(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, usdc):
+    token_id = 1
+    principal = 1000
+    offer = Offer(
+        principal=principal,
+        interest=100,
+        payment_token=usdc.address,
+        duration=100,
+        origination_fee_amount=0,
+        broker_upfront_fee_amount=0,
+        broker_settlement_fee_bps=0,
+        broker_address=ZERO_ADDRESS,
+        collateral_contract=bayc.address,
+        offer_type=OfferType.COLLECTION,
+        token_ids=[token_id, token_id + 1],
+        expiration=now + 100,
+        lender=lender,
+        pro_rata=False,
+        size=1,
+        tracing_id=b"random".zfill(32),
+    )
+    signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
+    offer_id = compute_signed_offer_id(signed_offer)
+
+    bayc.mint(borrower, token_id)
+    bayc.approve(p2p_nfts_usdc.address, token_id, sender=borrower)
+    usdc.approve(p2p_nfts_usdc.address, principal, sender=lender)
+    p2p_nfts_usdc.create_loan(signed_offer, token_id, ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower)
+
+    assert not p2p_nfts_usdc.revoked_offers(offer_id)
