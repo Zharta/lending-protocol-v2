@@ -72,6 +72,7 @@ struct Offer:
     lender: address
     pro_rata: bool
     size: uint256
+    tracing_id: bytes32
 
 
 struct Signature:
@@ -86,6 +87,7 @@ struct SignedOffer:
 struct Loan:
     id: bytes32
     offer_id: bytes32
+    offer_tracing_id: bytes32
     amount: uint256  # principal - origination_fee_amount
     interest: uint256
     payment_token: address
