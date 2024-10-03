@@ -60,7 +60,7 @@ def store_contracts(env: Environment, contracts: list[ContractConfig]):
             properties = c.get("properties", {})
             addresses = c.get("properties_addresses", {})
             for prop_key, prop_val in properties.items():
-                if prop_key.endswith("_key"):
+                if prop_key.endswith("_key") and prop_val in contracts_dict:
                     addresses[prop_key[:-4]] = contracts_dict[prop_val].address()
             c["properties_addresses"] = addresses
 

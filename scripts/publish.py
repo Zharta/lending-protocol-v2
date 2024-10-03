@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore")
 ENV = Environment[os.environ.get("ENV", "local")]
 DYNAMODB = boto3.resource("dynamodb")
 P2P_CONFIGS = DYNAMODB.Table(f"p2p-configs-{ENV.name}")
+COLLECTIONS = DYNAMODB.Table(f"collections-{ENV.name}")
 ABI = DYNAMODB.Table(f"abis-{ENV.name}")
 KEY_ATTRIBUTES = ["p2p_config_key"]
 
@@ -33,7 +34,9 @@ def get_abi_map(context, env: Environment) -> dict:
     with open(config_file, "r") as f:
         config = json.load(f)
 
-    contracts = {f"{prefix}.{k}": v for prefix, contracts in config.items() for k, v in contracts.items()}
+    contracts = {
+        f"{prefix}.{k}": v for prefix, contracts in config.items() for k, v in contracts.items() if prefix in ["common", "p2p"]
+    }
     for k, config in contracts.items():
         contract = context[k].contract
         config["abi"] = contract.contract_type.dict()["abi"]
@@ -56,6 +59,15 @@ def get_p2p_configs(context, env: Environment) -> dict:
     return p2p_configs
 
 
+def get_traits_roots(context, env: Environment) -> dict:
+    config_file = f"{Path.cwd()}/configs/{env.name}/p2p.json"
+    with open(config_file, "r") as f:
+        config = json.load(f)
+
+    configs = config.get("configs", {})
+    return configs.get("trait_roots", {})
+
+
 def update_p2p_config(p2p_config_key: str, p2p_config: dict):
     indexed_attrs = list(enumerate(p2p_config.items()))
     p2p_config["p2p_config_key"] = p2p_config_key
@@ -63,6 +75,12 @@ def update_p2p_config(p2p_config_key: str, p2p_config: dict):
     values = {f":v{i}": v for i, (k, v) in indexed_attrs if k not in KEY_ATTRIBUTES}
     P2P_CONFIGS.update_item(
         Key={"p2p_config_key": p2p_config_key}, UpdateExpression=f"SET {update_expr}", ExpressionAttributeValues=values
+    )
+
+
+def update_collection_trait_root(collection_key: str, root: str):
+    COLLECTIONS.update_item(
+        Key={"collection_key": collection_key}, UpdateExpression="SET traits_root=:v", ExpressionAttributeValues={":v": root}
     )
 
 
@@ -94,5 +112,10 @@ def cli():
         abi_key = v["abi_key"]
         print(f"updating p2p config {k} {abi_key=}")
         update_p2p_config(k, v)
+
+    trait_roots = get_traits_roots(dm.context, dm.env)
+    for collection, root in trait_roots.items():
+        print(f"updating trait root {collection=} {root=}")
+        update_collection_trait_root(collection, root)
 
     print(f"P2P configs updated in {ENV.name}")
