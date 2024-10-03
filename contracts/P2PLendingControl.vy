@@ -46,7 +46,7 @@ event OwnershipTransferred:
 
 CHANGE_BATCH: constant(uint256) = 128
 
-VERSION: constant(String[30]) = "P2PLendingControl.20240920"
+VERSION: constant(String[30]) = "P2PLendingControl.20241002"
 
 owner: public(address)
 proposed_owner: public(address)
@@ -54,7 +54,7 @@ proposed_owner: public(address)
 contracts: public(HashMap[bytes32, address])
 
 # leafs are calculated as keccak256(_abi_encode(collection_address, trait_hash, token_id))
-# all valid (contract, trait, token_id) tuples are stored in the tree and the root 
+# all valid (contract, trait, token_id) tuples are stored in the tree and the root
 # is stored in the contract for each collection.
 # The collection key is hashed and must match the collection key hash in the offer.
 trait_roots: public(HashMap[bytes32, bytes32])
@@ -134,4 +134,3 @@ def get_collection_status(collection_key_hash: bytes32) -> CollectionStatus:
         contract: self.contracts[collection_key_hash],
         trait_root: self.trait_roots[collection_key_hash]
     })
-

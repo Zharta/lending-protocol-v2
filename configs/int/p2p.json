@@ -1,0 +1,95 @@
+{
+    "common": {
+        "delegation_registry": {
+            "abi_key": "8f910c9aa38cffa69fc4a97a81cbc79dda306e2a",
+            "address": "0x00000000000000447e69651d841bD8D104Bed493",
+            "contract": "DelegationRegistry",
+            "properties_addresses": {}
+        },
+        "p2p_controller": {
+            "address": "0x4a8900CB9566EC2a8967B534Cb5044e63DF34691",
+            "contract": "P2PLendingControl",
+            "properties": {
+                "trait_roots_key": "configs.trait_roots"
+            },
+            "properties_addresses": {}
+        },
+        "usdc": {
+            "address": "0x74540605Dc99f9cd65A3eA89231fFA727B1049E2",
+            "contract": "ERC20",
+            "properties": {
+                "decimals": 6,
+                "name": "USDC",
+                "supply": "1000000000000000000",
+                "symbol": "USDC"
+            },
+            "properties_addresses": {}
+        },
+        "weth": {
+            "address": "0xB7603602860a4816154F2A3bA4d6aBDDd8937b84",
+            "contract": "ERC20",
+            "properties": {
+                "decimals": 18,
+                "name": "WETH",
+                "supply": "1000000000000000000000000",
+                "symbol": "WETH"
+            },
+            "properties_addresses": {}
+        }
+    },
+    "configs": {
+        "trait_roots": {}
+    },
+    "p2p": {
+        "eth_nfts": {
+            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
+            "address": "0x9986E02Cb09cdEd244EE0139e545d4F308B748B1",
+            "contract": "P2PLendingNfts",
+            "properties": {
+                "cryptopunks_key": "punk",
+                "delegation_registry_key": "common.delegation_registry",
+                "max_borrower_broker_settlement_fee": 1000,
+                "max_lender_broker_settlement_fee": 1000,
+                "max_protocol_settlement_fee": 1000,
+                "max_protocol_upfront_fee": 1000,
+                "p2p_controller_key": "common.p2p_controller",
+                "payment_token_key": "common.weth",
+                "protocol_settlement_fee": 0,
+                "protocol_upfront_fee": 0,
+                "protocol_wallet": "0x313e7bF4D508087295f092Bb9fadcE3b7b4dc89e"
+            },
+            "properties_addresses": {
+                "cryptopunks": "0xbF2f1565C894ccE3c74F89602280F417f8970538",
+                "delegation_registry": "0x00000000000000447e69651d841bD8D104Bed493",
+                "p2p_controller": "0x4a8900CB9566EC2a8967B534Cb5044e63DF34691",
+                "payment_token": "0xB7603602860a4816154F2A3bA4d6aBDDd8937b84"
+            },
+            "version": "1"
+        },
+        "usdc_nfts": {
+            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
+            "address": "0xA1Ae632834eeca8Bca17E9614472Ea173dFedFB2",
+            "contract": "P2PLendingNfts",
+            "properties": {
+                "cryptopunks_key": "punk",
+                "delegation_registry_key": "common.delegation_registry",
+                "max_borrower_broker_settlement_fee": 1000,
+                "max_lender_broker_settlement_fee": 1000,
+                "max_protocol_settlement_fee": 1000,
+                "max_protocol_upfront_fee": 1000,
+                "p2p_controller_key": "common.p2p_controller",
+                "payment_token_key": "common.usdc",
+                "protocol_settlement_fee": 0,
+                "protocol_upfront_fee": 0,
+                "protocol_wallet": "0x313e7bF4D508087295f092Bb9fadcE3b7b4dc89e"
+            },
+            "properties_addresses": {
+                "cryptopunks": "0xbF2f1565C894ccE3c74F89602280F417f8970538",
+                "delegation_registry": "0x00000000000000447e69651d841bD8D104Bed493",
+                "p2p_controller": "0x4a8900CB9566EC2a8967B534Cb5044e63DF34691",
+                "payment_token": "0x74540605Dc99f9cd65A3eA89231fFA727B1049E2"
+            },
+            "version": "1"
+        }
+    }
+}

@@ -36,7 +36,10 @@ class DeploymentContext:
         return self.config[key]
 
     def __contains__(self, key):
-        return key in self.contracts or key in self.config
+        try:
+            return key in self.contracts or key in self.config
+        except TypeError:
+            return False
 
     def keys(self):
         return self.contracts.keys() | self.config.keys()

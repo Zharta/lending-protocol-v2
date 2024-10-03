@@ -6,6 +6,15 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
+        "p2p_controller": {
+            "abi_key": "04afdba3576595c8dc72c60cb9213580887fa375",
+            "address": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
+            "contract": "P2PLendingControl",
+            "properties": {
+                "trait_roots_key": "configs.trait_roots"
+            },
+            "properties_addresses": {}
+        },
         "usdc": {
             "address": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab",
             "contract": "ERC20",
@@ -29,18 +38,71 @@
             "properties_addresses": {}
         }
     },
-    "configs": {},
+    "configs": {
+        "trait_roots": {
+            "anticyclone": "990b7a4af2012be5f172b464961947422d00fe5c5536d127c2412620d93ae744",
+            "archetype": "bc5c53873f536a547a142fd8eaf71d95ecc20c26ab273da08faea6b7ddb901c5",
+            "azuki": "c271e7ac89a729ec41339afd5c765a27d84a209bc8624db3625e8d6aff993fd9",
+            "bakc": "ccf7e2a7ac281425729183e786c8975a94b053a6567afbfd19a57786803b0287",
+            "bayc": "cbb0018e80fc234ad6d8ddb6059408311bef0f6958aa4b8bf883259ef61d93f2",
+            "beanz": "38ee56d6c725a11eb46b4bff047a7052715aa48c32aab09e75fdc7e619498350",
+            "chromie": "d46a73b0e79a51621fc6b76241c6130c00662af57a650467c87b69a7712a23a7",
+            "clonex": "105479b275bd37e38b90463778c33b96e0a6e7defb82ab02a33870e2d7b1ed28",
+            "cool": "70a7e47e5921a3f5c23050024d58c0c25eda6985f8b18c5c07e4c7c712c17bb6",
+            "degods": "b357a7f235da62cded667b39beab2f799200711a7856d0216ce5671267fd888f",
+            "doodles": "0aaa5a84d8411244dac4ca6e7727c1942d3d08d91e3c069f55d5167c6a898956",
+            "fidenza": "7a2c2d4df0310875969023ab9f538707c2e133de59e33a5dc41f6e04f5aacc2d",
+            "gazers": "d7454216281063d43b32d0ec1bcfdf47b539843c4dbcb6645c5461fa686fa319",
+            "hvmtl": "b25e01af253b955ed067df16621d70f32bb250583bd24a98df125c41c129418f",
+            "invsble": "01327d3da981c23391c0dcde635b6f8fe6c87b618131256cd74eacdeffb94329",
+            "lilpudgys": "8f4b3b681e1773ce8c1b358759468c71796d2f1b70b74fa0557cf74b01d294cf",
+            "mayc": "8c9182f3d46846db42a51d85b9a5218cffb2274e1548beefd97c73db18bdb15e",
+            "meebits": "9377ea5c1ee80187b047ec1e3a9f72ed8c7686c2103f9c68e4e1fcad6fc21a70",
+            "memoriesofqilin": "09b85b126e2f3af123adb5072cd833ac02d2cb43074880fab6d1a52eb1af63b2",
+            "meridian": "8fbf608113b6ffec3412a1511f56547fd3bd246212c94732c36163066ff72c6b",
+            "miladymaker": "b1476d70165ef76a0b6169d04e74fa2617774d56f57b2e21706a635e3fbe6ce4",
+            "moonbirds": "32807172ae29b9a95b44062ebebcc525b5a96d4a4fb4677fa8422aaf099580ad",
+            "opepen": "6d055434f1fac080e4e1480d89b48ad3c8da2f40a218de71ccdd353a09b938dc",
+            "otherdeed": "323039bae07cc6a8392b443fd078679e4f30499fb6764716df5d2e2ca5cd66cd",
+            "otherdeedexpanded": "7416ed9f1241b094479e921c6d48901358c495be3cb10a68a5217a818510740b",
+            "othersidekoda": "f7846a8643ddb515fd358de347a7b37afe68e253da15ef24fb3aec7ead816108",
+            "othersidekodamara": "d6bbd3db07c31d641c56b874b33b3882b42aafce5ebf8d8bdd4a544bc3959ef5",
+            "ppg": "290622562d967f9c401dce10ce96bc9742a2d8a4a8cedb285c1b3cb530d1b829",
+            "punk": "098779f13be10519ced3ac6d42e129afc1299eabe2c12ee2c39c41282f488f46",
+            "quirkies": "115f524e0a23dcb25e29020dd78b73309eb519756957b5f8e83b8624ddf9b294",
+            "rektguy": "c1f3db64a822a3c2e4b581d03d2cc7bd27b71b99a738c0bac1c8eaaf0c65aa60",
+            "renga": "e677a47bac680935cd28085320a1a81b2df4baa9009214dde726413669e6a0bf",
+            "rentingkoda": "b99290e2d53d0aad57d2b3b7db534a9a7a7faa34a6d8bde1edd05f15d1eecef6",
+            "ringers": "c11a30fb164c279f87baca1c075c0021bd5083b30d394414c12a9ae1d8d399a6",
+            "thecaptainz": "4b0cbfe3f34976940a951dc5eeeae118ee06877d878d6ed3eb7f7b420a248067",
+            "thecurrency": "2ce6db666138aa7cf6f7ab0445f1a497ea28a1c363150e1d6e392aa7002e9c17",
+            "theeternalpump": "f4db98706e8f34c8a72f0636da8c1f00fe990c797bb93e426083c7477cb32e07",
+            "thegrailed": "92a132e647065f0a5ffabf1318328f6bd9083fc5f3a9f9b67a6b8177df56a801",
+            "theharvest": "9627cd765f9b54793155072633164fd883f9ce04238376754011e730fe2bcf83",
+            "thepotatoz": "84a1a15adfde005a071dca85aa1c49a813f262a09d29a8ae15d936a9da8a2cbf",
+            "vft": "37e6cfbe64927ca0c549b6c506f3c165d3b6b5cfcad1e1f91b3eccd59e350092",
+            "wgame": "c810be43a4589a4e8931f909019ee4b990df103a006f9299f187e84d73ddd4d2",
+            "wgamefarmer": "10e0d717f07457131236bee8b2283bc83a298daddd87f00ad46af8706babe0de",
+            "wgameland": "37aaddf77e52a54dcb80aeffab96a6ea0c45e06e6a8ba00c831803b48332cbfe",
+            "windsofyawanawa": "b010042bd4135a3d8bfef4c8b9f61463dbabc43d9e4a4e7c9e311d42ed7b4ca2",
+            "wow": "7e2a2b10f5bf1ad09785d6bf1242dd3999ae985b4a06fb355d4c686ff1961396",
+            "wpunk": "01cbb39af28166cf4179af8e3e1380d1934005fcf4fe034583bf0ecd09b02a32"
+        }
+    },
     "p2p": {
         "eth_nfts": {
-            "abi_key": "b267de93adcc2a0ba131a3e2e6c4d8daef2b58cc",
-            "address": "0xde427aec548B74f5bbe3Dc2d005C5E8F8708D3F8",
+            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
+            "address": "0x9D1eb389b310b09D6417a7170b873C4FbA181425",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
                 "delegation_registry_key": "common.delegation_registry",
-                "payment_token_key": "common.weth",
+                "max_borrower_broker_settlement_fee": 1000,
+                "max_lender_broker_settlement_fee": 1000,
                 "max_protocol_settlement_fee": 1000,
                 "max_protocol_upfront_fee": 1000,
+                "p2p_controller_key": "common.p2p_controller",
+                "payment_token_key": "common.weth",
                 "protocol_settlement_fee": 0,
                 "protocol_upfront_fee": 0,
                 "protocol_wallet": "0x66aB6D9362d4F35596279692F0251Db635165871"
@@ -48,20 +110,24 @@
             "properties_addresses": {
                 "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
                 "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
+                "p2p_controller": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
                 "payment_token": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb"
             },
             "version": "1"
         },
         "usdc_nfts": {
-            "abi_key": "b267de93adcc2a0ba131a3e2e6c4d8daef2b58cc",
-            "address": "0x4540Cf428f7331df0aD9fEe11632daC820054bc7",
+            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
+            "address": "0x44b6E8D583191BFF1cCaeef7aE0bb3e412E8c919",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
                 "delegation_registry_key": "common.delegation_registry",
-                "payment_token_key": "common.usdc",
+                "max_borrower_broker_settlement_fee": 1000,
+                "max_lender_broker_settlement_fee": 1000,
                 "max_protocol_settlement_fee": 1000,
                 "max_protocol_upfront_fee": 1000,
+                "p2p_controller_key": "common.p2p_controller",
+                "payment_token_key": "common.usdc",
                 "protocol_settlement_fee": 0,
                 "protocol_upfront_fee": 0,
                 "protocol_wallet": "0x66aB6D9362d4F35596279692F0251Db635165871"
@@ -69,6 +135,7 @@
             "properties_addresses": {
                 "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
                 "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
+                "p2p_controller": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
                 "payment_token": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab"
             },
             "version": "1"
