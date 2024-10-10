@@ -299,6 +299,7 @@ def __init__(
 
     assert _protocol_upfront_fee <= _max_protocol_upfront_fee, "upfront fee exceeds max"
     assert _protocol_settlement_fee <= _max_protocol_settlement_fee, "settlement fee exceeds max"
+    assert _max_lender_broker_settlement_fee <= BPS, "broker settlement fee gt bps"
 
     self.owner = msg.sender
     payment_token = _payment_token
