@@ -497,7 +497,8 @@ def create_loan(
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._transfer_funds(loan.lender, fee.wallet, fee.upfront_amount)
 
-    self._set_delegation(delegate, loan.collateral_contract, loan.collateral_token_id, delegate != empty(address))
+    if delegate != empty(address):
+        self._set_delegation(delegate, loan.collateral_contract, loan.collateral_token_id, True)
 
     log LoanCreated(
         loan.id,
