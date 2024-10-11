@@ -149,6 +149,7 @@ event LoanCreated:
     pro_rata: bool
     offer_id: bytes32
     offer_tracing_id: bytes32
+    delegate: address
 
 event LoanReplaced:
     id: bytes32
@@ -514,7 +515,8 @@ def create_loan(
         loan.fees,
         loan.pro_rata,
         offer_id,
-        offer.offer.tracing_id
+        offer.offer.tracing_id,
+        delegate
     )
     return loan.id
 
