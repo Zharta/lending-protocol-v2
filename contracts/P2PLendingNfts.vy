@@ -142,6 +142,7 @@ event LoanCreated:
     fees: DynArray[Fee, MAX_FEES]
     pro_rata: bool
     offer_id: bytes32
+    delegate: address
 
 event LoanReplaced:
     id: bytes32
@@ -485,7 +486,8 @@ def create_loan(
         loan.collateral_token_id,
         loan.fees,
         loan.pro_rata,
-        self._compute_signed_offer_id(offer)
+        self._compute_signed_offer_id(offer),
+        delegate
     )
     return loan.id
 
