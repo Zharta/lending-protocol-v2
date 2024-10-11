@@ -971,6 +971,8 @@ def _get_loan_fees(offer: Offer, borrower_broker_upfront_fee_amount: uint256, bo
         assert borrower_broker != empty(address), "broker fee without address"
     assert offer.broker_settlement_fee_bps <= max_lender_broker_settlement_fee, "lender broker fee exceeds max"
     assert borrower_broker_settlement_fee_bps <= max_borrower_broker_settlement_fee, "borrower broker fee exceeds max"
+    assert self.protocol_settlement_fee + offer.broker_settlement_fee_bps <= BPS, "settlement fees gt principal"
+
     fees.append(Fee({
         type: FeeType.PROTOCOL_FEE,
         upfront_amount: self.protocol_upfront_fee * offer.principal / BPS,
