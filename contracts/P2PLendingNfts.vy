@@ -28,12 +28,6 @@ from vyper.interfaces import ERC721 as IERC721
 from vyper.interfaces import ERC20 as IERC20
 
 
-interface WETH:
-    def deposit(): payable
-    def withdraw(_amount: uint256): nonpayable
-    def transferFrom(_from: address, _to: address, _amount: uint256) -> bool: nonpayable
-    def transfer(_to : address, _value : uint256) -> bool: nonpayable
-
 interface CryptoPunksMarket:
     def transferPunk(to: address, punkIndex: uint256): nonpayable
     def buyPunk(punkIndex: uint256): payable
@@ -270,7 +264,7 @@ revoked_offers: public(HashMap[bytes32, bool])
 authorized_proxies: public(HashMap[address, bool])
 pending_transfers: public(HashMap[address, uint256])
 
-VERSION: constant(String[30]) = "P2PLendingNfts.20241002"
+VERSION: public(constant(String[30])) = "P2PLendingNfts.20241002"
 
 ZHARTA_DOMAIN_NAME: constant(String[6]) = "Zharta"
 ZHARTA_DOMAIN_VERSION: constant(String[1]) = "1"
@@ -314,7 +308,6 @@ def __init__(
     assert _payment_token != empty(address), "payment token is zero"
     assert _p2p_control != empty(address), "p2p control is zero"
     assert _delegation_registry != empty(address), "delegation registry is zero"
-    assert _cryptopunks != empty(address), "cryptopunks is zero"
 
     assert _protocol_upfront_fee <= _max_protocol_upfront_fee, "upfront fee exceeds max"
     assert _protocol_settlement_fee <= _max_protocol_settlement_fee, "settlement fee exceeds max"

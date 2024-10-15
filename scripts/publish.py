@@ -35,7 +35,7 @@ def get_abi_map(context, env: Environment) -> dict:
         config = json.load(f)
 
     contracts = {
-        f"{prefix}.{k}": v for prefix, contracts in config.items() for k, v in contracts.items() if prefix in ["common", "p2p"]
+        f"{prefix}.{k}": v for prefix, contracts in config.items() for k, v in contracts.items() if prefix in {"common", "p2p"}
     }
     for k, config in contracts.items():
         contract = context[k].contract
@@ -59,7 +59,7 @@ def get_p2p_configs(context, env: Environment) -> dict:
     return p2p_configs
 
 
-def get_traits_roots(context, env: Environment) -> dict:
+def get_traits_roots(context, env: Environment) -> dict:  # noqa: ARG001
     config_file = f"{Path.cwd()}/configs/{env.name}/p2p.json"
     with open(config_file, "r") as f:
         config = json.load(f)
