@@ -9,7 +9,7 @@ from rich import print
 from rich.markup import escape
 
 from .basetypes import ContractConfig, DeploymentContext
-from .transactions import check_different, check_owner, execute, execute_read
+from .transactions import check_owner, execute, execute_read
 
 ZERO_ADDRESS = "0x" + "00" * 20
 
