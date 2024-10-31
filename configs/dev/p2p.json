@@ -113,6 +113,7 @@
                 "p2p_controller": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
                 "payment_token": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb"
             },
+            "token_symbol": "WETH",
             "version": "1"
         },
         "usdc_nfts": {
@@ -138,6 +139,7 @@
                 "p2p_controller": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
                 "payment_token": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab"
             },
+            "token_symbol": "USDC",
             "version": "1"
         }
     }

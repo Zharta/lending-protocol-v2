@@ -21,6 +21,7 @@ P2P_CONFIGS = DYNAMODB.Table(f"p2p-configs-{ENV.name}")
 COLLECTIONS = DYNAMODB.Table(f"collections-{ENV.name}")
 ABI = DYNAMODB.Table(f"abis-{ENV.name}")
 KEY_ATTRIBUTES = ["p2p_config_key"]
+EMPTY_BYTES32 = "00" * 32
 
 
 def abi_key(abi: list) -> str:
@@ -84,6 +85,14 @@ def update_collection_trait_root(collection_key: str, root: str):
     )
 
 
+def update_collection_p2p_whitelisted(collection_key: str, *, whitelisted: bool):
+    COLLECTIONS.update_item(
+        Key={"collection_key": collection_key},
+        UpdateExpression="SET p2p_whitelisted=:v",
+        ExpressionAttributeValues={":v": whitelisted},
+    )
+
+
 def update_abi(abi_key: str, abi: list[dict]):
     ABI.update_item(Key={"abi_key": abi_key}, UpdateExpression="SET abi=:v", ExpressionAttributeValues={":v": abi})
 
@@ -117,5 +126,10 @@ def cli():
     for collection, root in trait_roots.items():
         print(f"updating trait root {collection=} {root=}")
         update_collection_trait_root(collection, root)
+
+    for collection, root in trait_roots.items():
+        whitelisted = root != EMPTY_BYTES32
+        print(f"updating whitelisted root {collection=} {whitelisted=}")
+        update_collection_p2p_whitelisted(collection, whitelisted=whitelisted)
 
     print(f"P2P configs updated in {ENV.name}")
