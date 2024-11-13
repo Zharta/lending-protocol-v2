@@ -29,9 +29,8 @@ def cli(network):
 
     changes = set()
     # changes |= {
-    #     # "configs.max_penalty_fee_weth",
-    #     # "eth-grails.loans",
-    #     # "common.nftx_marketplace_zap",
+    #     "configs.trait_roots",
+    #     "p2p.eth_nfts",
     # }
 
     dm.deploy(changes, dryrun=True)

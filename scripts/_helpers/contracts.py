@@ -12,6 +12,7 @@ from .basetypes import ContractConfig, DeploymentContext
 from .transactions import check_owner, execute, execute_read
 
 ZERO_ADDRESS = "0x" + "00" * 20
+ZERO_BYTES32 = "0x" + "00" * 32
 
 
 class GenericContract(ContractConfig):
@@ -72,12 +73,31 @@ class P2PLendingControl(ContractConfig):
         else:
             print(f"Contract [blue]{escape(self.key)}[/] change_collections_trait_roots with no roots, skipping update")
 
+        contracts_to_update = [
+            (self.get_collection_hash(collection), contract)
+            for collection, root in trait_roots.items()
+            for contract in [context[collection].address() if "0x" + root != ZERO_BYTES32 else ZERO_ADDRESS]
+            if context.dryrun or self.contract_needs_update(context, collection, contract)
+        ]
+        if contracts_to_update:
+            execute(context, self.key, "change_collections_contracts", contracts_to_update)
+        else:
+            print(f"Contract [blue]{escape(self.key)}[/] change_collections_contracts with no contracts, skipping update")
+
     def root_needs_update(self, context: DeploymentContext, collection: str, root: str) -> bool:
         collection_hash = self.get_collection_hash(collection)
         current_root = execute_read(context, self.key, "trait_roots", collection_hash)
         # print(f"Current root for {collection} is {current_root.hex()}, new is {root}")
         if current_root.hex() == "0x" + root:
             print(f"Contract [blue]{escape(self.key)}[/] trait root for {collection} is already {root}, skipping update")
+            return False
+        return True
+
+    def contract_needs_update(self, context: DeploymentContext, collection: str, contract: str) -> bool:
+        collection_hash = self.get_collection_hash(collection)
+        current_contract = execute_read(context, self.key, "contracts", collection_hash)
+        if current_contract == contract:
+            print(f"Contract [blue]{escape(self.key)}[/] contract for {collection} is already {contract}, skipping update")
             return False
         return True
 
