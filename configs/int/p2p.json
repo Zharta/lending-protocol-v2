@@ -7,7 +7,8 @@
             "properties_addresses": {}
         },
         "p2p_controller": {
-            "address": "0x4a8900CB9566EC2a8967B534Cb5044e63DF34691",
+            "abi_key": "04afdba3576595c8dc72c60cb9213580887fa375",
+            "address": "0xE109f0Cb5246606Cc4DC5Ade3fe25ab0F5C503a7",
             "contract": "P2PLendingControl",
             "properties": {
                 "trait_roots_key": "configs.trait_roots"
@@ -38,12 +39,60 @@
         }
     },
     "configs": {
-        "trait_roots": {}
+        "trait_roots": {
+            "anticyclone": "990b7a4af2012be5f172b464961947422d00fe5c5536d127c2412620d93ae744",
+            "archetype": "bc5c53873f536a547a142fd8eaf71d95ecc20c26ab273da08faea6b7ddb901c5",
+            "autoglyphs": "0000000000000000000000000000000000000000000000000000000000000000",
+            "azuki": "c271e7ac89a729ec41339afd5c765a27d84a209bc8624db3625e8d6aff993fd9",
+            "bakc": "ccf7e2a7ac281425729183e786c8975a94b053a6567afbfd19a57786803b0287",
+            "bayc": "cbb0018e80fc234ad6d8ddb6059408311bef0f6958aa4b8bf883259ef61d93f2",
+            "beanz": "0000000000000000000000000000000000000000000000000000000000000000",
+            "chromie": "d46a73b0e79a51621fc6b76241c6130c00662af57a650467c87b69a7712a23a7",
+            "clonex": "105479b275bd37e38b90463778c33b96e0a6e7defb82ab02a33870e2d7b1ed28",
+            "cool": "70a7e47e5921a3f5c23050024d58c0c25eda6985f8b18c5c07e4c7c712c17bb6",
+            "degods": "b357a7f235da62cded667b39beab2f799200711a7856d0216ce5671267fd888f",
+            "doodles": "0aaa5a84d8411244dac4ca6e7727c1942d3d08d91e3c069f55d5167c6a898956",
+            "fidenza": "7a2c2d4df0310875969023ab9f538707c2e133de59e33a5dc41f6e04f5aacc2d",
+            "gazers": "d7454216281063d43b32d0ec1bcfdf47b539843c4dbcb6645c5461fa686fa319",
+            "hvmtl": "b25e01af253b955ed067df16621d70f32bb250583bd24a98df125c41c129418f",
+            "invsble": "0000000000000000000000000000000000000000000000000000000000000000",
+            "lilpudgys": "8f4b3b681e1773ce8c1b358759468c71796d2f1b70b74fa0557cf74b01d294cf",
+            "mayc": "8c9182f3d46846db42a51d85b9a5218cffb2274e1548beefd97c73db18bdb15e",
+            "meebits": "9377ea5c1ee80187b047ec1e3a9f72ed8c7686c2103f9c68e4e1fcad6fc21a70",
+            "memoriesofqilin": "09b85b126e2f3af123adb5072cd833ac02d2cb43074880fab6d1a52eb1af63b2",
+            "meridian": "8fbf608113b6ffec3412a1511f56547fd3bd246212c94732c36163066ff72c6b",
+            "miladymaker": "b1476d70165ef76a0b6169d04e74fa2617774d56f57b2e21706a635e3fbe6ce4",
+            "moonbirds": "32807172ae29b9a95b44062ebebcc525b5a96d4a4fb4677fa8422aaf099580ad",
+            "opepen": "0000000000000000000000000000000000000000000000000000000000000000",
+            "otherdeed": "323039bae07cc6a8392b443fd078679e4f30499fb6764716df5d2e2ca5cd66cd",
+            "otherdeedexpanded": "7416ed9f1241b094479e921c6d48901358c495be3cb10a68a5217a818510740b",
+            "othersidekoda": "f7846a8643ddb515fd358de347a7b37afe68e253da15ef24fb3aec7ead816108",
+            "othersidekodamara": "d6bbd3db07c31d641c56b874b33b3882b42aafce5ebf8d8bdd4a544bc3959ef5",
+            "ppg": "290622562d967f9c401dce10ce96bc9742a2d8a4a8cedb285c1b3cb530d1b829",
+            "punk": "098779f13be10519ced3ac6d42e129afc1299eabe2c12ee2c39c41282f488f46",
+            "quirkies": "0000000000000000000000000000000000000000000000000000000000000000",
+            "rektguy": "c1f3db64a822a3c2e4b581d03d2cc7bd27b71b99a738c0bac1c8eaaf0c65aa60",
+            "renga": "e677a47bac680935cd28085320a1a81b2df4baa9009214dde726413669e6a0bf",
+            "ringers": "c11a30fb164c279f87baca1c075c0021bd5083b30d394414c12a9ae1d8d399a6",
+            "thecaptainz": "4b0cbfe3f34976940a951dc5eeeae118ee06877d878d6ed3eb7f7b420a248067",
+            "thecurrency": "0000000000000000000000000000000000000000000000000000000000000000",
+            "theeternalpump": "f4db98706e8f34c8a72f0636da8c1f00fe990c797bb93e426083c7477cb32e07",
+            "thegrailed": "0000000000000000000000000000000000000000000000000000000000000000",
+            "theharvest": "9627cd765f9b54793155072633164fd883f9ce04238376754011e730fe2bcf83",
+            "thepotatoz": "84a1a15adfde005a071dca85aa1c49a813f262a09d29a8ae15d936a9da8a2cbf",
+            "vft": "37e6cfbe64927ca0c549b6c506f3c165d3b6b5cfcad1e1f91b3eccd59e350092",
+            "wgame": "0000000000000000000000000000000000000000000000000000000000000000",
+            "wgamefarmer": "0000000000000000000000000000000000000000000000000000000000000000",
+            "wgameland": "0000000000000000000000000000000000000000000000000000000000000000",
+            "windsofyawanawa": "b010042bd4135a3d8bfef4c8b9f61463dbabc43d9e4a4e7c9e311d42ed7b4ca2",
+            "wow": "0000000000000000000000000000000000000000000000000000000000000000",
+            "wpunk": "01cbb39af28166cf4179af8e3e1380d1934005fcf4fe034583bf0ecd09b02a32"
+        }
     },
     "p2p": {
         "eth_nfts": {
-            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
-            "address": "0x9986E02Cb09cdEd244EE0139e545d4F308B748B1",
+            "abi_key": "5a6f84b09451e64083b390b298643877c73352f2",
+            "address": "0x20bfae59eda3947aeba752B9634d10c60e205Cf3",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -61,15 +110,15 @@
             "properties_addresses": {
                 "cryptopunks": "0xbF2f1565C894ccE3c74F89602280F417f8970538",
                 "delegation_registry": "0x00000000000000447e69651d841bD8D104Bed493",
-                "p2p_controller": "0x4a8900CB9566EC2a8967B534Cb5044e63DF34691",
+                "p2p_controller": "0xE109f0Cb5246606Cc4DC5Ade3fe25ab0F5C503a7",
                 "payment_token": "0xB7603602860a4816154F2A3bA4d6aBDDd8937b84"
             },
             "token_symbol": "WETH",
             "version": "1"
         },
         "usdc_nfts": {
-            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
-            "address": "0xA1Ae632834eeca8Bca17E9614472Ea173dFedFB2",
+            "abi_key": "5a6f84b09451e64083b390b298643877c73352f2",
+            "address": "0x307cf8eb561b77E65cd843A73db6a05315488728",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -87,7 +136,7 @@
             "properties_addresses": {
                 "cryptopunks": "0xbF2f1565C894ccE3c74F89602280F417f8970538",
                 "delegation_registry": "0x00000000000000447e69651d841bD8D104Bed493",
-                "p2p_controller": "0x4a8900CB9566EC2a8967B534Cb5044e63DF34691",
+                "p2p_controller": "0xE109f0Cb5246606Cc4DC5Ade3fe25ab0F5C503a7",
                 "payment_token": "0x74540605Dc99f9cd65A3eA89231fFA727B1049E2"
             },
             "token_symbol": "USDC",
