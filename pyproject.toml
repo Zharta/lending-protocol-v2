@@ -67,6 +67,8 @@ target-version = "py311"
     "F401",
     "FBT003",
     "FURB118",
+    "FURB140",
+    "N806",
     "N815",
     "PLC1901",
     "PLR0914",
