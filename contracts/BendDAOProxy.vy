@@ -18,8 +18,8 @@ interface P2PLendingNfts:
     def payment_token() -> address: view
 
 
-interface Arcade:
-    def repay(loan_id: uint256): nonpayable
+interface BendDAO:
+    def repay(nft_asset: address, nft_token_id: uint256, amount: uint256): nonpayable
 
 
 interface IFlashLender:
@@ -101,10 +101,10 @@ struct Loan:
 
 
 struct CallbackData:
-    arcade_contract: address
+    benddao_contract: address
     approved: address
     payment_token: address
-    loan_id: uint256
+    collateral_address: address
     amount: uint256
     signed_offer: SignedOffer
     borrower: address
@@ -148,7 +148,7 @@ def onFlashLoan(
     assert IERC20(payment_token).balanceOf(self) >= amount, "Insufficient balance"
 
     IERC20(payment_token).approve(callback_data.approved, amount)
-    Arcade(callback_data.arcade_contract).repay(callback_data.loan_id)
+    BendDAO(callback_data.benddao_contract).repay(callback_data.collateral_address, callback_data.token_id, amount)
 
     self._create_loan(
         callback_data.signed_offer,
@@ -192,25 +192,26 @@ def _create_loan(
 
 
 @external
-def pay_arcade_loan(
-    arcade_contract: address,
+def pay_benddao_loan(
+    benddao_contract: address,
     approved: address,
     payment_token: address,
-    loan_id: uint256,
+    collateral_address: address,
+    token_id: uint256,
     amount: uint256,
 ):
     assert IERC20(payment_token).balanceOf(msg.sender) >= amount, "Insufficient borrower balance"
     IERC20(payment_token).transferFrom(msg.sender, self, amount)
     IERC20(payment_token).approve(approved, amount)
     assert IERC20(payment_token).balanceOf(self) >= amount, "Insufficient balance"
-    Arcade(arcade_contract).repay(loan_id)
+    BendDAO(benddao_contract).repay(collateral_address, token_id, amount)
 
 
 @external
 def refinance_loan(
-    arcade_contract: address,
+    benddao_contract: address,
     approved: address,
-    loan_id: uint256,
+    collateral_address: address,
     amount: uint256,
     signed_offer: SignedOffer,
     token_id: uint256,
@@ -220,10 +221,10 @@ def refinance_loan(
 
     payment_token: address = P2PLendingNfts(p2p_lending_nfts).payment_token()
     callback_data: CallbackData = CallbackData({
-        arcade_contract: arcade_contract,
+        benddao_contract: benddao_contract,
         approved: approved,
         payment_token: payment_token,
-        loan_id: loan_id,
+        collateral_address: collateral_address,
         amount: amount,
         signed_offer: signed_offer,
         borrower: msg.sender,

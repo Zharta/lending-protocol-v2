@@ -136,18 +136,10 @@ def p2p_nfts_usdc(p2p_lending_nfts_contract_def, usdc, delegation_registry, cryp
 
 
 @pytest.fixture
-def gondi_proxy(gondi_proxy_contract_def, p2p_nfts_usdc):
-    aave_pool_address_provider = "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
-    proxy = gondi_proxy_contract_def.deploy(p2p_nfts_usdc.address, aave_pool_address_provider)
+def gondi_proxy(gondi_proxy_contract_def, p2p_nfts_usdc, balancer):
+    proxy = gondi_proxy_contract_def.deploy(p2p_nfts_usdc.address, balancer.address)
     p2p_nfts_usdc.set_proxy_authorization(proxy, True, sender=p2p_nfts_usdc.owner())
     return proxy
-
-
-@pytest.fixture
-def aave(boa_env):
-    return boa.load_abi("contracts/auxiliary/AavePoolv3_abi.json", name="AavePoolv3").at(
-        "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2"
-    )
 
 
 @pytest.fixture
@@ -157,9 +149,10 @@ def gondi(boa_env):
     )
 
 
-def test_initial_state(aave, gondi_proxy, usdc, p2p_nfts_usdc, borrower):
-    assert gondi_proxy.POOL() == aave.address
-    assert gondi_proxy.ADDRESSES_PROVIDER() == aave.ADDRESSES_PROVIDER()
+def test_initial_state(balancer, gondi_proxy, usdc, p2p_nfts_usdc, borrower):
+    assert gondi_proxy.p2p_lending_nfts() == p2p_nfts_usdc.address
+    assert gondi_proxy.flash_lender() == balancer.address
+    assert p2p_nfts_usdc.authorized_proxies(gondi_proxy.address) is True
 
 
 def _create_gondi_loan(gondi, wpunk, token_id, borrower) -> GondiLoan:
@@ -189,7 +182,7 @@ def _create_gondi_loan(gondi, wpunk, token_id, borrower) -> GondiLoan:
         offerExecution=[
             OfferExecution(
                 offer=offer,
-                amount=45000000000,
+                amount=4500000000,
                 lenderOfferSignature=HexBytes(
                     "0x5b8fc44bb68dce40df16d939da4392e7e406423368452a79b1d598892a63302f51672d3bc271ef966538352dd7f387c1b4569bafa2760a712dd11f019cd4472e1c"
                 ),
@@ -242,34 +235,6 @@ def _sign_repayment_data(data: SignableRepaymentData, signer_key: str, verifying
     return signed_msg.signature
 
 
-def _test_pay_loan(gondi, gondi_proxy, usdc, borrower, owner, wpunk, now, borrower_key):
-    repayment_data = SignableRepaymentData(loanId=459, callbackData=b"", shouldDelegate=False)
-    loan_tranche = Tranche(
-        loanId=459,
-        floor=0,
-        principalAmount=20000000000000000000,
-        lender="0xb9b8Dc9ECaC8708A16F9c442063C2bFD74EaB78A",
-        accruedInterest=0,
-        startTime=1730864735,
-        aprBps=1500,
-    )
-
-    gondi_loan = GondiLoan(
-        borrower="0xD79b937791724e47F193f67162B92cDFbF7ABDFd",
-        nftCollateralTokenId=4134,
-        nftCollateralAddress=wpunk.address,
-        principalAddress=usdc.address,
-        principalAmount=20000000000000000000,
-        startTime=1730864735,
-        duration=2592000,
-        tranche=[loan_tranche],
-        protocolFee=0,
-    )
-
-    loan_repayment_data = LoanRepaymentData(data=repayment_data, loan=gondi_loan, borrowerSignature=b"")
-    print(loan_repayment_data)
-
-
 def test_pay_loan(gondi, gondi_proxy, usdc, borrower, owner, wpunk, now, borrower_key):
     token_id = 6501
     wpunk_owner = wpunk.ownerOf(token_id)
@@ -302,7 +267,7 @@ def test_pay_loan(gondi, gondi_proxy, usdc, borrower, owner, wpunk, now, borrowe
 
 
 def test_refinance(
-    aave,
+    balancer,
     borrower,
     borrower_key,
     debug_precompile,
@@ -341,7 +306,6 @@ def test_refinance(
     borrower = gondi_loan.borrower
     amount = gondi_loan.principalAmount + interest
     approved = gondi.address
-    flash_loan_fee = amount * 5 // BPS  # TODO: change provider
 
     offer = Offer(
         principal=amount,
@@ -356,19 +320,19 @@ def test_refinance(
     )
     signed_offer = sign_offer(offer, lender_key, p2p_nfts_usdc.address)
 
-    usdc.transfer(borrower, flash_loan_fee, sender=owner)
     usdc.transfer(lender, offer.principal, sender=owner)
 
-    assert usdc.balanceOf(borrower) >= flash_loan_fee
     assert usdc.balanceOf(lender) >= offer.principal
 
-    usdc.approve(gondi_proxy.address, amount + flash_loan_fee, sender=borrower)
+    usdc.approve(gondi_proxy.address, amount, sender=borrower)
     usdc.approve(gondi.address, amount, sender=borrower)
     usdc.approve(p2p_nfts_usdc.address, offer.principal, sender=lender)
 
     wpunk.setApprovalForAll(p2p_nfts_usdc.address, True, sender=borrower)
 
     p2p_control.change_collections_contracts([CollectionContract(wpunk_key_hash, wpunk.address)])
+
+    assert balancer.maxFlashLoan(usdc.address) >= amount
 
     gondi_proxy.refinance_loan(gondi.address, approved, loan_repayment_data, amount, signed_offer, token_id, sender=borrower)
 

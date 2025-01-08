@@ -32,23 +32,16 @@ def p2p_nfts_weth(p2p_lending_nfts_contract_def, weth, delegation_registry, cryp
 
 
 @pytest.fixture
-def arcade_proxy(arcade_proxy_contract_def, p2p_nfts_weth):
-    aave_pool_address_provider = "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
-    proxy = arcade_proxy_contract_def.deploy(p2p_nfts_weth.address, aave_pool_address_provider)
+def arcade_proxy(arcade_proxy_contract_def, p2p_nfts_weth, balancer):
+    proxy = arcade_proxy_contract_def.deploy(p2p_nfts_weth.address, balancer.address)
     p2p_nfts_weth.set_proxy_authorization(proxy, True, sender=p2p_nfts_weth.owner())
     return proxy
 
 
-@pytest.fixture
-def aave(boa_env):
-    return boa.load_abi("contracts/auxiliary/AavePoolv3_abi.json", name="AavePoolv3").at(
-        "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2"
-    )
-
-
-def test_initial_state(aave, arcade_proxy, weth, p2p_nfts_weth, borrower):
-    assert arcade_proxy.POOL() == aave.address
-    assert arcade_proxy.ADDRESSES_PROVIDER() == aave.ADDRESSES_PROVIDER()
+def test_initial_state(balancer, arcade_proxy, weth, p2p_nfts_weth, borrower):
+    assert arcade_proxy.p2p_lending_nfts() == p2p_nfts_weth.address
+    assert arcade_proxy.flash_lender() == balancer.address
+    assert p2p_nfts_weth.authorized_proxies(arcade_proxy.address) is True
 
 
 def test_pay_loan(arcade_proxy, weth, borrower, owner, wpunk):
@@ -69,7 +62,7 @@ def test_pay_loan(arcade_proxy, weth, borrower, owner, wpunk):
 
 
 def test_refinance(
-    aave,
+    balancer,
     borrower,
     debug_precompile,
     lender,
@@ -119,6 +112,7 @@ def test_refinance(
 
     p2p_control.change_collections_contracts([CollectionContract(wpunk_key_hash, wpunk.address)])
 
+    assert balancer.maxFlashLoan(weth.address) >= amount
     arcade_proxy.refinance_loan(arcade_contract, approved, loan_id, amount, signed_offer, token_id, sender=borrower)
 
     assert wpunk.ownerOf(token_id) == p2p_nfts_weth.address

@@ -33,8 +33,6 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(scope="session", autouse=True)
 def boa_env():
-    # boa.interpret.set_cache_dir(cache_dir=".cache/titanoboa")
-    # return boa
     old_env = boa.env
     new_env = Env()
     new_env._cached_call_profiles = old_env._cached_call_profiles
@@ -45,11 +43,9 @@ def boa_env():
         fork_uri = os.environ["BOA_FORK_RPC_URL"]
         disable_cache = os.environ.get("BOA_FORK_NO_CACHE")
         kw = {"cache_file": None} if disable_cache else {}
-        blkid = 21326447
         blkid = 21325933
 
         boa.env.fork(fork_uri, block_identifier=blkid, **kw)
-        # boa.env.fork(fork_uri, **kw)
         yield
 
         old_env._cached_call_profiles = new_env._cached_call_profiles
@@ -213,6 +209,11 @@ def punks(owner, cryptopunks_market_contract_def):
     return cryptopunks_market_contract_def.at("0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB")
 
 
+@pytest.fixture
+def punks_key_hash():
+    return sha3_256(b"cryptopunks").digest()
+
+
 @pytest.fixture(scope="module")
 def bayc(owner, erc721_contract_def):
     return erc721_contract_def.at("0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D")
@@ -244,9 +245,14 @@ def wpunk_key_hash():
     return sha3_256(b"wpunk").digest()
 
 
+@pytest.fixture(scope="module")
+def koda(owner, erc721_contract_def):
+    return erc721_contract_def.at("0xE012Baf811CF9c05c408e879C399960D1f305903")
+
+
 @pytest.fixture
-def punks_key_hash():
-    return sha3_256(b"cryptopunks").digest()
+def koda_key_hash():
+    return sha3_256(b"othersidekoda").digest()
 
 
 @pytest.fixture
@@ -267,6 +273,13 @@ def otherdeed_for_otherside_contract(owner, erc721_contract_def):
 @pytest.fixture(scope="module")
 def delegation_registry(owner, delegation_registry_contract_def):
     return delegation_registry_contract_def.at("0x00000000000076A84feF008CDAbe6409d2FE638B")
+
+
+@pytest.fixture
+def balancer(boa_env):
+    return boa.load_abi("contracts/auxiliary/BalancerFlashLoanProvider.json", name="Balancer").at(
+        "0x4EAF187ad4cE325bF6C84070b51c2f7224A51321"
+    )
 
 
 @pytest.fixture(scope="module")
@@ -309,6 +322,11 @@ def arcade_proxy_contract_def():
 @pytest.fixture(scope="session")
 def x2y2_proxy_contract_def():
     return boa.load_partial("contracts/X2Y2Proxy.vy")
+
+
+@pytest.fixture(scope="session")
+def benddao_proxy_contract_def():
+    return boa.load_partial("contracts/BendDAOProxy.vy")
 
 
 @pytest.fixture

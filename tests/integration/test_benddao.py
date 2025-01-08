@@ -32,32 +32,31 @@ def p2p_nfts_weth(p2p_lending_nfts_contract_def, weth, delegation_registry, cryp
 
 
 @pytest.fixture
-def x2y2_proxy(x2y2_proxy_contract_def, p2p_nfts_weth, balancer):
-    proxy = x2y2_proxy_contract_def.deploy(p2p_nfts_weth.address, balancer.address)
+def benddao_proxy(benddao_proxy_contract_def, p2p_nfts_weth, balancer):
+    proxy = benddao_proxy_contract_def.deploy(p2p_nfts_weth.address, balancer.address)
     p2p_nfts_weth.set_proxy_authorization(proxy, True, sender=p2p_nfts_weth.owner())
     return proxy
 
 
-def test_initial_state(balancer, x2y2_proxy, weth, p2p_nfts_weth, borrower):
-    assert x2y2_proxy.p2p_lending_nfts() == p2p_nfts_weth.address
-    assert x2y2_proxy.flash_lender() == balancer.address
-    assert p2p_nfts_weth.authorized_proxies(x2y2_proxy.address) is True
+def test_initial_state(balancer, benddao_proxy, weth, p2p_nfts_weth, borrower):
+    assert benddao_proxy.p2p_lending_nfts() == p2p_nfts_weth.address
+    assert benddao_proxy.flash_lender() == balancer.address
+    assert p2p_nfts_weth.authorized_proxies(benddao_proxy.address) is True
 
 
-def test_pay_loan(x2y2_proxy, weth, borrower, owner, captainz):
-    x2y2_contract = "0xB81965DdFdDA3923f292a47A1be83ba3A36B5133"
-    borrower = "0x5b4485cD1528b11c40a1e098F918026865DB2807"
-    loan_id = 50899
-    token_id = 9712
-    amount = 1714672700000000000 + 1630300000000000
-    approved = "0xeF887e8b1C06209F59E8Ae55D0e625C937344376"
+def test_pay_loan(benddao_proxy, weth, borrower, owner, koda):
+    benddao_contract = "0x70b97A0da65C15dfb0FFA02aEE6FA36e507C2762"
+    borrower = "0xFb71960563af69888eb10182711cD69dDD01dbF7"
+    token_id = 9851
+    amount = 670300000000000000 + 5436224997180424
+    approved = benddao_contract
 
     weth.transfer(borrower, amount, sender=owner)
-    weth.approve(x2y2_proxy.address, amount, sender=borrower)
+    weth.approve(benddao_proxy.address, amount, sender=borrower)
+    # weth.approve(benddao_contract, amount, sender=borrower)
+    benddao_proxy.pay_benddao_loan(benddao_contract, approved, weth.address, koda.address, token_id, amount, sender=borrower)
 
-    x2y2_proxy.pay_x2y2_loan(x2y2_contract, approved, weth.address, loan_id, amount, sender=borrower)
-
-    assert captainz.ownerOf(token_id) == borrower
+    assert koda.ownerOf(token_id) == borrower
 
 
 def test_refinance(
@@ -66,28 +65,27 @@ def test_refinance(
     debug_precompile,
     lender,
     lender_key,
-    captainz,
-    captainz_key_hash,
-    x2y2_proxy,
+    koda,
+    koda_key_hash,
+    benddao_proxy,
     now,
     owner,
     p2p_control,
     p2p_nfts_weth,
     weth,
 ):
-    x2y2_contract = "0xB81965DdFdDA3923f292a47A1be83ba3A36B5133"
-    borrower = "0x5b4485cD1528b11c40a1e098F918026865DB2807"
-    loan_id = 50899
-    token_id = 9712
-    amount = 1714672700000000000 + 1630300000000000
-    approved = "0xeF887e8b1C06209F59E8Ae55D0e625C937344376"
+    benddao_contract = "0x70b97A0da65C15dfb0FFA02aEE6FA36e507C2762"
+    borrower = "0xFb71960563af69888eb10182711cD69dDD01dbF7"
+    token_id = 9851
+    amount = 670300000000000000 + 5436224997180424
+    approved = benddao_contract
 
     offer = Offer(
         principal=amount,
         interest=amount // 100,
         payment_token=weth.address,
         duration=30 * 86400,
-        collection_key_hash=captainz_key_hash,
+        collection_key_hash=koda_key_hash,
         token_id=token_id,
         expiration=now + 100,
         lender=lender,
@@ -101,15 +99,15 @@ def test_refinance(
 
     assert weth.balanceOf(lender) >= offer.principal
 
-    weth.approve(x2y2_proxy.address, amount, sender=borrower)
+    weth.approve(benddao_proxy.address, amount, sender=borrower)
     weth.approve(p2p_nfts_weth.address, offer.principal, sender=lender)
 
-    captainz.setApprovalForAll(p2p_nfts_weth.address, True, sender=borrower)
+    koda.setApprovalForAll(p2p_nfts_weth.address, True, sender=borrower)
 
-    p2p_control.change_collections_contracts([CollectionContract(captainz_key_hash, captainz.address)])
+    p2p_control.change_collections_contracts([CollectionContract(koda_key_hash, koda.address)])
 
     assert balancer.maxFlashLoan(weth.address) >= amount
-    x2y2_proxy.refinance_loan(x2y2_contract, approved, loan_id, amount, signed_offer, token_id, sender=borrower)
+    benddao_proxy.refinance_loan(benddao_contract, approved, koda.address, amount, signed_offer, token_id, sender=borrower)
 
-    assert captainz.ownerOf(token_id) == p2p_nfts_weth.address
+    assert koda.ownerOf(token_id) == p2p_nfts_weth.address
     assert weth.balanceOf(borrower) == 0

@@ -26,27 +26,15 @@ interface IFlashLoanSimpleReceiver:
     def POOL() -> address: view
 
 
-interface IPoolProvider:
-    def getPool() -> address: view
-
-
-interface IPool:
-    def flashLoanSimple(
-        receiverAddress: address,
-        asset: address,
-        amount: uint256,
-        params: Bytes[1024],
-        referralCode: uint16
-    ): nonpayable
-
-
 interface NFTfi:
     def payBackLoan(loan_id: uint32): nonpayable
+
 
 interface IFlashLender:
     def maxFlashLoan(token: address) -> uint256: view
     def flashFee(token: address, amount: uint256) -> uint256: view
     def flashLoan(receiver: address, token: address, amount: uint256, data: Bytes[1024]) -> bool: nonpayable
+
 
 enum FeeType:
     PROTOCOL_FEE
@@ -138,59 +126,13 @@ MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
 p2p_lending_nfts: public(immutable(address))
-aave_pool_provider: public(immutable(address))
 flash_lender: public(immutable(address))
 
 @external
-def __init__(_p2p_lending_nfts: address, _aave_pool_provider: address, _flash_lender: address):
+def __init__(_p2p_lending_nfts: address, _flash_lender: address):
     p2p_lending_nfts = _p2p_lending_nfts
-    aave_pool_provider = _aave_pool_provider
     flash_lender = _flash_lender
 
-
-
-@external
-def executeOperation(
-    asset: address,
-    amount: uint256,
-    premium: uint256,
-    initiator: address,
-    params: Bytes[1024]
-) -> bool:
-    raw_call(0x0000000000000000000000000000000000011111, _abi_encode(b"callback"))
-    # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(initiator))
-
-    assert initiator == self, "who are you?"
-    aave_pool: address = IPoolProvider(aave_pool_provider).getPool()
-    payment_token: address = P2PLendingNfts(p2p_lending_nfts).payment_token()
-
-    # assert premium == 0, "Premium not supported"
-    callback_data: CallbackData = _abi_decode(params, CallbackData)
-
-    IERC20(payment_token).transferFrom(callback_data.borrower, self, premium)
-    assert IERC20(payment_token).balanceOf(self) >= amount + premium, "Insufficient balance"
-    assert msg.sender == aave_pool, "Unauthorized"
-    assert asset == payment_token, "Invalid asset"
-
-    IERC20(payment_token).approve(callback_data.approved, amount)
-    NFTfi(callback_data.nftfi_contract).payBackLoan(convert(callback_data.loan_id, uint32))
-
-    self._create_loan(
-        callback_data.signed_offer,
-        callback_data.token_id,
-        [],
-        empty(address),
-        0,
-        0,
-        empty(address)
-    )
-
-    IERC20(payment_token).transferFrom(callback_data.borrower, self, amount)
-
-    assert IERC20(payment_token).balanceOf(self) >= amount + premium, "Insufficient balance"
-    IERC20(payment_token).approve(aave_pool, amount + premium)
-
-    return True
 
 
 @external
@@ -236,16 +178,6 @@ def onFlashLoan(
     IERC20(payment_token).approve(flash_lender, amount + fee)
     return ERC3156_CALLBACK_OK
 
-@external
-@view
-def ADDRESSES_PROVIDER() -> address:
-    return aave_pool_provider
-
-@external
-@view
-def POOL() -> address:
-    return IPoolProvider(aave_pool_provider).getPool()
-
 
 @internal
 def _create_loan(
@@ -284,35 +216,6 @@ def pay_nftfi_loan(
 
 
 @external
-def refinance_loan(
-    nftfi_contract: address,
-    approved: address,
-    loan_id: uint256,
-    amount: uint256,
-    signed_offer: SignedOffer,
-    token_id: uint256,
-):
-
-    raw_call(0x0000000000000000000000000000000000011111, _abi_encode(b"refinance"))
-    # TODO add checklist for nftfi contracts
-
-    aave_pool: address = IPoolProvider(aave_pool_provider).getPool()
-    payment_token: address = P2PLendingNfts(p2p_lending_nfts).payment_token()
-    callback_data: CallbackData = CallbackData({
-        nftfi_contract: nftfi_contract,
-        approved: approved,
-        payment_token: payment_token,
-        loan_id: loan_id,
-        amount: amount,
-        signed_offer: signed_offer,
-        borrower: msg.sender,
-        token_id: token_id
-    })
-
-    IPool(aave_pool).flashLoanSimple(self, payment_token, amount, _abi_encode(callback_data), 0)
-
-
-@external
 def refinance_loan_balancer(
     nftfi_contract: address,
     approved: address,
@@ -325,7 +228,6 @@ def refinance_loan_balancer(
     raw_call(0x0000000000000000000000000000000000011111, _abi_encode(b"refinance"))
     # TODO add checklist for nftfi contracts
 
-    aave_pool: address = IPoolProvider(aave_pool_provider).getPool()
     payment_token: address = P2PLendingNfts(p2p_lending_nfts).payment_token()
     callback_data: CallbackData = CallbackData({
         nftfi_contract: nftfi_contract,
