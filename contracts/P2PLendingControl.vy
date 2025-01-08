@@ -46,7 +46,7 @@ event OwnershipTransferred:
 
 CHANGE_BATCH: constant(uint256) = 128
 
-VERSION: constant(String[30]) = "P2PLendingControl.20241002"
+VERSION: public(constant(String[30])) = "P2PLendingControl.20241002"
 
 owner: public(address)
 proposed_owner: public(address)
