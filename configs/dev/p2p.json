@@ -8,7 +8,7 @@
         },
         "p2p_controller": {
             "abi_key": "04afdba3576595c8dc72c60cb9213580887fa375",
-            "address": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
+            "address": "0x9d19498474A9fa45d1Ed3F36822301307E083698",
             "contract": "P2PLendingControl",
             "properties": {
                 "trait_roots_key": "configs.trait_roots"
@@ -42,6 +42,7 @@
         "trait_roots": {
             "anticyclone": "990b7a4af2012be5f172b464961947422d00fe5c5536d127c2412620d93ae744",
             "archetype": "bc5c53873f536a547a142fd8eaf71d95ecc20c26ab273da08faea6b7ddb901c5",
+            "autoglyphs": "0000000000000000000000000000000000000000000000000000000000000001",
             "azuki": "c271e7ac89a729ec41339afd5c765a27d84a209bc8624db3625e8d6aff993fd9",
             "bakc": "ccf7e2a7ac281425729183e786c8975a94b053a6567afbfd19a57786803b0287",
             "bayc": "cbb0018e80fc234ad6d8ddb6059408311bef0f6958aa4b8bf883259ef61d93f2",
@@ -91,8 +92,8 @@
     },
     "p2p": {
         "eth_nfts": {
-            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
-            "address": "0x9D1eb389b310b09D6417a7170b873C4FbA181425",
+            "abi_key": "5a6f84b09451e64083b390b298643877c73352f2",
+            "address": "0xf85dad4F6bb604a8D45242d26Fc59201a1aeDa47",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -110,15 +111,15 @@
             "properties_addresses": {
                 "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
                 "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
-                "p2p_controller": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
+                "p2p_controller": "0x9d19498474A9fa45d1Ed3F36822301307E083698",
                 "payment_token": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb"
             },
             "token_symbol": "WETH",
             "version": "1"
         },
         "usdc_nfts": {
-            "abi_key": "dc015b48ff114eb6b5aec440eb6201f0847af946",
-            "address": "0x44b6E8D583191BFF1cCaeef7aE0bb3e412E8c919",
+            "abi_key": "5a6f84b09451e64083b390b298643877c73352f2",
+            "address": "0x12a8cB165c4DaF5D2338b2c871f10771E98547Ed",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -136,7 +137,7 @@
             "properties_addresses": {
                 "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
                 "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
-                "p2p_controller": "0xF860aFfDc6F4983C33d29446d795BB61c2f44BAD",
+                "p2p_controller": "0x9d19498474A9fa45d1Ed3F36822301307E083698",
                 "payment_token": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab"
             },
             "token_symbol": "USDC",

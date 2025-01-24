@@ -38,7 +38,7 @@ def get_collections():
     response = COLLECTIONS.scan()
     while "LastEvaluatedKey" in response:
         collection_items.extend(deserialize_values(i) for i in response["Items"])
-        response = COLLECTIONS.scan()
+        response = COLLECTIONS.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
     collection_items.extend(deserialize_values(i) for i in response["Items"])
     return collection_items
 
