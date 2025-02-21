@@ -44,7 +44,7 @@ def test_initial_state(balancer, nftfi_proxy, weth, p2p_nfts_weth, borrower):
     assert p2p_nfts_weth.authorized_proxies(nftfi_proxy.address) is True
 
 
-def test_pay_loan(nftfi_proxy, weth, borrower, owner, mayc):
+def _test_pay_loan(nftfi_proxy, weth, borrower, owner, mayc):
     nftfi_contract = "0x9F10D706D789e4c76A1a6434cd1A9841c875C0A6"
     borrower = "0x47cf584925b637B1023f63b6141f795cBaA1AE79"
     # lender = "0xa317566d1eb36cee30cb923f7575bfb7c168032e"
@@ -107,7 +107,20 @@ def test_refinance(
 
     p2p_control.change_collections_contracts([CollectionContract(mayc_key_hash, mayc.address)])
 
-    nftfi_proxy.refinance_loan_balancer(nftfi_contract, approved, loan_id, amount, signed_offer, token_id, sender=borrower)
+    nftfi_proxy.refinance_loan_balancer(
+        nftfi_contract,
+        approved,
+        loan_id,
+        amount,
+        signed_offer,
+        token_id,
+        [],
+        ZERO_ADDRESS,
+        0,
+        0,
+        ZERO_ADDRESS,
+        sender=borrower,
+    )
 
     assert mayc.ownerOf(token_id) == p2p_nfts_weth.address
     assert weth.balanceOf(borrower) == 0

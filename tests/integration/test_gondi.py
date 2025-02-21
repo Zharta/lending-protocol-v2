@@ -235,7 +235,7 @@ def _sign_repayment_data(data: SignableRepaymentData, signer_key: str, verifying
     return signed_msg.signature
 
 
-def test_pay_loan(gondi, gondi_proxy, usdc, borrower, owner, wpunk, now, borrower_key):
+def _test_pay_loan(gondi, gondi_proxy, usdc, borrower, owner, wpunk, now, borrower_key):
     token_id = 6501
     wpunk_owner = wpunk.ownerOf(token_id)
     wpunk.transferFrom(wpunk_owner, borrower, token_id, sender=wpunk_owner)
@@ -334,7 +334,20 @@ def test_refinance(
 
     assert balancer.maxFlashLoan(usdc.address) >= amount
 
-    gondi_proxy.refinance_loan(gondi.address, approved, loan_repayment_data, amount, signed_offer, token_id, sender=borrower)
+    gondi_proxy.refinance_loan(
+        gondi.address,
+        approved,
+        loan_repayment_data,
+        amount,
+        signed_offer,
+        token_id,
+        [],
+        ZERO_ADDRESS,
+        0,
+        0,
+        ZERO_ADDRESS,
+        sender=borrower,
+    )
 
     assert wpunk.ownerOf(token_id) == p2p_nfts_usdc.address
     assert usdc.balanceOf(borrower) == 0

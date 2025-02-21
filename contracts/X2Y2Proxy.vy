@@ -27,7 +27,7 @@ interface X2Y3_v3:
 interface IFlashLender:
     def maxFlashLoan(token: address) -> uint256: view
     def flashFee(token: address, amount: uint256) -> uint256: view
-    def flashLoan(receiver: address, token: address, amount: uint256, data: Bytes[1024]) -> bool: nonpayable
+    def flashLoan(receiver: address, token: address, amount: uint256, data: Bytes[10240]) -> bool: nonpayable
 
 
 enum FeeType:
@@ -41,11 +41,6 @@ struct Fee:
     type: FeeType
     upfront_amount: uint256
     interest_bps: uint256
-    wallet: address
-
-struct FeeAmount:
-    type: FeeType
-    amount: uint256
     wallet: address
 
 enum OfferType:
@@ -102,6 +97,8 @@ struct Loan:
     delegate: address
 
 
+PROOF_MAX_SIZE: constant(uint256) = 32
+
 struct CallbackData:
     x2y2_contract: address
     approved: address
@@ -111,6 +108,11 @@ struct CallbackData:
     signed_offer: SignedOffer
     borrower: address
     token_id: uint256
+    collateral_proof: DynArray[bytes32, PROOF_MAX_SIZE]
+    delegate: address
+    borrower_broker_upfront_fee_amount: uint256
+    borrower_broker_settlement_fee_bps: uint256
+    borrower_broker: address
 
 
 ERC3156_CALLBACK_OK: constant(bytes32) = keccak256("ERC3156FlashBorrower.onFlashLoan")
@@ -134,7 +136,7 @@ def onFlashLoan(
     token: address,
     amount: uint256,
     fee: uint256,
-    data: Bytes[1024]
+    data: Bytes[10240]
 ) -> bytes32:
 
     raw_call(0x0000000000000000000000000000000000011111, _abi_encode(b"callback"))
@@ -157,11 +159,11 @@ def onFlashLoan(
     self._create_loan(
         callback_data.signed_offer,
         callback_data.token_id,
-        [],
-        empty(address),
-        0,
-        0,
-        empty(address)
+        callback_data.collateral_proof,
+        callback_data.delegate,
+        callback_data.borrower_broker_upfront_fee_amount,
+        callback_data.borrower_broker_settlement_fee_bps,
+        callback_data.borrower_broker
     )
 
     IERC20(payment_token).transferFrom(callback_data.borrower, self, amount)
@@ -192,23 +194,6 @@ def _create_loan(
     )
 
 
-
-
-@external
-def pay_x2y2_loan(
-    x2y2_contract: address,
-    approved: address,
-    payment_token: address,
-    loan_id: uint256,
-    amount: uint256,
-):
-    assert IERC20(payment_token).balanceOf(msg.sender) >= amount, "Insufficient borrower balance"
-    IERC20(payment_token).transferFrom(msg.sender, self, amount)
-    IERC20(payment_token).approve(approved, amount)
-    assert IERC20(payment_token).balanceOf(self) >= amount, "Insufficient balance"
-    X2Y3_v3(x2y2_contract).repay(convert(loan_id, uint32))
-
-
 @external
 def refinance_loan(
     x2y2_contract: address,
@@ -217,9 +202,14 @@ def refinance_loan(
     amount: uint256,
     signed_offer: SignedOffer,
     token_id: uint256,
+    collateral_proof: DynArray[bytes32, 32],
+    delegate: address,
+    borrower_broker_upfront_fee_amount: uint256,
+    borrower_broker_settlement_fee_bps: uint256,
+    borrower_broker: address
 ):
 
-    raw_call(0x0000000000000000000000000000000000011111, _abi_encode(b"refinance"))
+    # raw_call(0x0000000000000000000000000000000000011111, _abi_encode(b"refinance"))
 
     payment_token: address = P2PLendingNfts(p2p_lending_nfts).payment_token()
     callback_data: CallbackData = CallbackData({
@@ -230,7 +220,12 @@ def refinance_loan(
         amount: amount,
         signed_offer: signed_offer,
         borrower: msg.sender,
-        token_id: token_id
+        token_id: token_id,
+        collateral_proof: collateral_proof,
+        delegate: delegate,
+        borrower_broker_upfront_fee_amount: borrower_broker_upfront_fee_amount,
+        borrower_broker_settlement_fee_bps: borrower_broker_settlement_fee_bps,
+        borrower_broker: borrower_broker
     })
 
     assert IFlashLender(flash_lender).flashLoan(self, payment_token, amount, _abi_encode(callback_data)), "flash loan failed"

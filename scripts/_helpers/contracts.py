@@ -9,19 +9,28 @@ from hexbytes import HexBytes
 from rich import print
 from rich.markup import escape
 
-from .basetypes import ContractConfig, DeploymentContext
+from .basetypes import ContractConfig, DeploymentContext, abi_key
 from .transactions import check_owner, execute, execute_read
 
 ZERO_ADDRESS = "0x" + "00" * 20
 ZERO_BYTES32 = "0x" + "00" * 32
 
 
+def calculate_abi_key(filename: str) -> str:
+    with open(filename, "r") as f:
+        abi = json.load(f)
+    return abi_key(abi)
+
+
 class GenericContract(ContractConfig):
     _address: str
+    _name: str
 
-    def __init__(self, *, key: str, address: str, version: str | None = None, abi_key: str):
-        super().__init__(key, None, None, version=version, abi_key=abi_key)
+    def __init__(self, *, key: str, address: str, abi_key: str, name: str, abi_file: str, version: str | None = None):
+        _abi_key = abi_key or calculate_abi_key(abi_file)
+        super().__init__(key, None, None, version=version, abi_key=_abi_key)
         self._address = address
+        self._name = name
 
     def address(self):
         return self._address

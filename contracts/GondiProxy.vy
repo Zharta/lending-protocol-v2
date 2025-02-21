@@ -15,19 +15,6 @@ interface P2PLendingNfts:
         borrower_broker_settlement_fee_bps: uint256,
         borrower_broker: address
     ) -> bytes32: nonpayable
-    def settle_loan(loan: Loan): nonpayable
-    def claim_defaulted_loan_collateral(loan: Loan): nonpayable
-    def replace_loan(
-        loan: Loan,
-        offer: SignedOffer,
-        collateral_proof: DynArray[bytes32, 32],
-        borrower_broker_upfront_fee_amount: uint256,
-        borrower_broker_settlement_fee_bps: uint256,
-        borrower_broker: address
-    ) -> bytes32: nonpayable
-    def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArray[bytes32, 32]) -> bytes32: nonpayable
-    def revoke_offer(offer: SignedOffer): nonpayable
-    def onERC721Received(_operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]) -> bytes4: view
     def payment_token() -> address: view
 
 
@@ -87,11 +74,6 @@ struct Fee:
     interest_bps: uint256
     wallet: address
 
-struct FeeAmount:
-    type: FeeType
-    amount: uint256
-    wallet: address
-
 enum OfferType:
     TOKEN
     COLLECTION
@@ -145,6 +127,8 @@ struct Loan:
     pro_rata: bool
     delegate: address
 
+PROOF_MAX_SIZE: constant(uint256) = 32
+
 struct CallbackData:
     gondi_contract: address
     # approved: address
@@ -155,6 +139,11 @@ struct CallbackData:
     signed_offer: SignedOffer
     borrower: address
     token_id: uint256
+    collateral_proof: DynArray[bytes32, PROOF_MAX_SIZE]
+    delegate: address
+    borrower_broker_upfront_fee_amount: uint256
+    borrower_broker_settlement_fee_bps: uint256
+    borrower_broker: address
 
 
 ERC3156_CALLBACK_OK: constant(bytes32) = keccak256("ERC3156FlashBorrower.onFlashLoan")
@@ -202,11 +191,11 @@ def onFlashLoan(
     self._create_loan(
         callback_data.signed_offer,
         callback_data.token_id,
-        [],
-        empty(address),
-        0,
-        0,
-        empty(address)
+        callback_data.collateral_proof,
+        callback_data.delegate,
+        callback_data.borrower_broker_upfront_fee_amount,
+        callback_data.borrower_broker_settlement_fee_bps,
+        callback_data.borrower_broker
     )
 
     IERC20(payment_token).transferFrom(callback_data.borrower, self, amount)
@@ -237,21 +226,6 @@ def _create_loan(
     )
 
 
-
-
-@external
-def pay_gondi_loan(
-    gondi_contract: address,
-    repayment_data: LoanRepaymentData,
-    approved: address,
-    payment_token: address,
-    amount: uint256,
-):
-    # IERC20(payment_token).approve(approved, amount)
-    # assert IERC20(payment_token).balanceOf(self) >= amount, "Insufficient balance"
-    IGondiMultiSourceLoan(gondi_contract).repayLoan(repayment_data)
-
-
 @external
 def refinance_loan(
     gondi_contract: address,
@@ -260,9 +234,12 @@ def refinance_loan(
     amount: uint256,
     signed_offer: SignedOffer,
     token_id: uint256,
+    collateral_proof: DynArray[bytes32, PROOF_MAX_SIZE],
+    delegate: address,
+    borrower_broker_upfront_fee_amount: uint256,
+    borrower_broker_settlement_fee_bps: uint256,
+    borrower_broker: address
 ):
-
-    raw_call(0x0000000000000000000000000000000000011111, _abi_encode(b"refinance"))
 
     payment_token: address = P2PLendingNfts(p2p_lending_nfts).payment_token()
     callback_data: CallbackData = CallbackData({
@@ -272,7 +249,12 @@ def refinance_loan(
         loan_repayment_data: loan_repayment_data,
         signed_offer: signed_offer,
         borrower: msg.sender,
-        token_id: token_id
+        token_id: token_id,
+        collateral_proof: collateral_proof,
+        delegate: delegate,
+        borrower_broker_upfront_fee_amount: borrower_broker_upfront_fee_amount,
+        borrower_broker_settlement_fee_bps: borrower_broker_settlement_fee_bps,
+        borrower_broker: borrower_broker
     })
 
     assert IFlashLender(flash_lender).flashLoan(self, payment_token, amount, _abi_encode(callback_data)), "flash loan failed"
