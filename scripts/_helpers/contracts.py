@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from hashlib import sha3_256
 
 from ape import project
-from ape.contracts.base import ContractContainer, ContractType
+from ape.contracts.base import ContractContainer
+from ethpm_types.contract_type import ContractType
 from hexbytes import HexBytes
 from rich import print
 from rich.markup import escape

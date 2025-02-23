@@ -66,6 +66,26 @@ format:
 %-int: export ENV=int
 %-prod: export ENV=prod
 
+%-zethereum %-zapechain: export ENV=dev
+%-sepolia %-curtis: export ENV=int
+%-ethereum %-apechain: export ENV=prod
+
+%-local: export CHAIN=foundry
+%-zethereum: export CHAIN=zethereum
+%-zapechain: export CHAIN=zapechain
+%-sepolia: export CHAIN=sepolia
+%-curtis: export CHAIN=curtis
+%-ethereum: export CHAIN=mainnet
+%-apechain: export CHAIN=apechain
+
+%-local: export NETWORK=ethereum:local:foundry
+%-zethereum: export NETWORK=ethereum:local:https://network.dev.zharta.io/dev1/
+%-zapechain: export NETWORK=ethereum:local:https://network.dev.zharta.io/dev2/
+%-sepolia: export NETWORK=ethereum:sepolia:alchemy
+%-curtis: export NETWORK=apechain:curtis:alchemy
+%-ethereum: export NETWORK=ethereum:mainnet:alchemy
+%-apechain: export NETWORK=apechain:apechain:alchemy
+
 add-account:
 	${VENV}/bin/ape accounts import $(alias)
 
@@ -73,32 +93,14 @@ compile:
 	rm -rf .build/*
 	${VENV}/bin/ape compile
 
-console-local:
-	${VENV}/bin/ape console --network ethereum:local:foundry
+console-local console-zethereum console-zapechain console-sepolia console-curtis console-ethereum console-apechain:
+	${VENV}/bin/ape console --network ${NETWORK} # --verbosity DEBUG
 
-deploy-local:
-	${VENV}/bin/ape run -I deployment --network ethereum:local:foundry
+deploy-local deploy-zethereum deploy-zapechain deploy-sepolia deploy-curtis deploy-ethereum deploy-apechain:
+	${VENV}/bin/ape run -I deployment --network ${NETWORK}
 
-console-dev:
-	${VENV}/bin/ape console --network https://network.dev.zharta.io
-
-deploy-dev:
-	${VENV}/bin/ape run -I deployment --network https://network.dev.zharta.io
-
-console-int:
-	${VENV}/bin/ape console --network ethereum:sepolia:alchemy
-
-deploy-int:
-	${VENV}/bin/ape run -I deployment --network ethereum:sepolia:alchemy
-
-console-prod:
-	${VENV}/bin/ape console --network ethereum:mainnet:alchemy
-
-deploy-prod: compile
-	${VENV}/bin/ape run -I deployment --network ethereum:mainnet:alchemy
-
-publish-dev publish-int publish-prod:
+publish-zethereum publish-zapechain publish-sepolia publish-curtis publish-ethereum publish-apechain:
 	${VENV}/bin/ape run publish
 
-get-collections-dev get-collections-int get-collections-prod:
+get-collections-zethereum get-collections-zapechain get-collections-sepolia get-collections-curtis get-collections-ethereum get-collections-apechain:
 	${VENV}/bin/ape run get_collections

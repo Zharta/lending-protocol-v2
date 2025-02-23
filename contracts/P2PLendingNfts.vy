@@ -1,4 +1,5 @@
-# @version 0.3.10
+# @version 0.4.0
+#pragma optimize codesize
 
 """
 @title P2PLendingNfts
@@ -23,9 +24,8 @@
 
 # Interfaces
 
-from vyper.interfaces import ERC165 as IERC165
-from vyper.interfaces import ERC721 as IERC721
-from vyper.interfaces import ERC20 as IERC20
+from ethereum.ercs import IERC721
+from ethereum.ercs import IERC20
 
 
 interface CryptoPunksMarket:
@@ -39,7 +39,7 @@ interface DelegationRegistry:
     def delegateERC721(delegate: address, contract: address, token_id: uint256, rights: bytes32, _value: bool) -> bytes32: nonpayable
 
 interface P2PLendingControl:
-    def get_collection_status(collection_key_hash: bytes32) -> CollectionStatus: nonpayable
+    def get_collection_status(collection_key_hash: bytes32) -> CollectionStatus: view
 
 # Structs
 
@@ -47,13 +47,13 @@ PROOF_MAX_SIZE: constant(uint256) = 32
 MAX_FEES: constant(uint256) = 4
 BPS: constant(uint256) = 10000
 
-enum FeeType:
+flag FeeType:
     PROTOCOL_FEE
     ORIGINATION_FEE
     LENDER_BROKER_FEE
     BORROWER_BROKER_FEE
 
-enum OfferType:
+flag OfferType:
     TOKEN
     COLLECTION
     TRAIT
@@ -280,7 +280,7 @@ OFFER_TYPE_HASH: constant(bytes32) = keccak256(OFFER_TYPE_DEF)
 offer_sig_domain_separator: immutable(bytes32)
 
 
-@external
+@deploy
 def __init__(
     _payment_token: address,
     _p2p_control: address,
@@ -305,13 +305,13 @@ def __init__(
     @param _protocol_wallet The address where the protocol fees are accrued.
     """
 
-    assert _protocol_wallet != empty(address), "wallet is the zero address"
-    assert _payment_token != empty(address), "payment token is zero"
-    assert _p2p_control != empty(address), "p2p control is zero"
-    assert _delegation_registry != empty(address), "delegation registry is zero"
+    assert _protocol_wallet != empty(address)
+    assert _payment_token != empty(address)
+    assert _p2p_control != empty(address)
+    assert _delegation_registry != empty(address)
 
-    assert _protocol_upfront_fee <= _max_protocol_upfront_fee, "upfront fee exceeds max"
-    assert _protocol_settlement_fee <= _max_protocol_settlement_fee, "settlement fee exceeds max"
+    assert _protocol_upfront_fee <= _max_protocol_upfront_fee
+    assert _protocol_settlement_fee <= _max_protocol_settlement_fee
 
     self.owner = msg.sender
     payment_token = _payment_token
@@ -327,7 +327,7 @@ def __init__(
     self.protocol_wallet = _protocol_wallet
 
     offer_sig_domain_separator = keccak256(
-        _abi_encode(
+        abi_encode(
             DOMAIN_TYPE_HASH,
             keccak256(ZHARTA_DOMAIN_NAME),
             keccak256(ZHARTA_DOMAIN_VERSION),
@@ -351,7 +351,7 @@ def set_protocol_fee(protocol_upfront_fee: uint256, protocol_settlement_fee: uin
     @param protocol_settlement_fee The new protocol settlement fee.
     """
 
-    assert msg.sender == self.owner, "not owner"
+    assert msg.sender == self.owner
     assert protocol_upfront_fee <= max_protocol_upfront_fee, "upfront fee exceeds max"
     assert protocol_settlement_fee <= max_protocol_settlement_fee, "settlement fee exceeds max"
 
@@ -369,8 +369,8 @@ def change_protocol_wallet(new_protocol_wallet: address):
     @param new_protocol_wallet The new protocol wallet.
     """
 
-    assert msg.sender == self.owner, "not owner"
-    assert new_protocol_wallet != empty(address), "wallet is the zero address"
+    assert msg.sender == self.owner
+    assert new_protocol_wallet != empty(address)
 
     log ProtocolWalletChanged(self.protocol_wallet, new_protocol_wallet)
     self.protocol_wallet = new_protocol_wallet
@@ -386,7 +386,7 @@ def set_proxy_authorization(_proxy: address, _value: bool):
     @param _value The value of the authorization.
     """
 
-    assert msg.sender == self.owner, "not owner"
+    assert msg.sender == self.owner
 
     self.authorized_proxies[_proxy] = _value
 
@@ -402,8 +402,8 @@ def propose_owner(_address: address):
     @param _address The address of the proposed owner.
     """
 
-    assert msg.sender == self.owner, "not owner"
-    assert _address != empty(address), "_address is zero"
+    assert msg.sender == self.owner
+    assert _address != empty(address)
 
     log OwnerProposed(self.owner, _address)
     self.proposed_owner = _address
@@ -417,7 +417,7 @@ def claim_ownership():
     @dev Claims the ownership of the contract and logs the event. Requires the caller to be the proposed owner.
     """
 
-    assert msg.sender == self.proposed_owner, "not the proposed owner"
+    assert msg.sender == self.proposed_owner
 
     log OwnershipTransferred(self.owner, self.proposed_owner)
     self.owner = msg.sender
@@ -454,32 +454,32 @@ def create_loan(
     assert offer.offer.payment_token == payment_token, "invalid payment token"
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
 
-    collection_status: CollectionStatus = p2p_control.get_collection_status(offer.offer.collection_key_hash)
+    collection_status: CollectionStatus = staticcall p2p_control.get_collection_status(offer.offer.collection_key_hash)
     self._validate_token_ids(offer.offer, collateral_token_id, collection_status, collateral_proof)
 
     fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_upfront_fee_amount, borrower_broker_settlement_fee_bps, borrower_broker)
     total_upfront_fees: uint256 = 0
-    for fee in fees:
+    for fee: Fee in fees:
         total_upfront_fees += fee.upfront_amount
 
     offer_id: bytes32 = self._compute_signed_offer_id(offer)
-    loan: Loan = Loan({
-        id: empty(bytes32),
-        offer_id: offer_id,
-        offer_tracing_id: offer.offer.tracing_id,
-        amount: offer.offer.principal,
-        interest: offer.offer.interest,
-        payment_token: offer.offer.payment_token,
-        maturity: block.timestamp + offer.offer.duration,
-        start_time: block.timestamp,
-        borrower: msg.sender if not self.authorized_proxies[msg.sender] else tx.origin,
-        lender: offer.offer.lender,
-        collateral_contract: collection_status.contract,
-        collateral_token_id: collateral_token_id,
-        fees: fees,
-        pro_rata: offer.offer.pro_rata,
-        delegate: delegate
-    })
+    loan: Loan = Loan(
+        id=empty(bytes32),
+        offer_id=offer_id,
+        offer_tracing_id=offer.offer.tracing_id,
+        amount=offer.offer.principal,
+        interest=offer.offer.interest,
+        payment_token=offer.offer.payment_token,
+        maturity=block.timestamp + offer.offer.duration,
+        start_time=block.timestamp,
+        borrower=msg.sender if not self.authorized_proxies[msg.sender] else tx.origin,
+        lender=offer.offer.lender,
+        collateral_contract=collection_status.contract,
+        collateral_token_id=collateral_token_id,
+        fees=fees,
+        pro_rata=offer.offer.pro_rata,
+        delegate=delegate
+    )
     loan.id = self._compute_loan_id(loan)
 
     assert self.loans[loan.id] == empty(bytes32), "loan already exists"
@@ -489,7 +489,7 @@ def create_loan(
     self._store_collateral(loan.borrower, loan.collateral_contract, loan.collateral_token_id)
     self._transfer_funds(loan.lender, loan.borrower, loan.amount - total_upfront_fees + offer.offer.broker_upfront_fee_amount)
 
-    for fee in fees:
+    for fee: Fee in fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._transfer_funds(loan.lender, fee.wallet, fee.upfront_amount)
 
@@ -540,7 +540,7 @@ def settle_loan(loan: Loan):
     self._receive_funds(loan.borrower, loan.amount + interest + borrower_broker_fee_amount)
 
     self._send_funds(loan.lender, loan.amount + interest - settlement_fees_total + borrower_broker_fee_amount)
-    for fee in settlement_fees:
+    for fee: FeeAmount in settlement_fees:
         self._send_funds(fee.wallet, fee.amount)
 
     self._transfer_collateral(loan.borrower, loan.collateral_contract, loan.collateral_token_id)
@@ -617,7 +617,7 @@ def replace_loan(
     assert offer.offer.payment_token == payment_token, "invalid payment token"
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
 
-    collection_status: CollectionStatus = p2p_control.get_collection_status(offer.offer.collection_key_hash)
+    collection_status: CollectionStatus = staticcall p2p_control.get_collection_status(offer.offer.collection_key_hash)
     self._validate_token_ids(offer.offer, loan.collateral_token_id, collection_status, collateral_proof)
     assert collection_status.contract == loan.collateral_contract, "collateral contract mismatch"
 
@@ -634,7 +634,7 @@ def replace_loan(
 
     new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, borrower_broker_upfront_fee_amount, borrower_broker_settlement_fee_bps, borrower_broker)
     total_upfront_fees: uint256 = 0
-    for fee in new_loan_fees:
+    for fee: Fee in new_loan_fees:
         total_upfront_fees += fee.upfront_amount
 
     self.loans[loan.id] = empty(bytes32)
@@ -657,31 +657,31 @@ def replace_loan(
     if borrower_delta > 0:
         self._send_funds(loan.borrower, convert(borrower_delta, uint256))
 
-    for fee in settlement_fees:
+    for fee: FeeAmount in settlement_fees:
         self._send_funds(fee.wallet, fee.amount)
 
-    for fee in new_loan_fees:
+    for fee: Fee in new_loan_fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._send_funds(fee.wallet, fee.upfront_amount)
 
     offer_id: bytes32 = self._compute_signed_offer_id(offer)
-    new_loan: Loan = Loan({
-        id: empty(bytes32),
-        offer_id: offer_id,
-        offer_tracing_id: offer.offer.tracing_id,
-        amount: offer.offer.principal,
-        interest: offer.offer.interest,
-        payment_token: offer.offer.payment_token,
-        maturity: block.timestamp + offer.offer.duration,
-        start_time: block.timestamp,
-        borrower: loan.borrower,
-        lender: offer.offer.lender,
-        collateral_contract: collection_status.contract,
-        collateral_token_id: loan.collateral_token_id,
-        fees: new_loan_fees,
-        pro_rata: offer.offer.pro_rata,
-        delegate: loan.delegate
-    })
+    new_loan: Loan = Loan(
+        id=empty(bytes32),
+        offer_id=offer_id,
+        offer_tracing_id=offer.offer.tracing_id,
+        amount=offer.offer.principal,
+        interest=offer.offer.interest,
+        payment_token=offer.offer.payment_token,
+        maturity=block.timestamp + offer.offer.duration,
+        start_time=block.timestamp,
+        borrower=loan.borrower,
+        lender=offer.offer.lender,
+        collateral_contract=collection_status.contract,
+        collateral_token_id=loan.collateral_token_id,
+        fees=new_loan_fees,
+        pro_rata=offer.offer.pro_rata,
+        delegate=loan.delegate
+    )
     new_loan.id = self._compute_loan_id(new_loan)
 
     assert self.loans[new_loan.id] == empty(bytes32), "loan already exists"
@@ -732,7 +732,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArr
     assert offer.offer.origination_fee_amount <= offer.offer.principal, "origination fee gt principal"
     assert block.timestamp + offer.offer.duration >= loan.maturity, "maturity before loan maturity"
 
-    collection_status: CollectionStatus = p2p_control.get_collection_status(offer.offer.collection_key_hash)
+    collection_status: CollectionStatus = staticcall p2p_control.get_collection_status(offer.offer.collection_key_hash)
     self._validate_token_ids(offer.offer, loan.collateral_token_id, collection_status, collateral_proof)
     assert collection_status.contract == loan.collateral_contract, "collateral contract mismatch"
 
@@ -749,7 +749,7 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArr
 
     new_loan_fees: DynArray[Fee, MAX_FEES] = self._get_loan_fees(offer.offer, 0, 0, empty(address))
     total_upfront_fees: uint256 = 0
-    for fee in new_loan_fees:
+    for fee: Fee in new_loan_fees:
         total_upfront_fees += fee.upfront_amount
 
     self.loans[loan.id] = empty(bytes32)
@@ -780,31 +780,31 @@ def replace_loan_lender(loan: Loan, offer: SignedOffer, collateral_proof: DynArr
     if borrower_delta > 0:
         self._send_funds(loan.borrower, convert(borrower_delta, uint256))
 
-    for fee in settlement_fees:
+    for fee: FeeAmount in settlement_fees:
         self._send_funds(fee.wallet, fee.amount)
 
-    for fee in new_loan_fees:
+    for fee: Fee in new_loan_fees:
         if fee.type != FeeType.ORIGINATION_FEE and fee.upfront_amount > 0:
             self._send_funds(fee.wallet, fee.upfront_amount)
 
     offer_id: bytes32 = self._compute_signed_offer_id(offer)
-    new_loan: Loan = Loan({
-        id: empty(bytes32),
-        offer_id: offer_id,
-        offer_tracing_id: offer.offer.tracing_id,
-        amount: offer.offer.principal,
-        interest: offer.offer.interest,
-        payment_token: offer.offer.payment_token,
-        maturity: block.timestamp + offer.offer.duration,
-        start_time: block.timestamp,
-        borrower: loan.borrower,
-        lender: offer.offer.lender,
-        collateral_contract: collection_status.contract,
-        collateral_token_id: loan.collateral_token_id,
-        fees: new_loan_fees,
-        pro_rata: offer.offer.pro_rata,
-        delegate: loan.delegate
-    })
+    new_loan: Loan = Loan(
+        id=empty(bytes32),
+        offer_id=offer_id,
+        offer_tracing_id=offer.offer.tracing_id,
+        amount=offer.offer.principal,
+        interest=offer.offer.interest,
+        payment_token=offer.offer.payment_token,
+        maturity=block.timestamp + offer.offer.duration,
+        start_time=block.timestamp,
+        borrower=loan.borrower,
+        lender=offer.offer.lender,
+        collateral_contract=collection_status.contract,
+        collateral_token_id=loan.collateral_token_id,
+        fees=new_loan_fees,
+        pro_rata=offer.offer.pro_rata,
+        delegate=loan.delegate
+    )
     new_loan.id = self._compute_loan_id(new_loan)
 
     assert self.loans[new_loan.id] == empty(bytes32), "loan already exists"
@@ -859,7 +859,7 @@ def claim_pending_transfers():
     _amount: uint256 = self.pending_transfers[msg.sender]
     self.pending_transfers[msg.sender] = 0
 
-    assert IERC20(payment_token).transfer(msg.sender, _amount), "error sending funds"
+    assert extcall IERC20(payment_token).transfer(msg.sender, _amount), "error sending funds"
     log PendingTransfersClaimed(msg.sender, _amount)
 
 
@@ -942,7 +942,7 @@ def _is_loan_valid(loan: Loan) -> bool:
 @pure
 @internal
 def _loan_state_hash(loan: Loan) -> bytes32:
-    return keccak256(_abi_encode(loan))
+    return keccak256(abi_encode(loan))
 
 
 @internal
@@ -951,9 +951,9 @@ def _is_offer_signed_by_lender(signed_offer: SignedOffer, lender: address) -> bo
         keccak256(
             concat(
                 convert("\x19\x01", Bytes[2]),
-                _abi_encode(
+                abi_encode(
                     offer_sig_domain_separator,
-                    keccak256(_abi_encode(OFFER_TYPE_HASH, signed_offer.offer))
+                    keccak256(abi_encode(OFFER_TYPE_HASH, signed_offer.offer))
                 )
             )
         ),
@@ -976,30 +976,30 @@ def _get_loan_fees(offer: Offer, borrower_broker_upfront_fee_amount: uint256, bo
     assert borrower_broker_settlement_fee_bps <= max_borrower_broker_settlement_fee, "borrower broker fee exceeds max"
     assert self.protocol_settlement_fee + offer.broker_settlement_fee_bps <= BPS, "settlement fees gt principal"
 
-    fees.append(Fee({
-        type: FeeType.PROTOCOL_FEE,
-        upfront_amount: self.protocol_upfront_fee * offer.principal / BPS,
-        interest_bps: self.protocol_settlement_fee,
-        wallet: self.protocol_wallet
-    }))
-    fees.append(Fee({
-        type: FeeType.ORIGINATION_FEE,
-        upfront_amount: offer.origination_fee_amount,
-        interest_bps: 0,
-        wallet: offer.lender
-    }))
-    fees.append(Fee({
-        type: FeeType.LENDER_BROKER_FEE,
-        upfront_amount: offer.broker_upfront_fee_amount,
-        interest_bps: offer.broker_settlement_fee_bps,
-        wallet: offer.broker_address
-    }))
-    fees.append(Fee({
-        type: FeeType.BORROWER_BROKER_FEE,
-        upfront_amount: borrower_broker_upfront_fee_amount,
-        interest_bps: borrower_broker_settlement_fee_bps,
-        wallet: borrower_broker
-    }))
+    fees.append(Fee(
+        type=FeeType.PROTOCOL_FEE,
+        upfront_amount=self.protocol_upfront_fee * offer.principal // BPS,
+        interest_bps=self.protocol_settlement_fee,
+        wallet=self.protocol_wallet
+    ))
+    fees.append(Fee(
+        type=FeeType.ORIGINATION_FEE,
+        upfront_amount=offer.origination_fee_amount,
+        interest_bps=0,
+        wallet=offer.lender
+    ))
+    fees.append(Fee(
+        type=FeeType.LENDER_BROKER_FEE,
+        upfront_amount=offer.broker_upfront_fee_amount,
+        interest_bps=offer.broker_settlement_fee_bps,
+        wallet=offer.broker_address
+    ))
+    fees.append(Fee(
+        type=FeeType.BORROWER_BROKER_FEE,
+        upfront_amount=borrower_broker_upfront_fee_amount,
+        interest_bps=borrower_broker_settlement_fee_bps,
+        wallet=borrower_broker
+    ))
     return fees
 
 @internal
@@ -1007,10 +1007,10 @@ def _get_settlement_fees(loan: Loan, settlement_interest: uint256) -> (DynArray[
     total: uint256 = 0
     settlement_fees: DynArray[FeeAmount, MAX_FEES] = []
     borrower_broker_fee_amount: uint256 = 0
-    for fee in loan.fees:
+    for fee: Fee in loan.fees:
         if fee.interest_bps > 0:
-            fee_amount: uint256 = settlement_interest * fee.interest_bps / BPS
-            settlement_fees.append(FeeAmount({type: fee.type, amount: fee_amount, wallet: fee.wallet}))
+            fee_amount: uint256 = settlement_interest * fee.interest_bps // BPS
+            settlement_fees.append(FeeAmount(type=fee.type, amount=fee_amount, wallet=fee.wallet))
             total += fee_amount
             if fee.type == FeeType.BORROWER_BROKER_FEE:
                 borrower_broker_fee_amount = fee_amount
@@ -1021,7 +1021,7 @@ def _get_settlement_fees(loan: Loan, settlement_interest: uint256) -> (DynArray[
 @internal
 def _compute_settlement_interest(loan: Loan) -> uint256:
     if loan.pro_rata:
-        return loan.interest * (block.timestamp - loan.start_time) / (loan.maturity - loan.start_time)
+        return loan.interest * (block.timestamp - loan.start_time) // (loan.maturity - loan.start_time)
     else:
         return loan.interest
 
@@ -1035,13 +1035,13 @@ def _compute_max_interest_delta(loan: Loan, offer: Offer, interest: uint256, bor
     """
 
     borrower_broker_fee_bps: uint256 = 0
-    for fee in loan.fees:
+    for fee: Fee in loan.fees:
         if fee.type == FeeType.BORROWER_BROKER_FEE:
             borrower_broker_fee_bps = fee.interest_bps
     delta_at_refinance: uint256 = 0 if offer.pro_rata else offer.interest
-    borrower_broker_fee_delta_at_maturity: uint256 = (loan.interest - interest) * borrower_broker_fee_bps / BPS if offer.pro_rata else 0
+    borrower_broker_fee_delta_at_maturity: uint256 = (loan.interest - interest) * borrower_broker_fee_bps // BPS if offer.pro_rata else 0
     loan_interest_delta_at_maturity: uint256 = loan.interest - interest
-    offer_interest_at_loan_maturity: uint256 = offer.interest * (loan.maturity - block.timestamp) / offer.duration if offer.pro_rata else offer.interest
+    offer_interest_at_loan_maturity: uint256 = offer.interest * (loan.maturity - block.timestamp) // offer.duration if offer.pro_rata else offer.interest
 
     return convert(max(
         convert(delta_at_refinance, int256),
@@ -1051,12 +1051,12 @@ def _compute_max_interest_delta(loan: Loan, offer: Offer, interest: uint256, bor
 
 @internal
 def _set_delegation(_wallet: address, _collateral_address: address, _token_id: uint256, _value: bool):
-    delegation_registry.delegateERC721(_wallet, _collateral_address, _token_id, empty(bytes32), _value)
+    extcall delegation_registry.delegateERC721(_wallet, _collateral_address, _token_id, empty(bytes32), _value)
 
 
 @internal
 def _store_punk(_wallet: address, _collateralAddress: address, _tokenId: uint256):
-    offer: PunkOffer = CryptoPunksMarket(_collateralAddress).punksOfferedForSale(_tokenId)
+    offer: PunkOffer = staticcall CryptoPunksMarket(_collateralAddress).punksOfferedForSale(_tokenId)
 
     assert offer.isForSale, "collateral not for sale"
     assert offer.punkIndex == _tokenId, "collateral with wrong punkIndex"
@@ -1064,24 +1064,24 @@ def _store_punk(_wallet: address, _collateralAddress: address, _tokenId: uint256
     assert offer.minValue == 0, "collateral offer is not zero"
     assert offer.onlySellTo == empty(address) or offer.onlySellTo == self, "collateral buying not authorized"
 
-    CryptoPunksMarket(_collateralAddress).buyPunk(_tokenId)
+    extcall CryptoPunksMarket(_collateralAddress).buyPunk(_tokenId)
 
 
 @internal
 def _store_erc721(_wallet: address, _collateralAddress: address, _tokenId: uint256):
-    IERC721(_collateralAddress).safeTransferFrom(_wallet, self, _tokenId, b"")
+    extcall IERC721(_collateralAddress).safeTransferFrom(_wallet, self, _tokenId, b"")
 
 
 @internal
 def _transfer_punk(_wallet: address, _collateralAddress: address, _tokenId: uint256):
     assert self._punk_owner(_collateralAddress, _tokenId) == self, "collateral not owned by vault"
-    CryptoPunksMarket(_collateralAddress).transferPunk(_wallet, _tokenId)
+    extcall CryptoPunksMarket(_collateralAddress).transferPunk(_wallet, _tokenId)
 
 
 @internal
 def _transfer_erc721(_wallet: address, _collateralAddress: address, _tokenId: uint256):
     assert self._erc721_owner(_collateralAddress, _tokenId) == self, "collateral not owned by vault"
-    IERC721(_collateralAddress).safeTransferFrom(self, _wallet, _tokenId, b"")
+    extcall IERC721(_collateralAddress).safeTransferFrom(self, _wallet, _tokenId, b"")
 
 
 @internal
@@ -1099,7 +1099,7 @@ def _send_funds(_to: address, _amount: uint256):
 
     success, response = raw_call(
         payment_token,
-        _abi_encode(_to, _amount, method_id=method_id("transfer(address,uint256)")),
+        abi_encode(_to, _amount, method_id=method_id("transfer(address,uint256)")),
         max_outsize=32,
         revert_on_failure=False
     )
@@ -1111,14 +1111,14 @@ def _send_funds(_to: address, _amount: uint256):
 
 @internal
 def _receive_funds(_from: address, _amount: uint256):
-    assert IERC20(payment_token).transferFrom(_from, self, _amount), "transferFrom failed"
+    assert extcall IERC20(payment_token).transferFrom(_from, self, _amount), "transferFrom failed"
 
 
 @internal
 def _transfer_funds(_from: address, _to: address, _amount: uint256):
-    assert IERC20(payment_token).transferFrom(_from, _to, _amount), "transferFrom failed"
+    assert extcall IERC20(payment_token).transferFrom(_from, _to, _amount), "transferFrom failed"
 
-@pure
+@view
 @internal
 def _is_punk(_collateralAddress: address) -> bool:
     return _collateralAddress == cryptopunks.address
@@ -1127,19 +1127,19 @@ def _is_punk(_collateralAddress: address) -> bool:
 @view
 @internal
 def _punk_owner(_collateralAddress: address, _tokenId: uint256) -> address:
-    return CryptoPunksMarket(_collateralAddress).punkIndexToAddress(_tokenId)
+    return staticcall CryptoPunksMarket(_collateralAddress).punkIndexToAddress(_tokenId)
 
 
 @view
 @internal
 def _erc721_owner(_collateralAddress: address, _tokenId: uint256) -> address:
-    return IERC721(_collateralAddress).ownerOf(_tokenId)
+    return staticcall IERC721(_collateralAddress).ownerOf(_tokenId)
 
 
 @view
 @internal
 def _is_punk_approved_for_vault(_borrower: address, _collateralAddress: address, _tokenId: uint256) -> bool:
-    offer: PunkOffer = cryptopunks.punksOfferedForSale(_tokenId)
+    offer: PunkOffer = staticcall cryptopunks.punksOfferedForSale(_tokenId)
     return (
         offer.isForSale and
         offer.punkIndex == _tokenId and
@@ -1151,7 +1151,7 @@ def _is_punk_approved_for_vault(_borrower: address, _collateralAddress: address,
 @view
 @internal
 def _is_erc721_approved_for_vault(_borrower: address, _collateralAddress: address, _tokenId: uint256) -> bool:
-    return IERC721(_collateralAddress).isApprovedForAll(_borrower, self) or IERC721(_collateralAddress).getApproved(_tokenId) == self
+    return staticcall IERC721(_collateralAddress).isApprovedForAll(_borrower, self) or (staticcall IERC721(_collateralAddress).getApproved(_tokenId)) == self
 
 
 @internal
@@ -1189,7 +1189,7 @@ def _validate_token_ids(
         assert collateral_token_id >= offer.token_range_min, "tokenid below offer range"
         assert collateral_token_id <= offer.token_range_max, "tokenid above offer range"
     else:
-        _hash: bytes32 = keccak256(_abi_encode(collection_status.contract, offer.trait_hash, collateral_token_id))
-        for p in collateral_proof:
-            _hash = keccak256(_abi_encode(convert(keccak256(_hash), uint256) ^ convert(keccak256(p), uint256)))
+        _hash: bytes32 = keccak256(abi_encode(collection_status.contract, offer.trait_hash, collateral_token_id))
+        for p: bytes32 in collateral_proof:
+            _hash = keccak256(abi_encode(convert(keccak256(_hash), uint256) ^ convert(keccak256(p), uint256)))
         assert collection_status.trait_root == _hash, "proof invalid"

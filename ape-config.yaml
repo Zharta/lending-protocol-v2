@@ -4,3 +4,5 @@ plugins:
   - name: vyper
   - name: foundry
   - name: alchemy
+  - name: arbitrum
+  - name: base

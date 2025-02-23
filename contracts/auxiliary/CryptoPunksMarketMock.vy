@@ -1,4 +1,4 @@
-# @version 0.3.10
+# @version 0.4.0
 
 # Structs
 
@@ -89,19 +89,19 @@ wallet: public(HashMap[address, DynArray[uint256, 2**16]])
 def punkNoLongerForSale(punkIndex: uint256):
     assert self.punkIndexToAddress[punkIndex] == msg.sender
     assert punkIndex < 10000
-    self.punksOfferedForSale[punkIndex] = Offer({
-        isForSale: False,
-        punkIndex: punkIndex,
-        seller: msg.sender,
-        minValue: 0,
-        onlySellTo: empty(address)
-    })
+    self.punksOfferedForSale[punkIndex] = Offer(
+        isForSale=False,
+        punkIndex=punkIndex,
+        seller=msg.sender,
+        minValue=0,
+        onlySellTo=empty(address)
+    )
     log PunkNoLongerForSale(punkIndex)
 
 
 @internal
 def _addTokenTo(toAddress: address, punkIndex: uint256):
-    assert self.punkIndexToAddress[punkIndex] == ZERO_ADDRESS
+    assert self.punkIndexToAddress[punkIndex] == empty(address)
     self.punkIndexToAddress[punkIndex] = toAddress
     self.balanceOf[toAddress] += 1
     self.idToPositionInWallet[punkIndex] = len(self.wallet[toAddress])
@@ -112,7 +112,7 @@ def _addTokenTo(toAddress: address, punkIndex: uint256):
 @internal
 def _removeTokenFrom(fromAddress: address, punkIndex: uint256):
     assert self.punkIndexToAddress[punkIndex] == fromAddress
-    self.punkIndexToAddress[punkIndex] = ZERO_ADDRESS
+    self.punkIndexToAddress[punkIndex] = empty(address)
     self.balanceOf[fromAddress] -= 1
 
     last: uint256 = self.wallet[fromAddress].pop()
@@ -124,7 +124,7 @@ def _removeTokenFrom(fromAddress: address, punkIndex: uint256):
 
 # External functions
 
-@external
+@deploy
 def __init__():
     self.standard = 'CryptoPunks'
     self.owner = msg.sender
@@ -259,12 +259,12 @@ def enterBidForPunk(punkIndex: uint256):
     assert msg.value > existing.value
     if existing.value > 0:
         self.pendingWithdrawals[existing.bidder] += existing.value
-    self.punkBids[punkIndex] = Bid({
-        hasBid: True,
-        punkIndex: punkIndex,
-        bidder: msg.sender,
-        value: msg.value
-    })
+    self.punkBids[punkIndex] = Bid(
+        hasBid=True,
+        punkIndex=punkIndex,
+        bidder=msg.sender,
+        value=msg.value
+    )
     log PunkBidEntered(punkIndex, msg.value, msg.sender)
 
 
@@ -281,19 +281,19 @@ def acceptBidForPunk(punkIndex: uint256, minPrice: uint256):
     self._addTokenTo(bid.bidder, punkIndex)
     log Transfer(msg.sender, bid.bidder, 1)
 
-    self.punksOfferedForSale[punkIndex] = Offer({
-        isForSale: False,
-        punkIndex: punkIndex,
-        seller: msg.sender,
-        minValue: 0,
-        onlySellTo: empty(address)
-    })
-    self.punkBids[punkIndex] = Bid({
-        hasBid: False,
-        punkIndex: punkIndex,
-        bidder: empty(address),
-        value: 0
-    })
+    self.punksOfferedForSale[punkIndex] = Offer(
+        isForSale=False,
+        punkIndex=punkIndex,
+        seller=msg.sender,
+        minValue=0,
+        onlySellTo=empty(address)
+    )
+    self.punkBids[punkIndex] = Bid(
+        hasBid=False,
+        punkIndex=punkIndex,
+        bidder=empty(address),
+        value=0
+    )
     self.pendingWithdrawals[msg.sender] += bid.value
     log PunkBought(punkIndex, bid.value, msg.sender, bid.bidder)
 
@@ -307,12 +307,12 @@ def withdrawBidForPunk(punkIndex: uint256):
     bid: Bid = self.punkBids[punkIndex]
     assert bid.bidder == msg.sender
     log PunkBidWithdrawn(punkIndex, bid.value, msg.sender)
-    self.punkBids[punkIndex] = Bid({
-        hasBid: False,
-        punkIndex: punkIndex,
-        bidder: empty(address),
-        value: 0
-    })
+    self.punkBids[punkIndex] = Bid(
+        hasBid=False,
+        punkIndex=punkIndex,
+        bidder=empty(address),
+        value=0
+    )
     send(msg.sender, bid.value)
 
 

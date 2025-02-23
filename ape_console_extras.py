@@ -3,11 +3,9 @@ import random
 from collections import namedtuple
 from dataclasses import field
 from enum import Enum, IntEnum
-from hashlib import sha3_256
 from textwrap import dedent
 from typing import NamedTuple
 
-from hexbytes import HexBytes
 import ape
 import boa
 import eth_abi
@@ -17,10 +15,12 @@ from ape import convert, networks
 from eth_account import Account
 from eth_account.messages import encode_structured_data
 from eth_utils import keccak
+from hexbytes import HexBytes
 
 from scripts.deployment import DeploymentManager, Environment
 
 ENV = Environment[os.environ.get("ENV", "local")]
+CHAIN = os.environ.get("CHAIN", "nochain")
 
 ZERO_ADDRESS = "0x" + "0" * 40
 ZERO_BYTES32 = b"\0" * 32
@@ -87,7 +87,6 @@ class Offer(NamedTuple):
     token_id: int = 0
     token_range_min: int = 0
     token_range_max: int = 2**256 - 1
-    # collection_key: str = ""
     collection_key_hash: str = ZERO_BYTES32
     trait_hash: str = ZERO_BYTES32
     expiration: int = 0
@@ -387,11 +386,9 @@ def create_loan(
     filtered_offer["tracing_id"] = bytes.fromhex(filtered_offer["tracing_id"])
     _offer = Offer(**filtered_offer)
     offer_signature = signed_offer.get("signature")
-    _signed_offer = SignedOffer(_offer, Signature(
-        offer_signature.get("v"),
-        HexBytes(offer_signature.get("r")),
-        HexBytes(offer_signature.get("s"))
-    ))
+    _signed_offer = SignedOffer(
+        _offer, Signature(offer_signature.get("v"), HexBytes(offer_signature.get("r")), HexBytes(offer_signature.get("s")))
+    )
 
     p2p_control = ape.Contract(contract.p2p_control())
     collateral_contract = ape.Contract(p2p_control.contracts(_offer.collection_key_hash))
@@ -422,8 +419,9 @@ def get_loan(loan_id):
             type=FeeType[f.get("type").replace("_FEE", "")],
             upfront_amount=int(f.get("upfront_amount")),
             settlement_bps=int(f.get("interest_bps")),
-            wallet=f.get("wallet")
-        ) for f in loan_data["fees"].values()
+            wallet=f.get("wallet"),
+        )
+        for f in loan_data["fees"].values()
     ]
 
     fees_dict = {f.type: f for f in fees}
@@ -467,8 +465,9 @@ def pay_loan(loan_id, contract, *, sender):
             type=FeeType[f.get("type").replace("_FEE", "")],
             upfront_amount=int(f.get("upfront_amount")),
             settlement_bps=int(f.get("interest_bps")),
-            wallet=f.get("wallet")
-        ) for f in loan_data["fees"].values()
+            wallet=f.get("wallet"),
+        )
+        for f in loan_data["fees"].values()
     ]
 
     fees_dict = {f.type: f for f in fees}
@@ -500,9 +499,7 @@ def pay_loan(loan_id, contract, *, sender):
 
     payment_contract = ape.Contract(loan.payment_token)
     payment_contract.approve(
-        contract.address,
-        loan.amount + loan.interest + fees_dict[FeeType.BORROWER_BROKER].settlement_bps,
-        sender=sender
+        contract.address, loan.amount + loan.interest + fees_dict[FeeType.BORROWER_BROKER].settlement_bps, sender=sender
     )
 
     contract.settle_loan(loan, sender=sender)
@@ -513,28 +510,28 @@ def claim_loan_collateral(loan_id, contract, *, sender):
     loan_hash_in_contract = contract.loans(loan.id)
     print(f"loan_hash_in_contract: {loan_hash_in_contract.hex()}")
 
-    payment_contract = ape.Contract(loan.payment_token)
     contract.claim_defaulted_loan_collateral(loan, sender=sender)
 
 
+"""
+ draft = create_offer_draft(
+     offer_type="TOKEN",
+     principal=1e9,
+     interest=1e7,
+     p2p_contract="usdc_nfts",
+     duration=30*86400,
+     lender=me.address,
+     collection_key="bayc",
+     token_id=666
+ )
 
-# draft = create_offer_draft(
-#     offer_type="TOKEN",
-#     principal=1e9,
-#     interest=1e7,
-#     p2p_contract="usdc_nfts",
-#     duration=30*86400,
-#     lender=me.address,
-#     collection_key="bayc",
-#     token_id=666
-# )
-
-# offer = create_offer_backend(me, **draft)
-# loan_id = create_loan(offer, 1, p2p_usdc_nfts, sender=me)
+ offer = create_offer_backend(me, **draft)
+ loan_id = create_loan(offer, 1, p2p_usdc_nfts, sender=me)
+"""
 
 
 def ape_init_extras():
-    dm = DeploymentManager(ENV, Context.CONSOLE)
+    dm = DeploymentManager(ENV, CHAIN, Context.CONSOLE)
 
     globals()["dm"] = dm
     globals()["owner"] = dm.owner

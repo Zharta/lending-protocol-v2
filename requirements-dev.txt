@@ -7,10 +7,20 @@ aiosignal==1.3.1
 annotated-types==0.6.0
     # via pydantic
 ape-alchemy==0.8.1
+    # via lendging-protocol-v2 (pyproject.toml)
+ape-arbitrum==0.8.3
+    # via lendging-protocol-v2 (pyproject.toml)
+ape-base==0.8.1
+    # via lendging-protocol-v2 (pyproject.toml)
 ape-foundry==0.8.4
-ape-vyper==0.8.4
+    # via lendging-protocol-v2 (pyproject.toml)
+ape-optimism==0.8.3
+    # via ape-base
+ape-vyper==0.8.8
+    # via lendging-protocol-v2 (pyproject.toml)
 asttokens==2.4.1
     # via
+    #   eth-ape
     #   stack-data
     #   vyper
 attrs==23.2.0
@@ -26,6 +36,7 @@ base58==1.0.3
 bitarray==2.9.2
     # via eth-account
 boto3==1.34.96
+    # via lendging-protocol-v2 (pyproject.toml)
 botocore==1.34.96
     # via
     #   boto3
@@ -42,14 +53,18 @@ cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.3.2
     # via requests
-ckzg==1.0.1
+ckzg==1.0.2
     # via
     #   eth-account
     #   py-evm
 click==8.1.7
-    # via eth-ape
+    # via
+    #   lendging-protocol-v2 (pyproject.toml)
+    #   eth-ape
 coverage==7.3.2
-    # via pytest-cov
+    # via
+    #   lendging-protocol-v2 (pyproject.toml)
+    #   pytest-cov
 cytoolz==0.12.3
     # via eth-utils
 dataclassy==0.11.1
@@ -60,7 +75,7 @@ distlib==0.3.8
     # via virtualenv
 docstring-to-markdown==0.15
     # via python-lsp-server
-eip712==0.2.7
+eip712==0.2.10
     # via eth-ape
 eth-abi==5.1.0
     # via
@@ -68,27 +83,30 @@ eth-abi==5.1.0
     #   eth-account
     #   eth-ape
     #   eth-tester
+    #   ethpm-types
     #   titanoboa
     #   web3
-eth-account==0.11.2
+eth-account==0.11.3
     # via
     #   eip712
     #   eth-ape
     #   eth-tester
     #   titanoboa
     #   web3
-eth-ape==0.8.12
+eth-ape==0.8.21
     # via
+    #   lendging-protocol-v2 (pyproject.toml)
     #   ape-alchemy
+    #   ape-arbitrum
+    #   ape-base
     #   ape-foundry
+    #   ape-optimism
     #   ape-vyper
 eth-bloom==3.0.1
     # via py-evm
 eth-hash==0.7.0
     # via
-    #   eip712
     #   eth-bloom
-    #   eth-pydantic-types
     #   eth-tester
     #   eth-utils
     #   trie
@@ -101,9 +119,10 @@ eth-keys==0.5.1
     #   eth-keyfile
     #   eth-tester
     #   py-evm
-eth-pydantic-types==0.1.0
+eth-pydantic-types==0.1.3
     # via
     #   ape-alchemy
+    #   ape-arbitrum
     #   ape-foundry
     #   eth-ape
     #   ethpm-types
@@ -126,7 +145,7 @@ eth-typing==3.5.2
     #   py-evm
     #   titanoboa
     #   web3
-eth-utils==2.3.1
+eth-utils==4.1.1
     # via
     #   eip712
     #   eth-abi
@@ -144,18 +163,21 @@ eth-utils==2.3.1
     #   rlp
     #   trie
     #   web3
-ethpm-types==0.6.14
+ethpm-types==0.6.24
     # via
     #   ape-alchemy
+    #   ape-arbitrum
+    #   ape-base
     #   ape-foundry
+    #   ape-optimism
     #   ape-vyper
     #   eth-ape
-evm-trace==0.2.0
+evm-trace==0.2.4
     # via
     #   ape-alchemy
     #   ape-foundry
     #   eth-ape
-evmchains==0.0.11
+evmchains==0.1.3
     # via eth-ape
 execnet==2.1.1
     # via pytest-xdist
@@ -178,7 +200,9 @@ hexbytes==0.3.1
     #   trie
     #   web3
 hypothesis==6.100.2
-    # via titanoboa
+    # via
+    #   lendging-protocol-v2 (pyproject.toml)
+    #   titanoboa
 identify==2.5.36
     # via pre-commit
 idna==3.7
@@ -192,7 +216,9 @@ importlib-metadata==7.1.0
 iniconfig==2.0.0
     # via pytest
 ipython==8.24.0
-    # via eth-ape
+    # via
+    #   lendging-protocol-v2 (pyproject.toml)
+    #   eth-ape
 jedi==0.19.1
     # via
     #   ipython
@@ -201,9 +227,9 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via web3
-jsonschema-specifications==2023.12.1
+jsonschema-specifications==2024.10.1
     # via jsonschema
 lazyasd==0.1.4
     # via eth-ape
@@ -234,6 +260,7 @@ multidict==6.0.5
     #   aiohttp
     #   yarl
 mypy==1.10.0
+    # via lendging-protocol-v2 (pyproject.toml)
 mypy-extensions==1.0.0
     # via mypy
 nodeenv==1.8.0
@@ -274,9 +301,10 @@ pluggy==1.5.0
     #   pytest
     #   python-lsp-server
 pre-commit==3.7.0
+    # via lendging-protocol-v2 (pyproject.toml)
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==5.26.1
+protobuf==5.29.3
     # via web3
 ptyprocess==0.7.0
     # via pexpect
@@ -291,7 +319,7 @@ py-evm==0.10.1b1
     #   eth-tester
     #   evm-trace
     #   titanoboa
-py-geth==5.0.0
+py-geth==5.2.1
     # via
     #   eth-ape
     #   web3
@@ -307,7 +335,7 @@ pycryptodome==3.20.0
     #   eth-keyfile
     #   eth-stdlib
     #   vyper
-pydantic==2.7.1
+pydantic==2.10.6
     # via
     #   eth-ape
     #   eth-pydantic-types
@@ -316,9 +344,9 @@ pydantic==2.7.1
     #   evmchains
     #   py-geth
     #   pydantic-settings
-pydantic-core==2.18.2
+pydantic-core==2.27.2
     # via pydantic
-pydantic-settings==2.2.1
+pydantic-settings==2.8.0
     # via eth-ape
 pygments==2.17.2
     # via
@@ -326,15 +354,18 @@ pygments==2.17.2
     #   rich
 pytest==8.3.2
     # via
+    #   lendging-protocol-v2 (pyproject.toml)
     #   eth-ape
     #   pytest-bdd
     #   pytest-cov
     #   pytest-xdist
     #   titanoboa
 pytest-bdd==7.1.2
+    # via lendging-protocol-v2 (pyproject.toml)
 pytest-cov==5.0.0
     # via titanoboa
 pytest-xdist==3.6.1
+    # via lendging-protocol-v2 (pyproject.toml)
 python-baseconv==1.2.2
     # via py-multibase
 python-dateutil==2.9.0.post0
@@ -347,6 +378,7 @@ python-dotenv==1.0.1
 python-lsp-jsonrpc==1.1.2
     # via python-lsp-server
 python-lsp-server==1.11.0
+    # via lendging-protocol-v2 (pyproject.toml)
 pytoolconfig==1.3.1
     # via rope
 pytz==2024.1
@@ -357,13 +389,13 @@ pyyaml==6.0.1
     # via
     #   eth-ape
     #   pre-commit
-referencing==0.35.1
+referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
 regex==2024.4.28
     # via parsimonious
-requests==2.31.0
+requests==2.32.3
     # via
     #   ape-alchemy
     #   eth-ape
@@ -374,6 +406,7 @@ requests==2.31.0
     #   web3
 rich==13.7.1
     # via
+    #   lendging-protocol-v2 (pyproject.toml)
     #   eth-ape
     #   titanoboa
 rlp==4.0.1
@@ -384,11 +417,13 @@ rlp==4.0.1
     #   py-evm
     #   trie
 rope==1.13.0
-rpds-py==0.18.0
+    # via lendging-protocol-v2 (pyproject.toml)
+rpds-py==0.23.1
     # via
     #   jsonschema
     #   referencing
 ruff==0.4.2
+    # via lendging-protocol-v2 (pyproject.toml)
 s3transfer==0.10.1
     # via boto3
 safe-pysha3==1.0.4
@@ -416,6 +451,7 @@ sqlalchemy==2.0.29
 stack-data==0.6.3
     # via ipython
 titanoboa==0.1.10b1
+    # via lendging-protocol-v2 (pyproject.toml)
 toolz==0.12.1
     # via cytoolz
 tqdm==4.66.2
@@ -433,18 +469,18 @@ trie==3.0.1
     #   py-evm
 types-requests==2.32.0.20240712
     # via py-geth
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   eth-pydantic-types
     #   eth-rlp
     #   eth-typing
-    #   ethpm-types
     #   ipython
     #   mypy
     #   py-geth
     #   pydantic
     #   pydantic-core
     #   pytest-bdd
+    #   referencing
     #   sqlalchemy
     #   titanoboa
     #   web3
@@ -466,10 +502,11 @@ varint==1.0.2
     #   py-multihash
 virtualenv==20.26.1
     # via pre-commit
-vvm==0.2.0
+vvm==0.3.2
     # via ape-vyper
-vyper==0.3.10
+vyper==0.4.0
     # via
+    #   lendging-protocol-v2 (pyproject.toml)
     #   ape-vyper
     #   titanoboa
 watchdog==3.0.0
@@ -478,6 +515,7 @@ wcwidth==0.2.13
     # via prompt-toolkit
 web3==6.18.0
     # via
+    #   lendging-protocol-v2 (pyproject.toml)
     #   ape-alchemy
     #   ape-foundry
     #   eth-ape

@@ -1,4 +1,4 @@
-# @version 0.3.10
+# @version 0.4.0
 
 """
 WETH9 Mock based on
@@ -6,11 +6,11 @@ https://github.com/vyperlang/vyper/blob/master/examples/tokens/ERC20.vy
 https://github.com/gnosis/canonical-weth/blob/master/contracts/WETH9.sol
 """
 
-from vyper.interfaces import ERC20
-from vyper.interfaces import ERC20Detailed
+from ethereum.ercs import IERC20
+from ethereum.ercs import IERC20Detailed
 
-implements: ERC20
-implements: ERC20Detailed
+implements: IERC20
+implements: IERC20Detailed
 
 event Transfer:
     sender: indexed(address)
@@ -41,7 +41,7 @@ minter: address
 
 blacklisted: public(HashMap[address, bool])
 
-@external
+@deploy
 def __init__(_name: String[32], _symbol: String[32], _decimals: uint8, _supply: uint256):
     init_supply: uint256 = _supply * 10 ** convert(_decimals, uint256)
     self.name = _name

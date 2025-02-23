@@ -1,4 +1,4 @@
-# @version 0.3.10
+# @version 0.4.0
 
 """
 @title P2PLendingControl
@@ -8,9 +8,6 @@
 
 # Interfaces
 
-from vyper.interfaces import ERC165 as IERC165
-from vyper.interfaces import ERC721 as IERC721
-from vyper.interfaces import ERC20 as IERC20
 
 # Structs
 
@@ -60,7 +57,7 @@ contracts: public(HashMap[bytes32, address])
 trait_roots: public(HashMap[bytes32, bytes32])
 
 
-@external
+@deploy
 def __init__():
     self.owner = msg.sender
 
@@ -103,7 +100,7 @@ def change_collections_contracts(collections: DynArray[CollectionContract, CHANG
     @param collections array of CollectionContract
     """
     assert msg.sender == self.owner, "sender not owner"
-    for c in collections:
+    for c: CollectionContract in collections:
         self.contracts[c.collection_key_hash] = c.contract
 
     log ContractsChanged(collections)
@@ -116,7 +113,7 @@ def change_collections_trait_roots(roots: DynArray[TraitRoot, CHANGE_BATCH]):
     @param roots array of bytes32
     """
     assert msg.sender == self.owner, "sender not owner"
-    for r in roots:
+    for r: TraitRoot in roots:
         self.trait_roots[r.collection_key_hash] = r.root_hash
 
     log TraitRootChanged(roots)
@@ -130,7 +127,7 @@ def get_collection_status(collection_key_hash: bytes32) -> CollectionStatus:
     @param collection_key_hash hash of the collection key
     @return the contract address and traits root
     """
-    return CollectionStatus({
-        contract: self.contracts[collection_key_hash],
-        trait_root: self.trait_roots[collection_key_hash]
-    })
+    return CollectionStatus(
+        contract=self.contracts[collection_key_hash],
+        trait_root=self.trait_roots[collection_key_hash]
+    )

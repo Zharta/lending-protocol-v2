@@ -2,13 +2,13 @@
 # @author Takayuki Jimba (@yudetamago)
 # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 
-# @version ^0.3.3
+# @version 0.4.0
 
-from vyper.interfaces import ERC20
-from vyper.interfaces import ERC20Detailed
+from ethereum.ercs import IERC20
+from ethereum.ercs import IERC20Detailed
 
-implements: ERC20
-implements: ERC20Detailed
+implements: IERC20
+implements: IERC20Detailed
 
 event Transfer:
     sender: indexed(address)
@@ -36,7 +36,7 @@ totalSupply: public(uint256)
 minter: address
 
 
-@external
+@deploy
 def __init__(_name: String[32], _symbol: String[32], _decimals: uint8, _supply: uint256):
     init_supply: uint256 = _supply * 10 ** convert(_decimals, uint256)
     self.name = _name
@@ -45,7 +45,7 @@ def __init__(_name: String[32], _symbol: String[32], _decimals: uint8, _supply: 
     self.balanceOf[msg.sender] = init_supply
     self.totalSupply = init_supply
     self.minter = msg.sender
-    log Transfer(ZERO_ADDRESS, msg.sender, init_supply)
+    log Transfer(empty(address), msg.sender, init_supply)
 
 
 
@@ -109,10 +109,10 @@ def mint(_to: address, _value: uint256):
     @param _value The amount that will be created.
     """
     assert msg.sender == self.minter
-    assert _to != ZERO_ADDRESS
+    assert _to != empty(address)
     self.totalSupply += _value
     self.balanceOf[_to] += _value
-    log Transfer(ZERO_ADDRESS, _to, _value)
+    log Transfer(empty(address), _to, _value)
 
 
 @internal
@@ -123,10 +123,10 @@ def _burn(_to: address, _value: uint256):
     @param _to The account whose tokens will be burned.
     @param _value The amount that will be burned.
     """
-    assert _to != ZERO_ADDRESS
+    assert _to != empty(address)
     self.totalSupply -= _value
     self.balanceOf[_to] -= _value
-    log Transfer(_to, ZERO_ADDRESS, _value)
+    log Transfer(_to, empty(address), _value)
 
 
 @external

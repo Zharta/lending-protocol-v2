@@ -1,19 +1,23 @@
 [project]
-name = "protocol-v1"
+name = "lendging-protocol-v2"
 description = "Lending Protocol by Zharta"
 classifiers = ["Private :: Do Not Upload"]
 version = "0"
 dependencies = [
     "eth-ape",
-    "vyper==0.3.10",
+    "vyper==0.4.0",
     "ape-vyper",
     "ape-foundry",
     "ape-alchemy",
+    "ape-arbitrum",
+    "ape-base",
+    "web3==6.18.0",
 ]
 
 
 [project.optional-dependencies]
 dev = [
+    # "titanoboa==0.2.5",
     "titanoboa==0.1.10b1",
     "boto3",
     "click",
@@ -56,7 +60,7 @@ target-version = "py311"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"ape_console_extras.py" = ["T201"]
+"ape_console_extras.py" = ["T201", "B006", "PYI024"]
 "tests/*.py" = [
     "ARG001",
     "ERA001",

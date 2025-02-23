@@ -28,8 +28,8 @@ class Context(Enum):
     CONSOLE = "console"
 
 
-def load_contracts(env: Environment) -> list[ContractConfig]:
-    config_file = Path.cwd() / "configs" / env.name / "p2p.json"
+def load_contracts(env: Environment, chain: str) -> list[ContractConfig]:
+    config_file = Path.cwd() / "configs" / env.name / chain / "p2p.json"
     with config_file.open(encoding="utf8") as f:
         config = json.load(f)
 
@@ -42,8 +42,8 @@ def load_contracts(env: Environment) -> list[ContractConfig]:
     ]
 
 
-def store_contracts(env: Environment, contracts: list[ContractConfig]):
-    config_file = Path.cwd() / "configs" / env.name / "p2p.json"
+def store_contracts(env: Environment, chain: str, contracts: list[ContractConfig]):
+    config_file = Path.cwd() / "configs" / env.name / chain / "p2p.json"
     with config_file.open(encoding="utf8") as f:
         config = json.load(f)
 
@@ -68,8 +68,8 @@ def store_contracts(env: Environment, contracts: list[ContractConfig]):
         f.write(json.dumps(config, indent=4, sort_keys=True))
 
 
-def load_nft_contracts(env: Environment) -> list[ContractConfig]:
-    config_file = Path.cwd() / "configs" / env.name / "collections.json"
+def load_nft_contracts(env: Environment, chain: str) -> list[ContractConfig]:
+    config_file = Path.cwd() / "configs" / env.name / chain / "collections.json"
     with config_file.open(encoding="utf8") as f:
         config = json.load(f)
 
@@ -83,8 +83,8 @@ def load_nft_contracts(env: Environment) -> list[ContractConfig]:
     ]
 
 
-def load_configs(env: Environment) -> dict:
-    config_file = Path.cwd() / "configs" / env.name / "p2p.json"
+def load_configs(env: Environment, chain: str) -> dict:
+    config_file = Path.cwd() / "configs" / env.name / chain / "p2p.json"
     with config_file.open(encoding="utf8") as f:
         config = json.load(f)
 
@@ -93,8 +93,9 @@ def load_configs(env: Environment) -> dict:
 
 
 class DeploymentManager:
-    def __init__(self, env: Environment, context: Context = Context.DEPLOYMENT):
+    def __init__(self, env: Environment, chain: str, context: Context = Context.DEPLOYMENT):
         self.env = env
+        self.chain = chain
         match env:
             case Environment.local:
                 self.owner = accounts.test_accounts[0]
@@ -104,11 +105,11 @@ class DeploymentManager:
                 self.owner = accounts.load("intacc")
             case Environment.prod:
                 self.owner = accounts.load("prodacc")
-        self.context = DeploymentContext(self._get_contracts(context), self.env, self.owner, self._get_configs())
+        self.context = DeploymentContext(self._get_contracts(context), self.env, self.chain, self.owner, self._get_configs())
 
     def _get_contracts(self, context: Context) -> dict[str, ContractConfig]:
-        contracts = load_contracts(self.env)
-        nfts = load_nft_contracts(self.env)
+        contracts = load_contracts(self.env, self.chain)
+        nfts = load_nft_contracts(self.env, self.chain)
         all_contracts = contracts + nfts
 
         # always deploy everything in local
@@ -119,10 +120,10 @@ class DeploymentManager:
         return {c.key: c for c in all_contracts}
 
     def _get_configs(self) -> dict[str, Any]:
-        return load_configs(self.env)
+        return load_configs(self.env, self.chain)
 
     def _save_state(self):
-        store_contracts(self.env, list(self.context.contracts.values()))
+        store_contracts(self.env, self.chain, list(self.context.contracts.values()))
 
     def deploy(self, changes: set[str], *, dryrun=False, save_state=True):
         self.owner.set_autosign(True) if self.env != Environment.local else None

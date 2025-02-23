@@ -1,7 +1,7 @@
-# @version 0.3.10
+# @version 0.4.0
 
 
-enum DelegationType:
+flag DelegationType:
     NONE_
     ALL
     CONTRACT
@@ -190,7 +190,7 @@ def getOutgoingDelegationHashes(from_: address) -> DynArray[bytes32, 2**20]:
 @external
 def getDelegationsFromHashes(hashes: DynArray[bytes32, 2**20]) -> DynArray[Delegation, 2**20]:
     delegations_: DynArray[Delegation, 2**20] = []
-    for hash in hashes:
+    for hash: bytes32 in hashes:
         delegation: Delegation = self.delegations[hash]
         if self._invalidFrom(delegation.from_):
             continue
@@ -214,7 +214,7 @@ def _invalidFrom(from_: address) -> bool:
 @internal
 def _getValidDelegationsFromHashes(hashes: DynArray[bytes32, 2**20]) -> DynArray[Delegation, 2**20]:
     delegations_: DynArray[Delegation, 2**20] = []
-    for hash in hashes:
+    for hash: bytes32 in hashes:
         delegation: Delegation = self.delegations[hash]
         if self._invalidFrom(delegation.from_):
             continue
@@ -225,7 +225,16 @@ def _getValidDelegationsFromHashes(hashes: DynArray[bytes32, 2**20]) -> DynArray
 @internal
 def _getValidDelegationHashesFromHashes(hashes: DynArray[bytes32, 2**20]) -> DynArray[bytes32, 2**20]:
     valid_hashes: DynArray[bytes32, 2**20] = []
-    for hash in hashes:
+
+    # for hash: bytes32 in hashes:
+    #     if self._invalidFrom(self.delegations[hash].from_):
+    #         continue
+    #     valid_hashes.append(hash)
+    # return valid_hashes
+
+    # workaround https://github.com/vyperlang/vyper/issues/4163
+    for i: uint256 in range(len(hashes), bound=2**20):
+        hash: bytes32 = hashes[i]
         if self._invalidFrom(self.delegations[hash].from_):
             continue
         valid_hashes.append(hash)

@@ -1,14 +1,14 @@
 {
     "common": {
         "delegation_registry": {
-            "abi_key": "8f910c9aa38cffa69fc4a97a81cbc79dda306e2a",
-            "address": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
+            "abi_key": "b81a1dc53243e33e00b85ff03e7df975f34f7975",
+            "address": "0x15166b180D12cA49ce15c5EF8725cf6Cd56434ED",
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
         "p2p_controller": {
-            "abi_key": "04afdba3576595c8dc72c60cb9213580887fa375",
-            "address": "0x9d19498474A9fa45d1Ed3F36822301307E083698",
+            "abi_key": "ea96d1a2134dd14a2190e52e504bf39dd4b92ef9",
+            "address": "0x90145B50fEe796beD10bfd0E7BFDd0489C60E445",
             "contract": "P2PLendingControl",
             "properties": {
                 "trait_roots_key": "configs.trait_roots"
@@ -16,7 +16,7 @@
             "properties_addresses": {}
         },
         "usdc": {
-            "address": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab",
+            "address": "0x77BE703d950f6B84c679a2AB519f736174E63883",
             "contract": "ERC20",
             "properties": {
                 "decimals": 6,
@@ -27,7 +27,7 @@
             "properties_addresses": {}
         },
         "weth": {
-            "address": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb",
+            "address": "0xEba85304439c77C74Fb471D302fba836ab3248b4",
             "contract": "ERC20",
             "properties": {
                 "decimals": 18,
@@ -73,7 +73,6 @@
             "quirkies": "115f524e0a23dcb25e29020dd78b73309eb519756957b5f8e83b8624ddf9b294",
             "rektguy": "c1f3db64a822a3c2e4b581d03d2cc7bd27b71b99a738c0bac1c8eaaf0c65aa60",
             "renga": "e677a47bac680935cd28085320a1a81b2df4baa9009214dde726413669e6a0bf",
-            "rentingkoda": "b99290e2d53d0aad57d2b3b7db534a9a7a7faa34a6d8bde1edd05f15d1eecef6",
             "ringers": "c11a30fb164c279f87baca1c075c0021bd5083b30d394414c12a9ae1d8d399a6",
             "thecaptainz": "4b0cbfe3f34976940a951dc5eeeae118ee06877d878d6ed3eb7f7b420a248067",
             "thecurrency": "2ce6db666138aa7cf6f7ab0445f1a497ea28a1c363150e1d6e392aa7002e9c17",
@@ -92,8 +91,8 @@
     },
     "p2p": {
         "eth_nfts": {
-            "abi_key": "5a6f84b09451e64083b390b298643877c73352f2",
-            "address": "0xf85dad4F6bb604a8D45242d26Fc59201a1aeDa47",
+            "abi_key": "10303d3fbb028dacb97d9fbfe3717a62bd73a126",
+            "address": "0x97A74a72cF54788cA8A2EeD8694dae6b603a1277",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -109,17 +108,17 @@
                 "protocol_wallet": "0x66aB6D9362d4F35596279692F0251Db635165871"
             },
             "properties_addresses": {
-                "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
-                "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
-                "p2p_controller": "0x9d19498474A9fa45d1Ed3F36822301307E083698",
-                "payment_token": "0xE33b26CA786cC720DD11289D36bAE3Af051839fb"
+                "cryptopunks": "0xd9705E8F5b47c4189266c789759Cb19b84281492",
+                "delegation_registry": "0x15166b180D12cA49ce15c5EF8725cf6Cd56434ED",
+                "p2p_controller": "0x90145B50fEe796beD10bfd0E7BFDd0489C60E445",
+                "payment_token": "0xEba85304439c77C74Fb471D302fba836ab3248b4"
             },
             "token_symbol": "WETH",
             "version": "1"
         },
         "usdc_nfts": {
-            "abi_key": "5a6f84b09451e64083b390b298643877c73352f2",
-            "address": "0x12a8cB165c4DaF5D2338b2c871f10771E98547Ed",
+            "abi_key": "10303d3fbb028dacb97d9fbfe3717a62bd73a126",
+            "address": "0x0d2a478a1B52a9304bc7a0C0233DD1E3d3019916",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "punk",
@@ -135,10 +134,10 @@
                 "protocol_wallet": "0x66aB6D9362d4F35596279692F0251Db635165871"
             },
             "properties_addresses": {
-                "cryptopunks": "0xb44fed94fA5ED28Bd860cFf484EF4F4E4DE4c314",
-                "delegation_registry": "0xE9FAfFe98C56104F735776e11dF69cbe57Aa71AF",
-                "p2p_controller": "0x9d19498474A9fa45d1Ed3F36822301307E083698",
-                "payment_token": "0xa72aC03c2f446ab8a648651735c7dB9dCE5809Ab"
+                "cryptopunks": "0xd9705E8F5b47c4189266c789759Cb19b84281492",
+                "delegation_registry": "0x15166b180D12cA49ce15c5EF8725cf6Cd56434ED",
+                "p2p_controller": "0x90145B50fEe796beD10bfd0E7BFDd0489C60E445",
+                "payment_token": "0x77BE703d950f6B84c679a2AB519f736174E63883"
             },
             "token_symbol": "USDC",
             "version": "1"

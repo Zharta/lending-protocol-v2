@@ -16,6 +16,7 @@ warnings.filterwarnings("ignore")
 
 
 ENV = Environment[os.environ.get("ENV", "local")]
+CHAIN = os.environ.get("CHAIN", "nochain")
 DYNAMODB = boto3.resource("dynamodb")
 P2P_CONFIGS = DYNAMODB.Table(f"p2p-configs-{ENV.name}")
 COLLECTIONS = DYNAMODB.Table(f"collections-{ENV.name}")
@@ -30,8 +31,8 @@ def abi_key(abi: list) -> str:
     return hash.hexdigest()
 
 
-def get_abi_map(context, env: Environment) -> dict:
-    config_file = f"{Path.cwd()}/configs/{env.name}/p2p.json"
+def get_abi_map(context, env: Environment, chain: str) -> dict:
+    config_file = f"{Path.cwd()}/configs/{env.name}/{chain}/p2p.json"
     with open(config_file, "r") as f:
         config = json.load(f)
 
@@ -46,8 +47,8 @@ def get_abi_map(context, env: Environment) -> dict:
     return contracts
 
 
-def get_p2p_configs(context, env: Environment) -> dict:
-    config_file = f"{Path.cwd()}/configs/{env.name}/p2p.json"
+def get_p2p_configs(context, env: Environment, chain: str) -> dict:
+    config_file = f"{Path.cwd()}/configs/{env.name}/{chain}/p2p.json"
     with open(config_file, "r") as f:
         config = json.load(f)
 
@@ -60,8 +61,8 @@ def get_p2p_configs(context, env: Environment) -> dict:
     return p2p_configs
 
 
-def get_traits_roots(context, env: Environment) -> dict:  # noqa: ARG001
-    config_file = f"{Path.cwd()}/configs/{env.name}/p2p.json"
+def get_traits_roots(context, env: Environment, chain: str) -> dict:  # noqa: ARG001
+    config_file = f"{Path.cwd()}/configs/{env.name}/{chain}/p2p.json"
     with open(config_file, "r") as f:
         config = json.load(f)
 
@@ -99,17 +100,20 @@ def update_abi(abi_key: str, abi: list[dict]):
 
 @click.command()
 def cli():
-    dm = DeploymentManager(ENV)
+    dm = DeploymentManager(ENV, CHAIN)
 
-    print(f"Updating p2p configs in {ENV.name}")
+    print(f"Updating p2p configs in {ENV.name} for {CHAIN}")
 
-    abis = get_abi_map(dm.context, dm.env)
+    abis = get_abi_map(dm.context, dm.env, dm.chain)
     for contract_key, config in abis.items():
         abi_key = config["abi_key"]
         print(f"adding abi {contract_key=} {abi_key=}")
         update_abi(abi_key, config["abi"])
 
-    p2p_configs = get_p2p_configs(dm.context, dm.env)
+    p2p_configs = get_p2p_configs(dm.context, dm.env, dm.chain)
+
+    for data in p2p_configs.values():
+        data["chain"] = CHAIN
 
     for k, v in p2p_configs.items():
         properties_abis = {}
@@ -122,7 +126,7 @@ def cli():
         print(f"updating p2p config {k} {abi_key=}")
         update_p2p_config(k, v)
 
-    trait_roots = get_traits_roots(dm.context, dm.env)
+    trait_roots = get_traits_roots(dm.context, dm.env, dm.chain)
     for collection, root in trait_roots.items():
         print(f"updating trait root {collection=} {root=}")
         update_collection_trait_root(collection, root)
@@ -132,4 +136,4 @@ def cli():
         print(f"updating whitelisted root {collection=} {whitelisted=}")
         update_collection_p2p_whitelisted(collection, whitelisted=whitelisted)
 
-    print(f"P2P configs updated in {ENV.name}")
+    print(f"P2P configs updated in {ENV.name} for {CHAIN}")
