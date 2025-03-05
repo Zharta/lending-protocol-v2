@@ -16,3 +16,4 @@ reports/
 .tool-versions
 
 configs/**/collections.json
+configs/**/tokens.json

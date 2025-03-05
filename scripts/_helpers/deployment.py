@@ -47,7 +47,7 @@ def store_contracts(env: Environment, chain: str, contracts: list[ContractConfig
     with config_file.open(encoding="utf8") as f:
         config = json.load(f)
 
-    contracts_dict = {c.key: c for c in contracts}
+    contracts_dict = {c.key: c for c in contracts if not c.token and not c.nft}
     for scope in ["common", "p2p"]:
         for name, c in config[scope].items():
             key = f"{scope}.{name}"
@@ -83,6 +83,17 @@ def load_nft_contracts(env: Environment, chain: str) -> list[ContractConfig]:
     ]
 
 
+def load_tokens(env: Environment, chain: str) -> list[ContractConfig]:
+    config_file = Path.cwd() / "configs" / env.name / chain / "tokens.json"
+    with config_file.open(encoding="utf8") as f:
+        config = json.load(f)
+
+    return [
+        contracts_module.__dict__[c.get("contract_def", "ERC20External")](key=f"common.{name}", address=c.get("address"))
+        for name, c in config.items()
+    ]
+
+
 def load_configs(env: Environment, chain: str) -> dict:
     config_file = Path.cwd() / "configs" / env.name / chain / "p2p.json"
     with config_file.open(encoding="utf8") as f:
@@ -110,7 +121,8 @@ class DeploymentManager:
     def _get_contracts(self, context: Context) -> dict[str, ContractConfig]:
         contracts = load_contracts(self.env, self.chain)
         nfts = load_nft_contracts(self.env, self.chain)
-        all_contracts = contracts + nfts
+        tokens = load_tokens(self.env, self.chain)
+        all_contracts = contracts + nfts + tokens
 
         # always deploy everything in local
         if self.env == Environment.local and context == Context.DEPLOYMENT:

@@ -14,17 +14,6 @@
                 "trait_roots_key": "configs.trait_roots"
             },
             "properties_addresses": {}
-        },
-        "wape": {
-            "address": "",
-            "contract": "ERC20",
-            "properties": {
-                "decimals": 18,
-                "name": "Wrapped ApeCoin",
-                "supply": "1000000000000000000000000",
-                "symbol": "WAPE"
-            },
-            "properties_addresses": {}
         }
     },
     "configs": {

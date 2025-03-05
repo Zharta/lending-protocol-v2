@@ -14,28 +14,6 @@
                 "trait_roots_key": "configs.trait_roots"
             },
             "properties_addresses": {}
-        },
-        "usdc": {
-            "address": "0x74540605Dc99f9cd65A3eA89231fFA727B1049E2",
-            "contract": "ERC20",
-            "properties": {
-                "decimals": 6,
-                "name": "USDC",
-                "supply": "1000000000000000000",
-                "symbol": "USDC"
-            },
-            "properties_addresses": {}
-        },
-        "weth": {
-            "address": "0xB7603602860a4816154F2A3bA4d6aBDDd8937b84",
-            "contract": "ERC20",
-            "properties": {
-                "decimals": 18,
-                "name": "WETH",
-                "supply": "1000000000000000000000000",
-                "symbol": "WETH"
-            },
-            "properties_addresses": {}
         }
     },
     "configs": {

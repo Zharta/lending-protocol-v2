@@ -7,7 +7,6 @@ from textwrap import dedent
 from typing import NamedTuple
 
 import ape
-import boa
 import eth_abi
 import requests
 import web3
@@ -194,6 +193,8 @@ def compute_loan_hash(loan: Loan):
 
 
 def compute_signed_offer_id(offer: SignedOffer):
+    import boa  # noqa: PLC0415 temp workaround
+
     return boa.eval(
         dedent(
             f"""keccak256(

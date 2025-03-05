@@ -61,6 +61,7 @@ class ContractConfig:
     version: str | None = None
 
     nft: bool = False
+    token: bool = False
 
     def deployable(self, context: DeploymentContext) -> bool:
         return True

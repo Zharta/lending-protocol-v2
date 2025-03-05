@@ -55,11 +55,8 @@ clean:
 	rm -rf ${VENV} .cache .build __pycache__ **/__pycache__
 
 lint:
-	$(VENV)/bin/ruff check .
-
-format:
-	$(VENV)/bin/ruff format scripts tests
-	$(VENV)/bin/ruff check --select I --fix
+	$(VENV)/bin/ruff check --select I --fix .
+	$(VENV)/bin/ruff format tests scripts
 
 %-local: export ENV=local
 %-dev: export ENV=dev
@@ -75,7 +72,7 @@ format:
 %-zapechain: export CHAIN=zapechain
 %-sepolia: export CHAIN=sepolia
 %-curtis: export CHAIN=curtis
-%-ethereum: export CHAIN=mainnet
+%-ethereum: export CHAIN=ethereum
 %-apechain: export CHAIN=apechain
 
 %-local: export NETWORK=ethereum:local:foundry
@@ -102,5 +99,6 @@ deploy-local deploy-zethereum deploy-zapechain deploy-sepolia deploy-curtis depl
 publish-zethereum publish-zapechain publish-sepolia publish-curtis publish-ethereum publish-apechain:
 	${VENV}/bin/ape run publish
 
-get-collections-zethereum get-collections-zapechain get-collections-sepolia get-collections-curtis get-collections-ethereum get-collections-apechain:
+get-metadata-zethereum get-metadata-zapechain get-metadata-sepolia get-metadata-curtis get-metadata-ethereum get-metadata-apechain:
 	${VENV}/bin/ape run get_collections
+	${VENV}/bin/ape run get_tokens

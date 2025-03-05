@@ -182,7 +182,7 @@ class ERC20(ContractConfig):
         *,
         key: str,
         version: str | None = None,
-        abi_key: str,
+        abi_key: str | None = None,
         name: str,
         symbol: str,
         decimals: int,
@@ -195,10 +195,27 @@ class ERC20(ContractConfig):
             project.WETH9Mock,
             version=version,
             abi_key=abi_key,
+            token=True,
             deployment_args=[name, symbol, decimals, int(supply)],
         )
         if address:
             self.load_contract(address)
+
+
+@dataclass
+class ERC20External(ContractConfig):
+    def __init__(
+        self,
+        *,
+        key: str,
+        address: str | None = None,
+    ):
+        super().__init__(key, None, project.WETH9Mock, token=True)
+        if address:
+            self.load_contract(address)
+
+    def deployable(self, context: DeploymentContext) -> bool:  # noqa: PLR6301, ARG002
+        return False
 
 
 @dataclass
