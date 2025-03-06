@@ -120,6 +120,8 @@ def cli():
         for prop, prop_val in v.get("properties", {}).items():
             if prop_val in abis:
                 properties_abis[prop] = abis[prop_val]["abi_key"]
+            elif prop_val in dm.context and dm.context[prop_val].abi_key:
+                properties_abis[prop] = dm.context[prop_val].abi_key
         v["properties_abis"] = properties_abis
 
         abi_key = v["abi_key"]

@@ -89,7 +89,9 @@ def load_tokens(env: Environment, chain: str) -> list[ContractConfig]:
         config = json.load(f)
 
     return [
-        contracts_module.__dict__[c.get("contract_def", "ERC20External")](key=f"common.{name}", address=c.get("address"))
+        contracts_module.__dict__[c.get("contract_def", "ERC20External")](
+            key=f"common.{name}", address=c.get("address"), abi_key=c.get("abi_key")
+        )
         for name, c in config.items()
     ]
 

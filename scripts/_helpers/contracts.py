@@ -209,8 +209,9 @@ class ERC20External(ContractConfig):
         *,
         key: str,
         address: str | None = None,
+        abi_key: str | None = None,
     ):
-        super().__init__(key, None, project.WETH9Mock, token=True)
+        super().__init__(key, None, project.WETH9Mock, token=True, abi_key=abi_key)
         if address:
             self.load_contract(address)
 
