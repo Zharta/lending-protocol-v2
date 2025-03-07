@@ -44,7 +44,8 @@
             },
             "properties_addresses": {
                 "delegation_registry": "0xa3B53dDCd2E3fC28e8E130288F2aBD8d5EE37472",
-                "p2p_controller": "0xb6286fAFd0451320ad6A8143089b216C2152c025"
+                "p2p_controller": "0xb6286fAFd0451320ad6A8143089b216C2152c025",
+                "payment_token": "0x9E4c14403d7d9A8A782044E86a93CAE09D7B2ac9"
             },
             "token_symbol": "WAPE",
             "version": "1"

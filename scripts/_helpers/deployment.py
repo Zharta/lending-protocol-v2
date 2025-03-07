@@ -47,7 +47,7 @@ def store_contracts(env: Environment, chain: str, contracts: list[ContractConfig
     with config_file.open(encoding="utf8") as f:
         config = json.load(f)
 
-    contracts_dict = {c.key: c for c in contracts if not c.token and not c.nft}
+    contracts_dict = {c.key: c for c in contracts}
     for scope in ["common", "p2p"]:
         for name, c in config[scope].items():
             key = f"{scope}.{name}"
