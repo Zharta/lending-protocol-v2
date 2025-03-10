@@ -490,7 +490,7 @@ sqlalchemy==2.0.29
     # via eth-ape
 stack-data==0.6.3
     # via ipython
-titanoboa @ git+ssh://git@github.com/vyperlang/titanoboa.git@c06e23a68df73d669738f30faa4aeb051012423b
+titanoboa @ git+https://github.com/vyperlang/titanoboa.git@c06e23a68df73d669738f30faa4aeb051012423b
     # via lendging-protocol-v2 (pyproject.toml)
 toolz==0.12.1
     # via cytoolz
