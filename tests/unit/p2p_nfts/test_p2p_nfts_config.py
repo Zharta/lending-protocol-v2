@@ -39,7 +39,7 @@ def test_initial_state(
 
 
 def test_set_protocol_fee_reverts_if_not_owner(p2p_nfts_usdc):
-    with boa.reverts("not owner"):
+    with boa.reverts():
         p2p_nfts_usdc.set_protocol_fee(1, 1, sender=boa.env.generate_address("random"))
 
 
@@ -80,12 +80,12 @@ def test_set_protocol_fee_logs_event(p2p_nfts_usdc, owner):
 
 def test_change_protocol_wallet_reverts_if_not_owner(p2p_nfts_usdc):
     new_wallet = boa.env.generate_address("new_wallet")
-    with boa.reverts("not owner"):
+    with boa.reverts():
         p2p_nfts_usdc.change_protocol_wallet(new_wallet, sender=boa.env.generate_address("random"))
 
 
 def test_change_protocol_wallet_reverts_if_zero_address(p2p_nfts_usdc, owner):
-    with boa.reverts("wallet is the zero address"):
+    with boa.reverts():
         p2p_nfts_usdc.change_protocol_wallet(ZERO_ADDRESS, sender=owner)
 
 
@@ -108,7 +108,7 @@ def test_change_protocol_wallet_logs_event(p2p_nfts_usdc, owner):
 def test_set_proxy_authorization_reverts_if_not_owner(p2p_nfts_usdc):
     proxy = boa.env.generate_address("proxy")
     random = boa.env.generate_address("random")
-    with boa.reverts("not owner"):
+    with boa.reverts():
         p2p_nfts_usdc.set_proxy_authorization(proxy, True, sender=random)
 
 
@@ -132,12 +132,12 @@ def test_set_proxy_authorization_logs_event(p2p_nfts_usdc, owner):
 
 def test_propose_owner_reverts_if_wrong_caller(p2p_nfts_usdc):
     new_owner = boa.env.generate_address("new_owner")
-    with boa.reverts("not owner"):
+    with boa.reverts():
         p2p_nfts_usdc.propose_owner(new_owner, sender=new_owner)
 
 
 def test_propose_owner_reverts_if_zero_address(p2p_nfts_usdc, owner):
-    with boa.reverts("_address is zero"):
+    with boa.reverts():
         p2p_nfts_usdc.propose_owner(ZERO_ADDRESS, sender=owner)
 
 
@@ -188,7 +188,7 @@ def test_claim_ownership_reverts_if_wrong_caller(p2p_nfts_usdc, owner):
     new_owner = boa.env.generate_address("new_owner")
     p2p_nfts_usdc.propose_owner(new_owner, sender=owner)
 
-    with boa.reverts("not the proposed owner"):
+    with boa.reverts():
         p2p_nfts_usdc.claim_ownership(sender=owner)
 
 

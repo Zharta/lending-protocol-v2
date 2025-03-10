@@ -11,14 +11,14 @@ dependencies = [
     "ape-alchemy",
     "ape-arbitrum",
     "ape-base",
-    "web3==6.18.0",
+    "web3",
 ]
 
 
 [project.optional-dependencies]
 dev = [
     # "titanoboa==0.2.5",
-    "titanoboa==0.1.10b1",
+    "titanoboa @ git+ssh://git@github.com/vyperlang/titanoboa.git@c06e23a68df73d669738f30faa4aeb051012423b",
     "boto3",
     "click",
     "coverage",

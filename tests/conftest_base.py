@@ -16,7 +16,7 @@ from boa.contracts.vyper.vyper_contract import VyperContract
 from eth.exceptions import Revert
 from eth_abi import encode
 from eth_account import Account
-from eth_account.messages import encode_structured_data
+from eth_account.messages import encode_typed_data
 from eth_utils import keccak
 from web3 import Web3
 
@@ -281,7 +281,7 @@ def sign_offer(offer: Offer, lender_key: str, verifying_contract: str) -> Signed
         },
         "message": offer._asdict(),
     }
-    signable_msg = encode_structured_data(typed_data)
+    signable_msg = encode_typed_data(full_message=typed_data)
     signed_msg = Account.from_key(lender_key).sign_message(signable_msg)
     lender_signature = Signature(signed_msg.v, signed_msg.r, signed_msg.s)
 

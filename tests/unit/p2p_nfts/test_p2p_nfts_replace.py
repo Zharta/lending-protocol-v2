@@ -1122,7 +1122,6 @@ def test_replace_loan_settles_amounts(  # noqa: PLR0914
     same_lender,
     principal_loan1,
     principal_loan2,
-    debug_precompile,
     protocol_upfront_fee,
     protocol_settlement_fee,
     borrower_broker_upfront_fee,

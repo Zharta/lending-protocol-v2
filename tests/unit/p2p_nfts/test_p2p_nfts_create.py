@@ -478,7 +478,7 @@ def test_create_loan_reverts_if_lender_funds_not_approved(
 
 
 def test_create_loan_reverts_if_token_not_in_trait(
-    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc, debug_precompile, traits, bayc_key_hash
+    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc, traits, bayc_key_hash
 ):
     token_id = 1
     tree = TokenTraitTree(
@@ -629,7 +629,7 @@ def test_create_loan(p2p_nfts_usdc, borrower, now, lender, lender_key, bayc, bay
 
 
 def test_create_loan_with_trait_offer(
-    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc, traits, bayc_key_hash, debug_precompile
+    p2p_nfts_usdc, p2p_control, borrower, now, lender, lender_key, bayc, usdc, traits, bayc_key_hash
 ):
     token_id = 1
     tree = TokenTraitTree(
