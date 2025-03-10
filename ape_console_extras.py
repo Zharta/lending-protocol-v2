@@ -12,7 +12,7 @@ import requests
 import web3
 from ape import convert, networks
 from eth_account import Account
-from eth_account.messages import encode_structured_data
+from eth_account.messages import encode_typed_data
 from eth_utils import keccak
 from hexbytes import HexBytes
 
@@ -247,7 +247,7 @@ def sign_offer(offer: Offer, lender, verifying_contract: str) -> SignedOffer:
         },
         "message": offer._asdict(),
     }
-    signable_msg = encode_structured_data(typed_data)
+    signable_msg = encode_typed_data(full_message=typed_data)
     signed_msg = lender.sign_message(signable_msg)
 
     if type(signed_msg.r) is bytes:

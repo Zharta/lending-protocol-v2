@@ -60,12 +60,13 @@ target-version = "py311"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"ape_console_extras.py" = ["T201", "B006", "PYI024"]
+"ape_console_extras.py" = ["T201", "B006", "PYI024", "RUF052"]
 "tests/*.py" = [
     "ARG001",
     "ERA001",
     "F401",
     "FBT003",
+    "FURB118",
     "N815",
     "PLC1901",
     "PLR0914",
@@ -76,6 +77,7 @@ target-version = "py311"
     "PTH",
     "PYI024",
     "RUF029",
+    "RUF052",
     "RUF100",
     "SLF001",
     "T201",
@@ -83,12 +85,14 @@ target-version = "py311"
 ]
 "scripts/*.py" = [
     "A001",
+    "A004",
     "ERA001",
     "FURB101",
     "FURB103",
     "ERA001",
     "PLW1514",
     "PTH123",
+    "RUF052",
     "T201",
     "UP015"
 ]
