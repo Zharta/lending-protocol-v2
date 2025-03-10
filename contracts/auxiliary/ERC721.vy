@@ -2,7 +2,7 @@
 # @author Ryuya Nakamura (@nrryuya)
 # Modified from: https://github.com/vyperlang/vyper/blob/de74722bf2d8718cca46902be165f9fe0e3641dd/examples/tokens/ERC721.vy
 
-# @version 0.4.0
+# @version 0.4.1
 
 from ethereum.ercs import IERC165
 from ethereum.ercs import IERC721

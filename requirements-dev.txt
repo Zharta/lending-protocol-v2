@@ -231,6 +231,8 @@ jsonschema==4.23.0
     # via web3
 jsonschema-specifications==2024.10.1
     # via jsonschema
+lark==1.2.2
+    # via vyper
 lazyasd==0.1.4
     # via eth-ape
 lru-dict==1.2.0
@@ -504,7 +506,7 @@ virtualenv==20.26.1
     # via pre-commit
 vvm==0.3.2
     # via ape-vyper
-vyper==0.4.0
+vyper==0.4.1
     # via
     #   lendging-protocol-v2 (pyproject.toml)
     #   ape-vyper

@@ -189,6 +189,8 @@ jsonschema==4.23.0
     # via web3
 jsonschema-specifications==2024.10.1
     # via jsonschema
+lark==1.2.2
+    # via vyper
 lazyasd==0.1.4
     # via eth-ape
 lru-dict==1.2.0
@@ -387,7 +389,7 @@ varint==1.0.2
     #   py-multihash
 vvm==0.2.0
     # via ape-vyper
-vyper==0.4.0
+vyper==0.4.1
     # via
     #   lendging-protocol-v2 (pyproject.toml)
     #   ape-vyper
