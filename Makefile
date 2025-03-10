@@ -79,7 +79,7 @@ lint:
 %-zethereum: export NETWORK=ethereum:local:https://network.dev.zharta.io/dev1/
 %-zapechain: export NETWORK=ethereum:local:https://network.dev.zharta.io/dev2/
 %-sepolia: export NETWORK=ethereum:sepolia:alchemy
-%-curtis: export NETWORK=apechain:curtis:alchemy
+%-curtis: export NETWORK=apechain:curtis:https://curtis.rpc.caldera.xyz/http
 %-ethereum: export NETWORK=ethereum:mainnet:alchemy
 %-apechain: export NETWORK=apechain:apechain:alchemy
 
