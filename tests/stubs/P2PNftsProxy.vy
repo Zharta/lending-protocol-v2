@@ -1,8 +1,8 @@
-# @version 0.3.10
+# @version 0.4.1
 
-from vyper.interfaces import ERC165 as IERC165
-from vyper.interfaces import ERC721 as IERC721
-from vyper.interfaces import ERC20 as IERC20
+from ethereum.ercs import IERC165
+from ethereum.ercs import IERC721
+from ethereum.ercs import IERC20
 
 
 interface P2PLendingNfts:
@@ -30,7 +30,7 @@ interface P2PLendingNfts:
     def onERC721Received(_operator: address, _from: address, _tokenId: uint256, _data: Bytes[1024]) -> bytes4: view
 
 
-enum FeeType:
+flag FeeType:
     PROTOCOL_FEE
     ORIGINATION_FEE
     LENDER_BROKER_FEE
@@ -48,7 +48,7 @@ struct FeeAmount:
     amount: uint256
     wallet: address
 
-enum OfferType:
+flag OfferType:
     TOKEN
     COLLECTION
     TRAIT

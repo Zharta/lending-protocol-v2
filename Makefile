@@ -40,6 +40,9 @@ branch-coverage:
 unit-tests:
 	${VENV}/bin/pytest tests/unit --runslow -n auto --dist loadscope
 
+integration-tests:
+	${VENV}/bin/pytest tests/integration
+
 gas:
 	${VENV}/bin/pytest tests/unit --gas-profile
 
