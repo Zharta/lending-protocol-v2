@@ -55,7 +55,7 @@ def test_initial_state(balancer, balancer_proxy, usdc, p2p_nfts_usdc, borrower):
     assert balancer.flashFee(usdc.address, max_flash_loan) == 0
 
 
-def test_balancer_flash_loan(balancer, balancer_proxy, usdc, p2p_nfts_usdc, borrower, debug_precompile, owner):
+def test_balancer_flash_loan(balancer, balancer_proxy, usdc, p2p_nfts_usdc, borrower, owner):
     amount = balancer.maxFlashLoan(usdc.address)
     usdc.transfer(owner, usdc.balanceOf(borrower), sender=borrower)  # reset balance
     balancer_proxy.flash_loan(amount, sender=borrower)

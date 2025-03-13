@@ -7,7 +7,7 @@ import boa
 import pytest
 from eth_abi import encode
 from eth_account import Account
-from eth_account.messages import HexBytes, SignableMessage, encode_structured_data
+from eth_account.messages import HexBytes, SignableMessage, encode_typed_data
 from eth_utils import keccak
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -230,7 +230,7 @@ def _sign_repayment_data(data: SignableRepaymentData, signer_key: str, verifying
         },
         "message": data._asdict(),
     }
-    signable_msg = encode_structured_data(typed_data)
+    signable_msg = encode_typed_data(full_message=typed_data)
     signed_msg = Account.from_key(signer_key).sign_message(signable_msg)
     return signed_msg.signature
 
@@ -270,7 +270,6 @@ def test_refinance(
     balancer,
     borrower,
     borrower_key,
-    debug_precompile,
     gondi,
     gondi_proxy,
     lender,

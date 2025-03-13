@@ -33,24 +33,12 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(scope="session", autouse=True)
 def boa_env():
-    old_env = boa.env
     new_env = Env()
-    new_env._cached_call_profiles = old_env._cached_call_profiles
-    new_env._cached_line_profiles = old_env._cached_line_profiles
-    new_env._profiled_contracts = old_env._profiled_contracts
-
     with boa.swap_env(new_env):
         fork_uri = os.environ["BOA_FORK_RPC_URL"]
-        disable_cache = os.environ.get("BOA_FORK_NO_CACHE")
-        kw = {"cache_file": None} if disable_cache else {}
         blkid = 21325933
-
-        boa.env.fork(fork_uri, block_identifier=blkid, **kw)
+        boa.env.fork(fork_uri, block_identifier=blkid)
         yield
-
-        old_env._cached_call_profiles = new_env._cached_call_profiles
-        old_env._cached_line_profiles = new_env._cached_line_profiles
-        old_env._profiled_contracts = new_env._profiled_contracts
 
 
 @pytest.fixture(scope="session")
@@ -293,15 +281,15 @@ def empty_contract_def(boa_env):
     )
 
 
-@boa.precompile("def debug_bytes(data: Bytes[1024])")
-def debug_bytes(data: bytes):
-    print(f"DEBUG: {data.hex()} {data.decode()}")
+# @boa.precompile("def debug_bytes(data: Bytes[1024])")
+# def debug_bytes(data: bytes):
+#     print(f"DEBUG: {data.hex()} {data.decode()}")
 
 
-@pytest.fixture(scope="session")
-def debug_precompile(boa_env):
-    register_raw_precompile("0x0000000000000000000000000000000000011111", debug_bytes)
-    yield
+# @pytest.fixture(scope="session")
+# def debug_precompile(boa_env):
+#     register_raw_precompile("0x0000000000000000000000000000000000011111", debug_bytes)
+#     yield
 
 
 @pytest.fixture(scope="session")

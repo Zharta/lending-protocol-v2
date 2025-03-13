@@ -64,7 +64,6 @@ def _test_pay_loan(arcade_proxy, weth, borrower, owner, wpunk):
 def test_refinance(
     balancer,
     borrower,
-    debug_precompile,
     lender,
     lender_key,
     wpunk,
@@ -81,7 +80,6 @@ def test_refinance(
     loan_id = 6541
     token_id = 7994
     amount = 31356712328767124000
-    flash_loan_fee = amount * 5 // BPS  # TODO: change provider
     approved = "0x89bc08BA00f135d608bc335f6B33D7a9ABCC98aF"
 
     offer = Offer(
@@ -99,13 +97,11 @@ def test_refinance(
 
     weth.transfer(owner, weth.balanceOf(borrower), sender=borrower)  # borrower wallet reset
 
-    weth.transfer(borrower, flash_loan_fee, sender=owner)
     weth.transfer(lender, offer.principal, sender=owner)
 
-    assert weth.balanceOf(borrower) == flash_loan_fee
     assert weth.balanceOf(lender) >= offer.principal
 
-    weth.approve(arcade_proxy.address, amount + flash_loan_fee, sender=borrower)
+    weth.approve(arcade_proxy.address, amount, sender=borrower)
     weth.approve(p2p_nfts_weth.address, offer.principal, sender=lender)
 
     wpunk.setApprovalForAll(p2p_nfts_weth.address, True, sender=borrower)

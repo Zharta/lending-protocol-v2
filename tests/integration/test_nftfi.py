@@ -63,7 +63,6 @@ def _test_pay_loan(nftfi_proxy, weth, borrower, owner, mayc):
 def test_refinance(
     balancer,
     borrower,
-    debug_precompile,
     lender,
     lender_key,
     mayc,

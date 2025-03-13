@@ -52,7 +52,7 @@ def test_initial_state(aave, aave_proxy, usdc, p2p_nfts_usdc, borrower):
     assert aave_proxy.ADDRESSES_PROVIDER() == aave.ADDRESSES_PROVIDER()
 
 
-def test_aave_flash_loan(aave, aave_proxy, usdc, p2p_nfts_usdc, borrower, debug_precompile, owner):
+def test_aave_flash_loan(aave, aave_proxy, usdc, p2p_nfts_usdc, borrower, owner):
     amount = int(1000 * 1e6)
     usdc.transfer(borrower, amount, sender=owner)
     assert usdc.balanceOf(borrower) >= amount

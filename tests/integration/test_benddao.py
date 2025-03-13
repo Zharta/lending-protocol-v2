@@ -62,7 +62,6 @@ def _test_pay_loan(benddao_proxy, weth, borrower, owner, koda):
 def test_refinance(
     balancer,
     borrower,
-    debug_precompile,
     lender,
     lender_key,
     koda,
