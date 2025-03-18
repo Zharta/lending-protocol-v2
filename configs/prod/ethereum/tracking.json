@@ -1,0 +1,32 @@
+{
+    "arcade": {
+        "abi_file": "auxiliary/ArcadeLoanCore_abi.json",
+        "address": "0x89bc08BA00f135d608bc335f6B33D7a9ABCC98aF",
+        "contract": "Generic",
+        "name": "Arcade"
+    },
+    "benddao": {
+        "abi_file": "auxiliary/BendDAOLendPoolLoan_abi.json",
+        "address": "0x5f6ac80CdB9E87f3Cfa6a90E5140B9a16A361d5C",
+        "contract": "Generic",
+        "name": "BendDAO"
+    },
+    "gondi": {
+        "abi_file": "auxiliary/GondiMultiSourceLoan_abi.json",
+        "address": "0xf65B99CE6DC5F6c556172BCC0Ff27D3665a7d9A8",
+        "contract": "Generic",
+        "name": "Gondi"
+    },
+    "nftfi": {
+        "abi_file": "auxiliary/NFTfiAssetOfferLoan_abi.json",
+        "address": "0x9F10D706D789e4c76A1a6434cd1A9841c875C0A6",
+        "contract": "Generic",
+        "name": "NFTfi"
+    },
+    "x2y2v3": {
+        "abi_file": "auxiliary/X2Y2_v3_abi.json",
+        "address": "0xB81965DdFdDA3923f292a47A1be83ba3A36B5133",
+        "contract": "Generic",
+        "name": "X2Y2v3"
+    }
+}

@@ -105,8 +105,8 @@ def load_configs(env: Environment, chain: str) -> dict:
     return {f"configs.{k}": v for k, v in _configs.items()}
 
 
-def load_tracking(env: Environment) -> dict:
-    config_file = Path.cwd() / "configs" / env.name / "tracking.json"
+def load_tracking(env: Environment, chain: str) -> dict:
+    config_file = Path.cwd() / "configs" / env.name / chain / "tracking.json"
     with config_file.open(encoding="utf8") as f:
         config = json.load(f)
 
@@ -146,7 +146,7 @@ class DeploymentManager:
         return load_configs(self.env, self.chain)
 
     def _get_tracking(self) -> dict[str, Any]:
-        return load_tracking(self.env)
+        return load_tracking(self.env, self.chain)
 
     def _save_state(self):
         store_contracts(self.env, self.chain, list(self.context.contracts.values()))

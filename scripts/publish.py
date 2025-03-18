@@ -51,7 +51,7 @@ def get_abi_map(context, env: Environment, chain: str) -> dict:
         config["abi"] = contract.contract_type.dict()["abi"]
         config["abi_key"] = abi_key(contract.contract_type.dict()["abi"])
 
-    with open(f"{Path.cwd()}/configs/{env.name}/tracking.json", "r") as f:
+    with open(f"{Path.cwd()}/configs/{env.name}/{chain}/tracking.json", "r") as f:
         tracking_config = json.load(f)
     tracking_contracts = {f"tracking.{k}": v for k, v in tracking_config.items()}
     for config in tracking_contracts.values():
@@ -85,10 +85,10 @@ def get_traits_roots(context, env: Environment, chain: str) -> dict:  # noqa: AR
     return configs.get("trait_roots", {})
 
 
-def get_tracking_configs(context, env: Environment) -> dict:  # noqa: ARG001
-    with open(f"{Path.cwd()}/configs/{env.name}/tracking.json", "r") as f:
+def get_tracking_configs(context, env: Environment, chain: str) -> dict:  # noqa: ARG001
+    with open(f"{Path.cwd()}/configs/{env.name}/{chain}/tracking.json", "r") as f:
         tracking_config = json.load(f)
-    tracking_contracts = {f"tracking.{k}": v for k, v in tracking_config.items()}
+    tracking_contracts = dict(tracking_config.items())
     for config in tracking_contracts.values():
         abi = load_abi(config["abi_file"])
         config["abi"] = abi
@@ -141,7 +141,7 @@ def update_abi(abi_key: str, abi: list[dict]):
 
 
 @click.command()
-def cli():
+def cli():  # noqa: C901
     dm = DeploymentManager(ENV, CHAIN)
 
     print(f"Updating p2p configs in {ENV.name} for {CHAIN}")
@@ -156,9 +156,12 @@ def cli():
     for data in p2p_configs.values():
         data["chain"] = CHAIN
 
-    tracking_configs = get_tracking_configs(dm.context, dm.env)
+    tracking_configs = get_tracking_configs(dm.context, dm.env, dm.chain)
+    for data in tracking_configs.values():
+        data["chain"] = CHAIN
+
     for k, v in tracking_configs.items():
-        print(f"updating tracking config {k} {v['name']=}")
+        print(f"updating tracking config {k} {v['name']}")
         update_tracking_config(k, v)
 
     for k, v in p2p_configs.items():
@@ -172,16 +175,16 @@ def cli():
 
         abi_key = v["abi_key"]
         print(f"updating p2p config {k} {abi_key=}")
-        # update_p2p_config(k, v)
+        update_p2p_config(k, v)
 
     trait_roots = get_traits_roots(dm.context, dm.env, dm.chain)
     for collection, root in trait_roots.items():
         print(f"updating trait root {collection=} {root=}")
-        # update_collection_trait_root(collection, root)
+        update_collection_trait_root(collection, root)
 
     for collection, root in trait_roots.items():
         whitelisted = root != EMPTY_BYTES32
         print(f"updating whitelisted {collection=} {whitelisted=}")
-        # update_collection_p2p_whitelisted(collection, whitelisted=whitelisted)
+        update_collection_p2p_whitelisted(collection, whitelisted=whitelisted)
 
     print(f"P2P configs updated in {ENV.name} for {CHAIN}")
