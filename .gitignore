@@ -1,4 +1,5 @@
 __pycache__
+*.egg-info
 .idea/
 .env*
 .local*
@@ -14,6 +15,7 @@ reports/
 .vscode
 .cache
 .tool-versions
+*~
 
 configs/**/collections.json
 configs/**/tokens.json

@@ -362,6 +362,27 @@ def get_offer_backend(offer_id):
     return response.json()
 
 
+def revoke_offer(signed_offer: dict, contract: str, *, sender):
+    filtered_offer = {k: v for k, v in signed_offer.items() if k in Offer._fields}
+    filtered_offer["offer_type"] = OfferType[filtered_offer["offer_type"]]
+    filtered_offer["principal"] = int(filtered_offer["principal"])
+    filtered_offer["interest"] = int(filtered_offer["interest"])
+    filtered_offer["origination_fee_amount"] = int(filtered_offer["origination_fee_amount"])
+    filtered_offer["broker_upfront_fee_amount"] = int(filtered_offer["broker_upfront_fee_amount"])
+    filtered_offer["token_range_min"] = int(filtered_offer.get("token_range_min"))
+    filtered_offer["token_range_max"] = int(filtered_offer.get("token_range_max"))
+    filtered_offer["trait_hash"] = bytes.fromhex(filtered_offer.get("trait_hash", ZERO_BYTES32))
+    filtered_offer["collection_key_hash"] = bytes.fromhex(filtered_offer["collection_key_hash"])
+    filtered_offer["tracing_id"] = bytes.fromhex(filtered_offer["tracing_id"])
+
+    _offer = Offer(**filtered_offer)
+    offer_signature = signed_offer.get("signature")
+    _signature = Signature(offer_signature.get("v"), HexBytes(offer_signature.get("r")), HexBytes(offer_signature.get("s")))
+    _signed_offer = SignedOffer(_offer, _signature)
+
+    return contract.revoke_offer(_signed_offer, sender=sender)
+
+
 def create_loan(
     signed_offer: dict,
     token_id: int,
