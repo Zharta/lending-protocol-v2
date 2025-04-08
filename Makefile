@@ -84,7 +84,7 @@ lint:
 %-sepolia: export NETWORK=ethereum:sepolia:alchemy
 %-curtis: export NETWORK=apechain:curtis:https://curtis.rpc.caldera.xyz/http
 %-ethereum: export NETWORK=ethereum:mainnet:alchemy
-%-apechain: export NETWORK=apechain:apechain:alchemy
+%-apechain: export NETWORK=apechain:mainnet:alchemy
 
 add-account:
 	${VENV}/bin/ape accounts import $(alias)

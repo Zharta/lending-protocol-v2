@@ -9,17 +9,12 @@ aiosignal==1.3.2
 annotated-types==0.7.0
     # via pydantic
 ape-alchemy==0.8.8
-    # via lendging-protocol-v2 (pyproject.toml)
 ape-arbitrum==0.8.3
-    # via lendging-protocol-v2 (pyproject.toml)
 ape-base==0.8.1
-    # via lendging-protocol-v2 (pyproject.toml)
 ape-foundry==0.8.7
-    # via lendging-protocol-v2 (pyproject.toml)
 ape-optimism==0.8.3
     # via ape-base
 ape-vyper==0.8.9
-    # via lendging-protocol-v2 (pyproject.toml)
 asttokens==2.4.1
     # via
     #   eth-ape
@@ -38,7 +33,6 @@ base58==1.0.3
 bitarray==3.1.1
     # via eth-account
 boto3==1.37.9
-    # via lendging-protocol-v2 (pyproject.toml)
 botocore==1.37.9
     # via
     #   boto3
@@ -63,15 +57,12 @@ ckzg==2.0.1
     #   py-evm
 click==8.1.8
     # via
-    #   lendging-protocol-v2 (pyproject.toml)
     #   eth-ape
     #   mkdocs
 colorama==0.4.6
     # via mkdocs-material
 coverage==7.6.12
-    # via
-    #   lendging-protocol-v2 (pyproject.toml)
-    #   pytest-cov
+    # via pytest-cov
 cytoolz==1.0.1
     # via eth-utils
 dataclassy==0.11.1
@@ -102,7 +93,6 @@ eth-account==0.13.5
     #   web3
 eth-ape==0.8.29
     # via
-    #   lendging-protocol-v2 (pyproject.toml)
     #   ape-alchemy
     #   ape-arbitrum
     #   ape-base
@@ -215,9 +205,7 @@ hexbytes==1.3.0
     #   trie
     #   web3
 hypothesis==6.128.2
-    # via
-    #   lendging-protocol-v2 (pyproject.toml)
-    #   titanoboa
+    # via titanoboa
 identify==2.6.9
     # via pre-commit
 idna==3.10
@@ -231,9 +219,7 @@ importlib-metadata==8.6.1
 iniconfig==2.0.0
     # via pytest
 ipython==8.34.0
-    # via
-    #   lendging-protocol-v2 (pyproject.toml)
-    #   eth-ape
+    # via eth-ape
 jedi==0.19.2
     # via
     #   ipython
@@ -288,14 +274,11 @@ morphys==1.0
     #   py-multibase
     #   py-multicodec
     #   py-multihash
-msgspec==0.19.0
-    # via evm-trace
 multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
 mypy==1.15.0
-    # via lendging-protocol-v2 (pyproject.toml)
 mypy-extensions==1.0.0
     # via mypy
 nodeenv==1.9.1
@@ -342,7 +325,6 @@ pluggy==1.5.0
     #   pytest
     #   python-lsp-server
 pre-commit==4.1.0
-    # via lendging-protocol-v2 (pyproject.toml)
 prompt-toolkit==3.0.50
     # via ipython
 propcache==0.3.0
@@ -402,18 +384,15 @@ pymdown-extensions==10.14.3
     # via mkdocs-material
 pytest==8.3.5
     # via
-    #   lendging-protocol-v2 (pyproject.toml)
     #   eth-ape
     #   pytest-bdd
     #   pytest-cov
     #   pytest-xdist
     #   titanoboa
 pytest-bdd==8.1.0
-    # via lendging-protocol-v2 (pyproject.toml)
 pytest-cov==6.0.0
     # via titanoboa
 pytest-xdist==3.6.1
-    # via lendging-protocol-v2 (pyproject.toml)
 python-baseconv==1.2.2
     # via py-multibase
 python-dateutil==2.9.0.post0
@@ -427,7 +406,6 @@ python-dotenv==1.0.1
 python-lsp-jsonrpc==1.1.2
     # via python-lsp-server
 python-lsp-server==1.12.2
-    # via lendging-protocol-v2 (pyproject.toml)
 pytoolconfig==1.3.1
     # via rope
 pytz==2025.1
@@ -460,7 +438,6 @@ requests==2.32.3
     #   web3
 rich==13.9.4
     # via
-    #   lendging-protocol-v2 (pyproject.toml)
     #   eth-ape
     #   titanoboa
 rlp==4.1.0
@@ -471,9 +448,7 @@ rlp==4.1.0
     #   py-evm
     #   trie
 rope==1.13.0
-    # via lendging-protocol-v2 (pyproject.toml)
 ruff==0.9.10
-    # via lendging-protocol-v2 (pyproject.toml)
 s3transfer==0.11.4
     # via boto3
 safe-pysha3==1.0.4
@@ -499,7 +474,6 @@ sqlalchemy==2.0.38
 stack-data==0.6.3
     # via ipython
 titanoboa @ git+https://github.com/vyperlang/titanoboa.git@c06e23a68df73d669738f30faa4aeb051012423b
-    # via lendging-protocol-v2 (pyproject.toml)
 toolz==1.0.0
     # via cytoolz
 tqdm==4.67.1
@@ -523,7 +497,6 @@ typing-extensions==4.12.2
     # via
     #   eth-pydantic-types
     #   eth-typing
-    #   ipython
     #   mypy
     #   py-geth
     #   pydantic
@@ -556,7 +529,6 @@ vvm==0.3.2
     #   titanoboa
 vyper==0.4.1
     # via
-    #   lendging-protocol-v2 (pyproject.toml)
     #   ape-vyper
     #   titanoboa
 watchdog==3.0.0
@@ -567,7 +539,6 @@ wcwidth==0.2.13
     # via prompt-toolkit
 web3==7.8.0
     # via
-    #   lendging-protocol-v2 (pyproject.toml)
     #   ape-alchemy
     #   ape-foundry
     #   eth-ape
