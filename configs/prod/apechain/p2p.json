@@ -18,12 +18,12 @@
     },
     "configs": {
         "trait_roots": {
-            "fuku": "aa3a9a68b4bac1983262bd521212a40e075d3b9206aef9a2cbb14fab465234dc",
-            "gobsonape": "9245f5f55e85d81dea6ae13a1dece475646dfbf802e7d03a0d855b638ecdd9ed",
-            "gsonape": "6c97bf7e96d7075261a5249f09e9e837e70ae0adc2c08f605f35c719569937c7",
-            "monkees": "57fd37cb5315283734a918bca0035357605d277a9947bc67671d7dea431c2168",
-            "shapes": "4f9b117b74d6d278f9ec5e322fd8c9664fe942dbf7fe912fab3efdf47d566d75",
-            "tokengators": "227d44ce3036587028e52a7be8903ff1b3556cd0999161f97ff49faf151a0ee5"
+            "fuku": "be6de49bf358d742d9c759fb2d6a780c4c848f984db9326802af832d89098859",
+            "gobsonape": "5a382a2b0a765e80c9c82fdd01c7908a522af59c7a62ef7640fc0f7a357dde3a",
+            "gsonape": "3523f24202dc14072006142914d2630d173347b1ccf3ebc35da32be542fa2558",
+            "monkees": "efc61ccc8a74a6e888e906629af09dfb0aa3b54b3bcd8fbe5c03fcfd85205cd0",
+            "shapes": "422b317f3353a55fe12ac80d031fec5a420c8286d32298e1b523014b643b5a11",
+            "tokengators": "c1bde94d371d0ec0e6e9722dad521d114134858f98d5aff99115186fb3a07531"
         }
     },
     "p2p": {
