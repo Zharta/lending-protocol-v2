@@ -18,10 +18,13 @@
     },
     "configs": {
         "trait_roots": {
+            "baycshadow": "6411051c7e23fbb77f098572f15c352f4c14e855832f5219f96276e32db52b80",
             "fuku": "be6de49bf358d742d9c759fb2d6a780c4c848f984db9326802af832d89098859",
             "gobsonape": "5a382a2b0a765e80c9c82fdd01c7908a522af59c7a62ef7640fc0f7a357dde3a",
             "gsonape": "3523f24202dc14072006142914d2630d173347b1ccf3ebc35da32be542fa2558",
             "hopstarz": "b78a602fd7744ba4a92f81df5e82705e8f0d162ce75ff47ec95f7c785a13d2e6",
+            "kodashadow": "f7117c29c8d68f456b6433fc05a8978670294bbbb53fb4a5da35f30c4980b5b0",
+            "maycshadow": "41b5524ff6ffd8b8f1f61ba9e853ca509c4a3d865c09815589724671ffc9f0b1",
             "monkees": "efc61ccc8a74a6e888e906629af09dfb0aa3b54b3bcd8fbe5c03fcfd85205cd0",
             "shapes": "422b317f3353a55fe12ac80d031fec5a420c8286d32298e1b523014b643b5a11",
             "tokengators": "c1bde94d371d0ec0e6e9722dad521d114134858f98d5aff99115186fb3a07531"
