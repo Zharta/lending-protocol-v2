@@ -163,6 +163,52 @@ class P2PLendingNfts(ContractConfig):
 
 
 @dataclass
+class P2PLendingExternal(ContractConfig):
+    def __init__(
+        self,
+        *,
+        key: str,
+        version: str | None = None,
+        abi_key: str,
+        payment_token_key: str,
+        cryptopunks_key: str | None = None,
+        address: str | None = None,
+        protocol_upfront_fee: int,
+        protocol_settlement_fee: int,
+        protocol_wallet: str,
+        p2p_controller_key: str,
+        max_protocol_upfront_fee: int,
+        max_protocol_settlement_fee: int,
+        max_lender_broker_settlement_fee: int,
+        max_borrower_broker_settlement_fee: int,
+        escrow_address: str,
+    ):
+        super().__init__(
+            key,
+            None,
+            project.P2PLendingExternal,
+            version=version,
+            abi_key=abi_key,
+            deployment_deps={payment_token_key, cryptopunks_key or "", p2p_controller_key},
+            deployment_args=[
+                payment_token_key,
+                p2p_controller_key,
+                cryptopunks_key or ZERO_ADDRESS,
+                protocol_upfront_fee,
+                protocol_settlement_fee,
+                protocol_wallet,
+                max_protocol_upfront_fee,
+                max_protocol_settlement_fee,
+                max_lender_broker_settlement_fee,
+                max_borrower_broker_settlement_fee,
+                escrow_address,
+            ],
+        )
+        if address:
+            self.load_contract(address)
+
+
+@dataclass
 class CryptoPunks(ContractConfig):
     def __init__(
         self,
