@@ -15,9 +15,7 @@
       - Handling ownership transfer of the contract
       - Loan state is kept hashed in the contract to save gas
 
-      This contracts does not transfer funds, which is done externally:
-      - The loan creation emits an event that is picked up externally to transfer the funds.
-      - The loan settlement funds transfer is also done externally, which unlocks the collateral on the escrow contract. This contract's `settle_loan` function is called to account for the loan settlement and transfer the collateral.
+      This contracts does not transfer funds on loan creation, it emits an event that is picked up externally to transfer the funds.
 """
 
 # Interfaces
@@ -523,6 +521,12 @@ def settle_loan(loan: Loan):
     self.loans[loan.id] = empty(bytes32)
     self._reduce_offer_count(loan.offer_tracing_id)
 
+    self._receive_funds(loan.borrower, loan.amount + interest + borrower_broker_fee_amount)
+
+    self._send_funds(loan.lender, loan.amount + interest - settlement_fees_total + borrower_broker_fee_amount)
+    for fee: FeeAmount in settlement_fees:
+        self._send_funds(fee.wallet, fee.amount)
+
     self._transfer_collateral(loan.borrower, loan.collateral_contract, loan.collateral_token_id)
 
     log LoanPaid(
@@ -792,6 +796,32 @@ def _transfer_collateral(wallet: address, collateral_contract: address, token_id
     else:
         self._transfer_erc721(wallet, collateral_contract, token_id)
 
+
+@internal
+def _send_funds(_to: address, _amount: uint256):
+    success: bool = False
+    response: Bytes[32] = b""
+
+    success, response = raw_call(
+        payment_token,
+        abi_encode(_to, _amount, method_id=method_id("transfer(address,uint256)")),
+        max_outsize=32,
+        revert_on_failure=False
+    )
+
+    if not success or not convert(response, bool):
+        log TransferFailed(_to, _amount)
+        self.pending_transfers[_to] += _amount
+
+
+@internal
+def _receive_funds(_from: address, _amount: uint256):
+    assert extcall IERC20(payment_token).transferFrom(_from, self, _amount), "transferFrom failed"
+
+
+@internal
+def _transfer_funds(_from: address, _to: address, _amount: uint256):
+    assert extcall IERC20(payment_token).transferFrom(_from, _to, _amount), "transferFrom failed"
 
 @view
 @internal

@@ -29,7 +29,7 @@
     "p2p": {
         "ape_external": {
             "abi_key": "efef33054018a46bd5b66176be126fa78a90a2be",
-            "address": "0x795af5f6648254fFAA8fCd35ff03a4dCEe5054c9",
+            "address": "0x8cdA0807D6251FED06361710b50f5592C6Af74f5",
             "contract": "P2PLendingExternal",
             "properties": {
                 "cryptopunks_key": "",
