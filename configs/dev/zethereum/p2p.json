@@ -6,6 +6,33 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
+        "lending_pool_usdc": {
+            "abi_key": "37a7b050e1b8593d0fdb41d19fa74352604d351b",
+            "address": "0x4A851A58DD2EF8503596cC8F696df89637679ed8",
+            "contract": "LendingPool",
+            "properties": {
+                "implementation_key": "common.lending_pool_usdc_impl",
+                "lender": "0x72651bb532a1feD9bb82266469242986ef5a70A3",
+                "protocol_fees_share": 0,
+                "protocol_wallet_fees": "0x66aB6D9362d4F35596279692F0251Db635165871",
+                "token_key": "common.usdc"
+            },
+            "properties_addresses": {
+                "implementation": "0xd4239bbFBA8e9b879A4Ed32C7153Bab12360354B",
+                "token": "0x77BE703d950f6B84c679a2AB519f736174E63883"
+            }
+        },
+        "lending_pool_usdc_impl": {
+            "abi_key": "37a7b050e1b8593d0fdb41d19fa74352604d351b",
+            "address": "0xd4239bbFBA8e9b879A4Ed32C7153Bab12360354B",
+            "contract": "LendingPoolExternal",
+            "properties": {
+                "token_key": "common.usdc"
+            },
+            "properties_addresses": {
+                "token": "0x77BE703d950f6B84c679a2AB519f736174E63883"
+            }
+        },
         "p2p_controller": {
             "abi_key": "ea96d1a2134dd14a2190e52e504bf39dd4b92ef9",
             "address": "0x382d62E97aE62daaAF972CdD8D3bE6d1CfC35271",
@@ -58,6 +85,7 @@
             "thegrailed": "92a132e647065f0a5ffabf1318328f6bd9083fc5f3a9f9b67a6b8177df56a801",
             "theharvest": "9627cd765f9b54793155072633164fd883f9ce04238376754011e730fe2bcf83",
             "thepotatoz": "84a1a15adfde005a071dca85aa1c49a813f262a09d29a8ae15d936a9da8a2cbf",
+            "univ3pos": "0000000000000000000000000000000000000000000000000000000000000001",
             "vft": "37e6cfbe64927ca0c549b6c506f3c165d3b6b5cfcad1e1f91b3eccd59e350092",
             "wgame": "c810be43a4589a4e8931f909019ee4b990df103a006f9299f187e84d73ddd4d2",
             "wgamefarmer": "10e0d717f07457131236bee8b2283bc83a298daddd87f00ad46af8706babe0de",

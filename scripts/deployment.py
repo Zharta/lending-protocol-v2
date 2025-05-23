@@ -31,8 +31,8 @@ def cli(network):
 
     changes = set()
     # changes |= {
-    #     "configs.trait_roots",
-    #     "p2p.eth_nfts",
+    # "configs.trait_roots",
+    # "p2p.ape_external",
     # }
 
     dm.deploy(changes, dryrun=True)

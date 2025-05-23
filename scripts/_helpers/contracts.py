@@ -9,7 +9,7 @@ from hexbytes import HexBytes
 from rich import print
 from rich.markup import escape
 
-from .basetypes import ContractConfig, DeploymentContext, abi_key
+from .basetypes import ContractConfig, DeploymentContext, MinimalProxy, abi_key
 from .transactions import check_owner, execute, execute_read
 
 ZERO_ADDRESS = "0x" + "00" * 20
@@ -50,7 +50,6 @@ class ERC721(ContractConfig):
             self.load_contract(address)
 
 
-# TODO add whitelisting as config?
 @dataclass
 class P2PLendingControl(ContractConfig):
     def __init__(
@@ -98,7 +97,7 @@ class P2PLendingControl(ContractConfig):
         collection_hash = self.get_collection_hash(collection)
         current_root = execute_read(context, self.key, "trait_roots", collection_hash)
         # print(f"Current root for {collection} is {current_root.hex()}, new is {root}")
-        if current_root.hex() == "0x" + root:
+        if current_root.hex() == HexBytes(root).hex():
             print(f"Contract [blue]{escape(self.key)}[/] trait root for {collection} is already {root}, skipping update")
             return False
         return True
@@ -203,6 +202,59 @@ class P2PLendingExternal(ContractConfig):
                 max_borrower_broker_settlement_fee,
                 escrow_address,
             ],
+        )
+        if address:
+            self.load_contract(address)
+
+
+@dataclass
+class LendingPoolExternal(ContractConfig):
+    def __init__(
+        self,
+        *,
+        key: str,
+        version: str | None = None,
+        abi_key: str,
+        address: str | None = None,
+        token_key: str,
+    ):
+        super().__init__(
+            key,
+            None,
+            project.LendingPoolExternal,
+            version=version,
+            abi_key=abi_key,
+            deployment_deps={token_key},
+            deployment_args=[token_key],
+        )
+        if address:
+            self.load_contract(address)
+
+
+@dataclass
+class LendingPool(MinimalProxy):
+    def __init__(
+        self,
+        *,
+        key: str,
+        version: str | None = None,
+        implementation_key: str,
+        token_key: str,  # noqa: ARG002
+        protocol_wallet_fees: int,
+        protocol_fees_share: int,
+        lender: str,
+        abi_key: str,
+        address: str | None = None,
+    ):
+        super().__init__(
+            key,
+            None,
+            project.LendingPoolExternal,
+            version=version,
+            abi_key=abi_key,
+            impl=implementation_key,
+            deployment_deps={implementation_key},
+            deployment_args=[protocol_wallet_fees, protocol_fees_share, lender],
         )
         if address:
             self.load_contract(address)
