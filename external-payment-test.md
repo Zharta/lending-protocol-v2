@@ -142,8 +142,6 @@ Transactions:
 * [Loan creation](https://curtis.explorer.caldera.xyz/tx/0x6b74d14206ac7e807c8d17dcec79f1972ac068ec891648c36589df184a03024e)
 
 
-```
-
 ### Operator sends funds from LP to borrower
 
 ```
