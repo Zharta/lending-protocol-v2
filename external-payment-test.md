@@ -3,16 +3,18 @@
 
 ## Wallets / contracts addresses
 
-p2p lending contract [curtis]: `0x13A18453c8aEeDb2e62502Dc74F0493B0E081C9C`
-lending pool [sepolia]: `0xf8fD741e0935b46cBD25a6dB78317Bd462898BA3`
-lender: `0x00aA70B40A89aDF483f4068323789a64d791CCe5`
-escrow: `0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475`
-borrower: `0x190Af7D087D32C61A2e23FB8aF192a58A6385DD1`
-operator: `0x77672996cD93B722e5a5673D404C3A92AD8dd1Fd`
 
-erc721 tokengators [curtis]: `0xB16A9612b91259ABA40862233e25f9685Ea0d738`
-p2p lending contract token (WAPE): `0x69B5cfEfDd30467Ea985EBac1756d81EA871798c`
-payment token (USDC) [sepolia]: `0x74540605Dc99f9cd65A3eA89231fFA727B1049E2`
+| **Name**                          | **Chain**        | **Address implementation**                   |
+| ---                               | ---              | ---                                          |
+| p2p lending contract              | curtis           | `0x13A18453c8aEeDb2e62502Dc74F0493B0E081C9C` |
+| lending pool                      | sepolia          | `0xf8fD741e0935b46cBD25a6dB78317Bd462898BA3` |
+| lender                            | curtis / sepolia | `0x00aA70B40A89aDF483f4068323789a64d791CCe5` |
+| escrow                            | curtis / sepolia | `0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475` |
+| borrower                          | curtis / sepolia | `0x190Af7D087D32C61A2e23FB8aF192a58A6385DD1` |
+| operator                          | curtis / sepolia | `0x77672996cD93B722e5a5673D404C3A92AD8dd1Fd` |
+| erc721 tokengators                | curtis           | `0xB16A9612b91259ABA40862233e25f9685Ea0d738` |
+| p2p lending contract token (WAPE) | curtis           | `0x69B5cfEfDd30467Ea985EBac1756d81EA871798c` |
+| payment token (USDC)              | sepolia]         | `0x74540605Dc99f9cd65A3eA89231fFA727B1049E2` |
 
 
 ```
@@ -24,9 +26,9 @@ escrow = accounts.load("escrow")
 
 ## Assets
 
-erc721: tokengators 5
-erc20 loan: 1000 WAPE
-payment: 645 USDC
+* ERC721: tokengators 5
+* Loan principal: 1000 WAPE
+* Payment: 645 USDC
 
 ```
 principal = int(1e21) # (1000 WAPE)
@@ -51,8 +53,6 @@ assert tokengators.ownerOf(token_id) == borrower
 # approve p2p contract to get tokens from escrow
 tokengators.setApprovalForAll(p2p_ape_external, True, sender=escrow)
 assert tokengators.isApprovedForAll(escrow, p2p_ape_external)
-
-# deposit lender funds in the lending pool
 ```
 
 
@@ -70,7 +70,7 @@ Transactions:
 * [Deposit](https://sepolia.etherscan.io/tx/0xe14d208b7edd1be8f72df7a77bbec90d5130073c703afe24fc5a0a42d278c8a7)
 
 ### Lender creates offer
-```
+
 ```
 draft = create_offer_draft(
     offer_type="COLLECTION",
