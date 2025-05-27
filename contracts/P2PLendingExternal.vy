@@ -782,7 +782,7 @@ def _transfer_punk(_wallet: address, _collateralAddress: address, _tokenId: uint
 @internal
 def _transfer_erc721(_wallet: address, _collateralAddress: address, _tokenId: uint256):
     assert self._erc721_owner(_collateralAddress, _tokenId) == escrow_address, "not owned by escrow"
-    assert self._is_erc721_approved(_wallet, _collateralAddress, _tokenId), "transfer is not approved"
+    assert self._is_erc721_approved(escrow_address, _collateralAddress, _tokenId), "transfer is not approved"
     extcall IERC721(_collateralAddress).safeTransferFrom(escrow_address, _wallet, _tokenId, b"")
 
 
@@ -856,8 +856,8 @@ def _is_punk_approved_for_vault(_borrower: address, _collateralAddress: address,
 
 @view
 @internal
-def _is_erc721_approved(_borrower: address, _collateralAddress: address, _tokenId: uint256) -> bool:
-    return staticcall IERC721(_collateralAddress).isApprovedForAll(_borrower, self) or (staticcall IERC721(_collateralAddress).getApproved(_tokenId)) == self
+def _is_erc721_approved(_wallet: address, _collateralAddress: address, _tokenId: uint256) -> bool:
+    return staticcall IERC721(_collateralAddress).isApprovedForAll(_wallet, self) or (staticcall IERC721(_collateralAddress).getApproved(_tokenId)) == self
 
 
 @internal

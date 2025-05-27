@@ -6,7 +6,7 @@
 
 | **Name**                          | **Chain**        | **Address implementation**                   |
 | ---                               | ---              | ---                                          |
-| P2P lending contract              | curtis           | `0x13A18453c8aEeDb2e62502Dc74F0493B0E081C9C` |
+| P2P lending contract              | curtis           | `0xBdbfa0fe1116B1770Bb2895235e3Ce0231dce931` |
 | Lending pool                      | sepolia          | `0xf8fD741e0935b46cBD25a6dB78317Bd462898BA3` |
 | Lender                            | curtis / sepolia | `0x00aA70B40A89aDF483f4068323789a64d791CCe5` |
 | Escrow                            | curtis / sepolia | `0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475` |
@@ -36,7 +36,7 @@ payment_amount = int(645e6) # (645 USDC)
 token_id = 5
 ```
 
-## SETUP
+## Setup
 
 ```
 # fund wallets
@@ -45,6 +45,7 @@ me.transfer(escrow, int(1e17))
 me.transfer(lender, int(1e17))
 me.transfer(operator, int(1e17))
 common_usdc.transfer(lender, payment_amount, sender=me)
+common_wape.transfer(borrower, principal * 2, sender=me)
 
 #send token to borrower
 tokengators.transferFrom(me, borrower, token_id, sender=me)
@@ -66,8 +67,8 @@ common_lending_pool_usdc.deposit(payment_amount, sender=lender)
 ```
 
 Transactions:
-* [Approval](https://sepolia.etherscan.io/tx/0x4e9a905f766f46d0946cedcf373d4c0ec140dce96493b5d8aa0e109e01f0977b)
-* [Deposit](https://sepolia.etherscan.io/tx/0xe14d208b7edd1be8f72df7a77bbec90d5130073c703afe24fc5a0a42d278c8a7)
+* [Approval](https://sepolia.etherscan.io/tx/0x17f171786f4ba8a2fcf9bec04e13eb2e25e08907f3d4dec06ccb19dccb379bc2)
+* [Deposit](https://sepolia.etherscan.io/tx/0xc999f068be8c606ef15b886b5ca3cce8a20dbd128bd4733f69b418b8384c5920)
 
 ### Lender creates offer
 
@@ -89,7 +90,7 @@ offer = create_offer_backend(lender, **draft)
 
 ```json
 {
-    'offer_id': '1b13042eeb311733dad5e8c6060a665c6d1a8c34f035d0e5aac5472366255c00',
+    'offer_id': '1166994ded8b345313e2eaa2c5c9cff9d330c360f4a24b2f4f7e3530cdaacb80',
     'chain': 'curtis',
     'offer_type': 'COLLECTION',
     'offer_display_type': 'AUTOMATIC',
@@ -97,11 +98,11 @@ offer = create_offer_backend(lender, **draft)
     'interest': '191780821917808220',
     'payment_token': '0x69B5cfEfDd30467Ea985EBac1756d81EA871798c',
     'duration': 604800,
-    'expiration': 1749200832,
+    'expiration': 1749205133,
     'lender': '0x00aA70B40A89aDF483f4068323789a64d791CCe5',
     'pro_rata': True,
     'size': 1,
-    'tracing_id': '5af6dd2ccc8f3a8e046a0b8004440780e97001f5773e631194112f6d33a6561f',
+    'tracing_id': '61d79edfeabccf6f0f4a34a9898de213d9ccbc98eab70636cc321e63f08b2ca1',
     'current_usage': 0,
     'p2p_contract_key': 'ape_external',
     'apr': 100,
@@ -121,9 +122,9 @@ offer = create_offer_backend(lender, **draft)
     'trait_name': None,
     'trait_value': None,
     'signature': {
-        'v': '27',
-        'r': '0x542dee55e8d2f0d8b34d011ef93f95a63a03d96ec3837e410359704c9ceac22a',
-        's': '0x7bd18ce2ee50bb4923a48d8e9eb7629c942e3a03971bff90037d9d9d70d320be'
+        'v': '28',
+        'r': '0xc3f37d1e1330cf8a4792927fe5eb860ddc29346010900884eb29079f9817df45',
+        's': '0x61d72c375b22c7ef4b76e143a99925c515312fbb9c67f072600da2b9baa5e0e0'
     },
     'revoked': False,
     'offer_type_numerical': 2
@@ -133,13 +134,12 @@ offer = create_offer_backend(lender, **draft)
 ### Borrower approves p2p contract for token and creates loan
 
 ```
-tokengators.approve(p2p_ape_external, token_id, sender=borrower)
 create_loan(offer, token_id, p2p_ape_external, sender=borrower)
 ```
 
 Transactions:
-* [Approval](https://curtis.explorer.caldera.xyz/tx/0x7a4ca81d1998523e200bb86393d8e42415e0a0570cbc505b0d6fd02c144c62cf)
-* [Loan creation](https://curtis.explorer.caldera.xyz/tx/0x6b74d14206ac7e807c8d17dcec79f1972ac068ec891648c36589df184a03024e)
+* [Approval](https://curtis.explorer.caldera.xyz/tx/0x64e9fa6d07318d10b9c0f69296d3247d374c43d47acf7af3b5bce0c30c3120fc)
+* [Loan creation](https://curtis.explorer.caldera.xyz/tx/0x125dcc869492cbb10140b4883708006746d66002617398fe47c2c81d881a509c)
 
 
 ### Operator sends funds from LP to borrower
@@ -151,7 +151,7 @@ balance2 = common_usdc.balanceOf(borrower)
 ```
 
 Transactions:
-* [Send funds](https://sepolia.etherscan.io/tx/0xbb143cc244d1cb644d9b4037b2dd3fc1ae39b2c1a047f328c98c8e475ab24ff7)
+* [Send funds](https://sepolia.etherscan.io/tx/0x1f32b02f8e42838407ef29889dffacf25de4c6a4f9d21da440f2d65f7890c510)
 
 ### Final state
 * Borrower gets the funds
@@ -160,4 +160,20 @@ Transactions:
 ```
 assert tokengators.ownerOf(token_id) == escrow
 assert balance2 - balance1 == payment_amount
+```
+
+
+## Loan settlement
+
+```
+loan_id = "0xe3ce24f6af80a1dd7c75e4e042828abda26cac70f8dd8e953c13128131bbf2c5"
+pay_loan(loan_id, p2p_ape_external, sender=borrower)
+```
+
+Transactions:
+* [Approval](https://curtis.explorer.caldera.xyz/tx/0x377cf7d702f8d664a4f9dd0a0b48d3e222248ef8d2e9fde599b7f0937bebd1aa)
+* [Loan settlement](https://curtis.explorer.caldera.xyz/tx/0xfa8be63e6aa2594649364fbf06788f95107cdfaa3d7de3ac8518e6e1e4eebf48)
+
+```
+assert tokengators.ownerOf(token_id) == borrower
 ```

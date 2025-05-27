@@ -32,6 +32,6 @@ def cli(network):
     changes = set()
     # changes |= {"p2p.ape_external"}
 
-    dm.deploy(changes, dryrun=False)
+    dm.deploy(changes, dryrun=True)
 
     print("Done")
