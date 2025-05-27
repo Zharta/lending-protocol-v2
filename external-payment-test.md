@@ -6,15 +6,15 @@
 
 | **Name**                          | **Chain**        | **Address implementation**                   |
 | ---                               | ---              | ---                                          |
-| p2p lending contract              | curtis           | `0x13A18453c8aEeDb2e62502Dc74F0493B0E081C9C` |
-| lending pool                      | sepolia          | `0xf8fD741e0935b46cBD25a6dB78317Bd462898BA3` |
-| lender                            | curtis / sepolia | `0x00aA70B40A89aDF483f4068323789a64d791CCe5` |
-| escrow                            | curtis / sepolia | `0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475` |
-| borrower                          | curtis / sepolia | `0x190Af7D087D32C61A2e23FB8aF192a58A6385DD1` |
-| operator                          | curtis / sepolia | `0x77672996cD93B722e5a5673D404C3A92AD8dd1Fd` |
-| erc721 tokengators                | curtis           | `0xB16A9612b91259ABA40862233e25f9685Ea0d738` |
-| p2p lending contract token (WAPE) | curtis           | `0x69B5cfEfDd30467Ea985EBac1756d81EA871798c` |
-| payment token (USDC)              | sepolia]         | `0x74540605Dc99f9cd65A3eA89231fFA727B1049E2` |
+| P2P lending contract              | curtis           | `0x13A18453c8aEeDb2e62502Dc74F0493B0E081C9C` |
+| Lending pool                      | sepolia          | `0xf8fD741e0935b46cBD25a6dB78317Bd462898BA3` |
+| Lender                            | curtis / sepolia | `0x00aA70B40A89aDF483f4068323789a64d791CCe5` |
+| Escrow                            | curtis / sepolia | `0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475` |
+| Borrower                          | curtis / sepolia | `0x190Af7D087D32C61A2e23FB8aF192a58A6385DD1` |
+| Operator                          | curtis / sepolia | `0x77672996cD93B722e5a5673D404C3A92AD8dd1Fd` |
+| ERC721 (tokengators)              | curtis           | `0xB16A9612b91259ABA40862233e25f9685Ea0d738` |
+| P2P lending contract token (WAPE) | curtis           | `0x69B5cfEfDd30467Ea985EBac1756d81EA871798c` |
+| Payment token (USDC)              | sepolia          | `0x74540605Dc99f9cd65A3eA89231fFA727B1049E2` |
 
 
 ```
@@ -154,8 +154,8 @@ Transactions:
 * [Send funds](https://sepolia.etherscan.io/tx/0xbb143cc244d1cb644d9b4037b2dd3fc1ae39b2c1a047f328c98c8e475ab24ff7)
 
 ### Final state
-* borrower gets the funds
-* escrow gets the token
+* Borrower gets the funds
+* Escrow gets the token
 
 ```
 assert tokengators.ownerOf(token_id) == escrow
