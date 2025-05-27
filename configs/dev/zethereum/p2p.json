@@ -7,24 +7,25 @@
             "properties_addresses": {}
         },
         "lending_pool_usdc": {
-            "abi_key": "37a7b050e1b8593d0fdb41d19fa74352604d351b",
-            "address": "0x4A851A58DD2EF8503596cC8F696df89637679ed8",
+            "abi_key": "4d96874d416e9420945b97aa88a0a8a92cbba79c",
+            "address": "0x86C4A6c3129bdeb85207d3d90cB964F2E2F9Bb5B",
             "contract": "LendingPool",
             "properties": {
                 "implementation_key": "common.lending_pool_usdc_impl",
-                "lender": "0x72651bb532a1feD9bb82266469242986ef5a70A3",
+                "lender": "0x00aA70B40A89aDF483f4068323789a64d791CCe5",
+                "operator": "0x77672996cD93B722e5a5673D404C3A92AD8dd1Fd",
                 "protocol_fees_share": 0,
                 "protocol_wallet_fees": "0x66aB6D9362d4F35596279692F0251Db635165871",
                 "token_key": "common.usdc"
             },
             "properties_addresses": {
-                "implementation": "0xd4239bbFBA8e9b879A4Ed32C7153Bab12360354B",
+                "implementation": "0x83F706E4CB5cfcDA526b258a57f031DD6898Aa62",
                 "token": "0x77BE703d950f6B84c679a2AB519f736174E63883"
             }
         },
         "lending_pool_usdc_impl": {
-            "abi_key": "37a7b050e1b8593d0fdb41d19fa74352604d351b",
-            "address": "0xd4239bbFBA8e9b879A4Ed32C7153Bab12360354B",
+            "abi_key": "4d96874d416e9420945b97aa88a0a8a92cbba79c",
+            "address": "0x83F706E4CB5cfcDA526b258a57f031DD6898Aa62",
             "contract": "LendingPoolExternal",
             "properties": {
                 "token_key": "common.usdc"

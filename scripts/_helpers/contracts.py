@@ -243,6 +243,7 @@ class LendingPool(MinimalProxy):
         protocol_wallet_fees: int,
         protocol_fees_share: int,
         lender: str,
+        operator: str,
         abi_key: str,
         address: str | None = None,
     ):
@@ -254,7 +255,7 @@ class LendingPool(MinimalProxy):
             abi_key=abi_key,
             impl=implementation_key,
             deployment_deps={implementation_key},
-            deployment_args=[protocol_wallet_fees, protocol_fees_share, lender],
+            deployment_args=[protocol_wallet_fees, protocol_fees_share, lender, operator],
         )
         if address:
             self.load_contract(address)

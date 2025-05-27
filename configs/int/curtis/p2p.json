@@ -27,6 +27,30 @@
         }
     },
     "p2p": {
+        "ape_external": {
+            "abi_key": "0bb673432ab9115908cf9db48173c7d48c892b4a",
+            "address": "0x13A18453c8aEeDb2e62502Dc74F0493B0E081C9C",
+            "contract": "P2PLendingExternal",
+            "properties": {
+                "cryptopunks_key": "",
+                "escrow_address": "0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475",
+                "max_borrower_broker_settlement_fee": 0,
+                "max_lender_broker_settlement_fee": 0,
+                "max_protocol_settlement_fee": 0,
+                "max_protocol_upfront_fee": 0,
+                "p2p_controller_key": "common.p2p_controller",
+                "payment_token_key": "common.wape",
+                "protocol_settlement_fee": 0,
+                "protocol_upfront_fee": 0,
+                "protocol_wallet": "0x313e7bF4D508087295f092Bb9fadcE3b7b4dc89e"
+            },
+            "properties_addresses": {
+                "p2p_controller": "0x5c435249e08D987a77fdA86376e796C37C552136",
+                "payment_token": "0x69B5cfEfDd30467Ea985EBac1756d81EA871798c"
+            },
+            "token_symbol": "WAPE",
+            "version": "1"
+        },
         "ape_nfts": {
             "abi_key": "10303d3fbb028dacb97d9fbfe3717a62bd73a126",
             "address": "0x311F9f063a3e8de0fFe81beAca53EEC310432faE",

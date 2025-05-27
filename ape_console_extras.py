@@ -2,6 +2,7 @@ import os
 import random
 from collections import namedtuple
 from dataclasses import field
+from datetime import datetime
 from enum import Enum, IntEnum
 from textwrap import dedent
 from typing import NamedTuple
@@ -36,6 +37,10 @@ class Context(Enum):
 def inject_poa(w3):
     w3.middleware_onion.inject(web3.middleware.geth_poa_middleware, layer=0)
     return w3
+
+
+def now():
+    return int(datetime.now().timestamp())
 
 
 def transfer(w3, wallet, val=10**60):
@@ -287,13 +292,14 @@ def create_offer_draft(**offer):
     if offer.get("trait_value"):
         payload["trait_value"] = offer.get("trait_value")
 
-    response = requests.post(f"{P2P_SERVICE_BASE_URL}/offers/draft", json=payload)
+    chain = offer.get("chain")
+    response = requests.post(f"{P2P_SERVICE_BASE_URL}/offers/draft?chain={chain}", json=payload)
 
     if response.status_code != 200:
         print(response.text)
     response.raise_for_status()
 
-    return response.json()
+    return response.json() | {"chain": chain}
 
 
 def create_offer_backend(signer: Account, **offer):
@@ -310,6 +316,7 @@ def create_offer_backend(signer: Account, **offer):
     filtered_offer["tracing_id"] = bytes.fromhex(filtered_offer["tracing_id"])
     _offer = Offer(**filtered_offer)
 
+    chain = offer.get("chain")
     verifying_contract = offer.get("p2p_contract")
     signed_offer = sign_offer(_offer, signer, verifying_contract)
     sig = signed_offer.signature
@@ -344,7 +351,7 @@ def create_offer_backend(signer: Account, **offer):
         "signature": {"v": sig.v, "r": sig.r, "s": sig.s},
     }
 
-    response = requests.post(f"{P2P_SERVICE_BASE_URL}/offers", json=payload)
+    response = requests.post(f"{P2P_SERVICE_BASE_URL}/offers?chain={chain}", json=payload)
 
     if response.status_code != 200:
         print(response.text)

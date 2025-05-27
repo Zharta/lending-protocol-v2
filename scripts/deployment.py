@@ -30,11 +30,8 @@ def cli(network):
     dm.context.gas_func = gas_cost
 
     changes = set()
-    # changes |= {
-    # "configs.trait_roots",
-    # "p2p.ape_external",
-    # }
+    # changes |= {"p2p.ape_external"}
 
-    dm.deploy(changes, dryrun=True)
+    dm.deploy(changes, dryrun=False)
 
     print("Done")

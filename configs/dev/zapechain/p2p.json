@@ -28,12 +28,12 @@
     },
     "p2p": {
         "ape_external": {
-            "abi_key": "efef33054018a46bd5b66176be126fa78a90a2be",
-            "address": "0x8cdA0807D6251FED06361710b50f5592C6Af74f5",
+            "abi_key": "0bb673432ab9115908cf9db48173c7d48c892b4a",
+            "address": "0x6057028AEb3086440A01577fcD18C5eC77305c47",
             "contract": "P2PLendingExternal",
             "properties": {
                 "cryptopunks_key": "",
-                "escrow_address": "0x66aB6D9362d4F35596279692F0251Db635165871",
+                "escrow_address": "0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475",
                 "max_borrower_broker_settlement_fee": 1000,
                 "max_lender_broker_settlement_fee": 1000,
                 "max_protocol_settlement_fee": 1000,

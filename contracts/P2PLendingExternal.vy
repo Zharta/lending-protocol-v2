@@ -425,6 +425,7 @@ def create_loan(
     offer: SignedOffer,
     collateral_token_id: uint256,
     collateral_proof: DynArray[bytes32, PROOF_MAX_SIZE],
+    delegate: address,
     borrower_broker_upfront_fee_amount: uint256,
     borrower_broker_settlement_fee_bps: uint256,
     borrower_broker: address
