@@ -6,6 +6,34 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
+        "lending_pool_wape": {
+            "abi_key": "4d96874d416e9420945b97aa88a0a8a92cbba79c",
+            "address": "0xF41aA7f8b8422157A458e839e1dB803fA339B315",
+            "contract": "LendingPool",
+            "properties": {
+                "implementation_key": "common.lending_pool_wape_impl",
+                "lender": "0x00aA70B40A89aDF483f4068323789a64d791CCe5",
+                "operator": "0x77672996cD93B722e5a5673D404C3A92AD8dd1Fd",
+                "protocol_fees_share": 0,
+                "protocol_wallet_fees": "0x313e7bF4D508087295f092Bb9fadcE3b7b4dc89e",
+                "token_key": "common.wape"
+            },
+            "properties_addresses": {
+                "implementation": "0x7Ec3C2f46CF92d82aD9988b647260Cc9fEe70Aa0",
+                "token": "0x69B5cfEfDd30467Ea985EBac1756d81EA871798c"
+            }
+        },
+        "lending_pool_wape_impl": {
+            "abi_key": "4d96874d416e9420945b97aa88a0a8a92cbba79c",
+            "address": "0x7Ec3C2f46CF92d82aD9988b647260Cc9fEe70Aa0",
+            "contract": "LendingPoolExternal",
+            "properties": {
+                "token_key": "common.wape"
+            },
+            "properties_addresses": {
+                "token": "0x69B5cfEfDd30467Ea985EBac1756d81EA871798c"
+            }
+        },
         "p2p_controller": {
             "abi_key": "ea96d1a2134dd14a2190e52e504bf39dd4b92ef9",
             "address": "0x5c435249e08D987a77fdA86376e796C37C552136",
@@ -27,30 +55,6 @@
         }
     },
     "p2p": {
-        "ape_external": {
-            "abi_key": "0bb673432ab9115908cf9db48173c7d48c892b4a",
-            "address": "0xBdbfa0fe1116B1770Bb2895235e3Ce0231dce931",
-            "contract": "P2PLendingExternal",
-            "properties": {
-                "cryptopunks_key": "",
-                "escrow_address": "0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475",
-                "max_borrower_broker_settlement_fee": 0,
-                "max_lender_broker_settlement_fee": 0,
-                "max_protocol_settlement_fee": 0,
-                "max_protocol_upfront_fee": 0,
-                "p2p_controller_key": "common.p2p_controller",
-                "payment_token_key": "common.wape",
-                "protocol_settlement_fee": 0,
-                "protocol_upfront_fee": 0,
-                "protocol_wallet": "0x313e7bF4D508087295f092Bb9fadcE3b7b4dc89e"
-            },
-            "properties_addresses": {
-                "p2p_controller": "0x5c435249e08D987a77fdA86376e796C37C552136",
-                "payment_token": "0x69B5cfEfDd30467Ea985EBac1756d81EA871798c"
-            },
-            "token_symbol": "WAPE",
-            "version": "1"
-        },
         "ape_nfts": {
             "abi_key": "10303d3fbb028dacb97d9fbfe3717a62bd73a126",
             "address": "0x311F9f063a3e8de0fFe81beAca53EEC310432faE",
