@@ -6,6 +6,12 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
+        "lender_claim": {
+            "address": "",
+            "contract": "LenderClaim",
+            "properties": {},
+            "properties_addresses": {}
+        },
         "p2p_controller": {
             "abi_key": "8c9e1e93f39f6d62e9d7d345eb17433df2fc0343",
             "address": "0xa11704B3dD545dC0771d9a9c5572064Db2A5C062",
