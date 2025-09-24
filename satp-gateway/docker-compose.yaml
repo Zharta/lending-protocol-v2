@@ -1,0 +1,17 @@
+
+
+services:
+  satp-hermes-gateway:
+    image: aaugusto11/cacti-satp-hermes-gateway:215ad342b-2025-05-29
+    platform: linux/amd64
+    volumes:
+      - ./config:/opt/cacti/satp-hermes/config/
+      - ./satp-hermes-gateway/logs:/opt/cacti/satp-hermes/logs
+      - ./supervisord.conf:/etc/supervisord.conf
+      - ./patch.sh:/opt/cacti/satp-hermes/patch.sh
+    ports:
+      - 3010:3010/tcp # SERVER_PORT
+      - 3011:3011/tcp # CLIENT_PORT
+      - 4010:4010/tcp # OAPI_PORT
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

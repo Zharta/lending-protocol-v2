@@ -105,3 +105,14 @@ publish-zethereum publish-zapechain publish-sepolia publish-curtis publish-ether
 get-metadata-zethereum get-metadata-zapechain get-metadata-sepolia get-metadata-curtis get-metadata-ethereum get-metadata-apechain:
 	${VENV}/bin/ape run get_collections
 	${VENV}/bin/ape run get_tokens
+
+start-gateway:
+	rm satp-gateway/satp-hermes-gateway/logs/* || true
+	@cd satp-gateway && docker compose up -d
+
+stop-gateway:
+	@cd satp-gateway && docker compose down
+
+register-listener:
+	@echo "Registering EVENT_LISTENING with READ_AND_UPDATE Tasks..."
+	ENV=int ${VENV}/bin/ape run satp_register_listener

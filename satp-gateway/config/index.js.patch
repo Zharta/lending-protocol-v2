@@ -1,0 +1,24 @@
+671288c671288
+<         const level = this.options.logLevel || "INFO";
+---
+>         const level = "TRACE";
+950208c950208
+<         return regex.test(signature);
+---
+>         return true;
+960709c960709
+<         this.logLevel = options.logLevel || "INFO";
+---
+>         this.logLevel = "TRACE";
+961123a961124,961129
+>         if (filter) {
+>             for (const key of filter) {
+>                 params.push(String(decodedEvent[key]));
+>             }
+>             return params;
+>         }
+1435579c1435585
+< ;
+\ No newline at end of file
+---
+> ;
