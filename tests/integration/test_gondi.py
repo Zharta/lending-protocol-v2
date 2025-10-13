@@ -331,8 +331,6 @@ def test_refinance(
 
     p2p_control.change_collections_contracts([CollectionContract(wpunk_key_hash, wpunk.address)])
 
-    assert balancer.maxFlashLoan(usdc.address) >= amount
-
     gondi_proxy.refinance_loan(
         gondi.address,
         approved,

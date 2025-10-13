@@ -4,6 +4,7 @@ from ethereum.ercs import IERC20
 
 
 FLASH_LOAN_CALLBACK_SIZE: constant(uint256) = 10240
+FLASH_LOAN_MAX_TOKENS: constant(uint256) = 1
 
 
 interface P2PLendingNfts:
@@ -24,22 +25,24 @@ interface BendDAO:
 
 
 interface IFlashLender:
-    def maxFlashLoan(token: address) -> uint256: view
-    def flashFee(token: address, amount: uint256) -> uint256: view
-    def flashLoan(receiver: address, token: address, amount: uint256, data: Bytes[FLASH_LOAN_CALLBACK_SIZE]) -> bool: nonpayable
-
-
-interface IERC3156FlashBorrower:
-    def onFlashLoan(
-        initiator: address,
-        token: address,
-        amount: uint256,
-        fee: uint256,
+    def flashLoan(
+        recepient: address,
+        tokens: DynArray[address,FLASH_LOAN_MAX_TOKENS],
+        amounts: DynArray[uint256,FLASH_LOAN_MAX_TOKENS],
         data: Bytes[FLASH_LOAN_CALLBACK_SIZE]
-    ) -> bytes32: nonpayable
+    ): nonpayable
 
 
-implements: IERC3156FlashBorrower
+interface IFlashLoanRecipient:
+    def receiveFlashLoan(
+        tokens: DynArray[address,FLASH_LOAN_MAX_TOKENS],
+        amounts: DynArray[uint256,FLASH_LOAN_MAX_TOKENS],
+        fee_amounts: DynArray[uint256,FLASH_LOAN_MAX_TOKENS],
+        data: Bytes[FLASH_LOAN_CALLBACK_SIZE]
+    ): nonpayable
+
+
+implements: IFlashLoanRecipient
 
 
 flag FeeType:
@@ -143,28 +146,26 @@ def __init__(_p2p_lending_nfts: address, _flash_lender: address):
 
 
 @external
-def onFlashLoan(
-    initiator: address,
-    token: address,
-    amount: uint256,
-    fee: uint256,
+def receiveFlashLoan(
+    tokens: DynArray[address,FLASH_LOAN_MAX_TOKENS],
+    amounts: DynArray[uint256,FLASH_LOAN_MAX_TOKENS],
+    fee_amounts: DynArray[uint256,FLASH_LOAN_MAX_TOKENS],
     data: Bytes[FLASH_LOAN_CALLBACK_SIZE]
-) -> bytes32:
+) :
 
     # raw_call(0x0000000000000000000000000000000000011111, abi_encode(b"callback"))
     assert msg.sender == flash_lender, "unauthorized"
-    assert initiator == self, "unknown initiator"
-    assert fee == 0, "fee not supported"
+    assert fee_amounts[0] == 0, "fee not supported"
 
     callback_data: CallbackData = abi_decode(data, CallbackData)
 
     payment_token: address = staticcall P2PLendingNfts(p2p_lending_nfts).payment_token()
-    assert token == payment_token, "Invalid asset"
+    assert tokens[0] == payment_token, "Invalid asset"
 
-    assert (staticcall IERC20(payment_token).balanceOf(self)) >= amount, "Insufficient balance"
+    assert (staticcall IERC20(payment_token).balanceOf(self)) >= amounts[0], "Insufficient balance"
 
-    extcall IERC20(payment_token).approve(callback_data.approved, amount)
-    extcall BendDAO(callback_data.benddao_contract).repay(callback_data.collateral_address, callback_data.token_id, amount)
+    extcall IERC20(payment_token).approve(callback_data.approved, amounts[0])
+    extcall BendDAO(callback_data.benddao_contract).repay(callback_data.collateral_address, callback_data.token_id, amounts[0])
 
     self._create_loan(
         callback_data.signed_offer,
@@ -176,11 +177,8 @@ def onFlashLoan(
         callback_data.borrower_broker
     )
 
-    extcall IERC20(payment_token).transferFrom(callback_data.borrower, self, amount)
-    assert (staticcall IERC20(payment_token).balanceOf(self)) >= amount, "Insufficient balance"
-
-    extcall IERC20(payment_token).approve(flash_lender, amount + fee)
-    return ERC3156_CALLBACK_OK
+    assert (staticcall IERC20(payment_token).balanceOf(callback_data.borrower)) >= amounts[0], "Insufficient balance"
+    extcall IERC20(payment_token).transferFrom(callback_data.borrower, flash_lender, amounts[0])
 
 
 
@@ -239,4 +237,9 @@ def refinance_loan(
         borrower_broker = borrower_broker
     )
 
-    assert extcall IFlashLender(flash_lender).flashLoan(self, payment_token, amount, abi_encode(callback_data)), "flash loan failed"
+    extcall IFlashLender(flash_lender).flashLoan(
+        self,
+        [payment_token],
+        [amount],
+        abi_encode(callback_data)
+    )
