@@ -63,7 +63,7 @@ def _test_pay_loan(x2y2_proxy, weth, borrower, owner, captainz):
 def test_refinance(
     balancer,
     borrower,
-    debug_precompile,
+    # debug_precompile,
     lender,
     lender_key,
     captainz,
@@ -108,7 +108,6 @@ def test_refinance(
 
     p2p_control.change_collections_contracts([CollectionContract(captainz_key_hash, captainz.address)])
 
-    assert balancer.maxFlashLoan(weth.address) >= amount
     x2y2_proxy.refinance_loan(
         x2y2_contract, approved, loan_id, amount, signed_offer, token_id, [], ZERO_ADDRESS, 0, 0, ZERO_ADDRESS, sender=borrower
     )

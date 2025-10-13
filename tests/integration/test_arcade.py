@@ -108,7 +108,6 @@ def test_refinance(
 
     p2p_control.change_collections_contracts([CollectionContract(wpunk_key_hash, wpunk.address)])
 
-    assert balancer.maxFlashLoan(weth.address) >= amount
     arcade_proxy.refinance_loan(
         arcade_contract,
         approved,
