@@ -266,7 +266,7 @@ def delegation_registry(owner, delegation_registry_contract_def):
 @pytest.fixture
 def balancer(boa_env):
     return boa.load_abi("contracts/auxiliary/BalancerFlashLoanProvider.json", name="Balancer").at(
-        "0x4EAF187ad4cE325bF6C84070b51c2f7224A51321"
+        "0xBA12222222228d8Ba445958a75a0704d566BF2C8"
     )
 
 

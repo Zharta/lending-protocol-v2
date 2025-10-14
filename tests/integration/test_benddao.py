@@ -105,7 +105,6 @@ def test_refinance(
 
     p2p_control.change_collections_contracts([CollectionContract(koda_key_hash, koda.address)])
 
-    assert balancer.maxFlashLoan(weth.address) >= amount
     benddao_proxy.refinance_loan(
         benddao_contract,
         approved,
