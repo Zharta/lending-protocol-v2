@@ -229,6 +229,73 @@ class ERC20External(ContractConfig):
 
 
 @dataclass
+class ArcadeProxy(ContractConfig):
+    def __init__(
+        self,
+        *,
+        key: str,
+        arcade_repayment_contract_key: str,
+        arcade_loan_core_contract_key: str,
+        p2p_contract_key: str,
+        flash_lender_key: str,
+        address: str | None = None,
+        abi_key: str | None = None,
+    ):
+        super().__init__(
+            key,
+            None,
+            project.ArcadeProxy,
+            token=False,
+            abi_key=abi_key,
+            deployment_deps={p2p_contract_key, flash_lender_key},
+            deployment_args=[p2p_contract_key, flash_lender_key],
+        )
+        if address:
+            self.load_contract(address)
+        self.p2p_contract_key = p2p_contract_key
+        self.arcade_repayment_contract_key = arcade_repayment_contract_key
+        self.arcade_loan_core_contract_key = arcade_loan_core_contract_key
+
+    def deploy(self, context: DeploymentContext):
+        super().deploy(context)
+        execute(
+            context,
+            self.p2p_contract_key,
+            "set_proxy_authorization",
+            self.contract.address if not context.dryrun else ZERO_ADDRESS,
+            True,  # noqa: FBT003
+        )
+
+
+@dataclass
+class BalancerMock(ContractConfig):
+    def __init__(
+        self,
+        *,
+        key: str,
+        address: str | None = None,
+        abi_key: str | None = None,
+    ):
+        super().__init__(key, None, project.BalancerMock, token=False, abi_key=abi_key)
+        if address:
+            self.load_contract(address)
+
+
+@dataclass
+class ArcadeMock(ContractConfig):
+    def __init__(
+        self,
+        *,
+        key: str,
+        address: str | None = None,
+        abi_key: str | None = None,
+    ):
+        super().__init__(key, None, project.ArcadeMock, token=False, abi_key=abi_key)
+        if address:
+            self.load_contract(address)
+
+
+@dataclass
 class DelegationRegistry(ContractConfig):
     def __init__(
         self,
