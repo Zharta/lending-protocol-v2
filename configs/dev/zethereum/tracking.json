@@ -1,20 +1,8 @@
 {
     "arcade": {
-        "abi_file": "auxiliary/ArcadeRepaymentController_abi.json",
-        "address": "0x733e5eCE38937EA44164D4d8b15447962B8A93A7",
+        "abi_file": "auxiliary/ArcadeLoanCore_abi.json",
+        "address": "0x6c61c29A2E75B996e533428Ec7D8b4fa19dD0aA1",
         "contract": "Generic",
         "name": "Arcade"
-    },
-    "gondi": {
-        "abi_file": "auxiliary/GondiMultiSourceLoan_abi.json",
-        "address": "0x0000000000000000000000000000000000000002",
-        "contract": "Generic",
-        "name": "Gondi"
-    },
-    "x2y2v3": {
-        "abi_file": "auxiliary/X2Y2_v3_abi.json",
-        "address": "0x0000000000000000000000000000000000000003",
-        "contract": "Generic",
-        "name": "X2Y2v3"
     }
 }
