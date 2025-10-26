@@ -247,7 +247,7 @@ class ArcadeProxy(ContractConfig):
             project.ArcadeProxy,
             token=False,
             abi_key=abi_key,
-            deployment_deps={p2p_contract_key, flash_lender_key},
+            deployment_deps={p2p_contract_key, flash_lender_key, arcade_repayment_contract_key, arcade_loan_core_contract_key},
             deployment_args=[p2p_contract_key, flash_lender_key],
         )
         if address:

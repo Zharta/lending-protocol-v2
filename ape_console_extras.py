@@ -2,6 +2,7 @@ import os
 import random
 from collections import namedtuple
 from dataclasses import field
+from datetime import datetime
 from enum import Enum, IntEnum
 from textwrap import dedent
 from typing import NamedTuple
@@ -10,6 +11,7 @@ import ape
 import eth_abi
 import requests
 import web3
+from ape import accounts as ape_accounts
 from ape import convert, networks
 from eth_account import Account
 from eth_account.messages import encode_typed_data
@@ -36,6 +38,10 @@ class Context(Enum):
 def inject_poa(w3):
     w3.middleware_onion.inject(web3.middleware.geth_poa_middleware, layer=0)
     return w3
+
+
+def now():
+    return int(datetime.now().timestamp())
 
 
 def transfer(w3, wallet, val=10**60):
@@ -533,6 +539,79 @@ def claim_loan_collateral(loan_id, contract, *, sender):
     print(f"loan_hash_in_contract: {loan_hash_in_contract.hex()}")
 
     contract.claim_defaulted_loan_collateral(loan, sender=sender)
+
+
+def _addr_to_account(addr):
+    return next((acc for acc in ape_accounts if acc.address == addr), None)
+
+
+def arcade_refinance(  # noqa: PLR0917
+    borrower,
+    proxy_contract,
+    arcade_repayment_contract,
+    arcade_loan_core,
+    loan_id,
+    amount,
+    signed_offer,
+    token_id=None,
+    collateral_proof=[],
+    delegate=ZERO_ADDRESS,
+    borrower_broker_upfront_fee_amount=0,
+    borrower_broker_settlement_fee_bps=0,
+    borrower_broker=ZERO_ADDRESS,
+):
+    arcade_loan_core = ape.Contract(arcade_loan_core)
+    loan = arcade_loan_core.getLoan(loan_id)
+    if token_id is None:
+        token_id = loan.terms.collateralId
+    if type(signed_offer) is tuple:
+        signed_offer = SignedOffer(Offer(*signed_offer[0]), Signature(*signed_offer[1]))
+
+    offer = signed_offer.offer
+    print(offer)
+    new_lender = _addr_to_account(offer.lender)
+    p2p_contract = ape.Contract(proxy_contract.p2p_lending_nfts())
+    payment_token = ape.Contract(p2p_contract.payment_token())
+    collection_contract = ape.Contract(loan.terms.collateralAddress)
+
+    repayment_interest = arcade_loan_core.getInterestAmount(loan.terms.principal, loan.terms.proratedInterestRate)
+    repayment_amount = loan.terms.principal + repayment_interest
+
+    assert amount >= repayment_amount, f"Refinance amount {amount} is less than repayment amount {repayment_amount}"
+
+    assert offer.offer_type == OfferType.TOKEN, "Invalid offer type for refinance"
+    if offer.offer_type == OfferType.TOKEN:
+        assert token_id == offer.token_id, "Token ID does not match offer for refinance"
+
+    assert payment_token.balanceOf(new_lender) >= offer.principal, "New lender has insufficient balance for refinance"
+
+    if payment_token.allowance(borrower, proxy_contract.address) < repayment_amount:
+        print(f"Approving payment token [{repayment_amount}] from borrower to proxy contract")
+        payment_token.approve(proxy_contract.address, repayment_amount, sender=borrower)
+
+    if payment_token.allowance(new_lender, p2p_contract.address) < offer.principal:
+        print("Approving payment token [{offer.principal}] from new lender to p2p contract")
+        payment_token.approve(p2p_contract.address, offer.principal, sender=new_lender)
+
+    if not collection_contract.isApprovedForAll(borrower, p2p_contract.address):
+        print("Approving collateral token from borrower to p2p contract")
+        collection_contract.setApprovalForAll(p2p_contract.address, True, sender=borrower)  # noqa: FBT003
+
+    print("Refinancing loan...")
+    proxy_contract.refinance_loan(
+        arcade_repayment_contract,
+        arcade_loan_core,
+        loan_id,
+        amount,
+        signed_offer,
+        token_id,
+        collateral_proof,
+        delegate,
+        borrower_broker_upfront_fee_amount,
+        borrower_broker_settlement_fee_bps,
+        borrower_broker,
+        sender=borrower,
+    )
 
 
 """

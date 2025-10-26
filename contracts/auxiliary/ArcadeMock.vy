@@ -55,13 +55,11 @@ event LoanRepaid:
 
 BPS : constant(uint256) = 10000
 
-loans: HashMap[uint256, LoanData]
-lenders: HashMap[uint256, address]
-borrowers: HashMap[uint256, address]
-loan_counter: uint256
-#owner: address
+loans: public(HashMap[uint256, LoanData])
+lenders: public(HashMap[uint256, address])
+borrowers: public(HashMap[uint256, address])
+loan_counter: public(uint256)
 
-#payment_token: public(immutable(address))
 
 @deploy
 def __init__():
@@ -90,14 +88,13 @@ def startLoan(lender: address, loan_terms: LoanTerms) -> uint256:
 
 @external
 def repay(loan_id: uint256):
-    assert msg.sender == self.borrowers[loan_id], "Only borrower can repay"
     assert self.loans[loan_id].state == LoanState.ACTIVE, "Loan not active"
     loan: LoanData = self.loans[loan_id]
     interest: uint256 = self._get_interest_amount(loan.terms.principal, loan.terms.proratedInterestRate)
     total_repayment: uint256 = loan.terms.principal + interest
     extcall IERC20(loan.terms.payableCurrency).transferFrom(msg.sender, self.lenders[loan_id], total_repayment)
     self.loans[loan_id].state = LoanState.REPAID
-    extcall IERC721(loan.terms.collateralAddress).transferFrom(self, msg.sender, loan.terms.collateralId)
+    extcall IERC721(loan.terms.collateralAddress).transferFrom(self, self.borrowers[loan_id], loan.terms.collateralId)
     log LoanRepaid(loanId=loan_id)
 
 @external

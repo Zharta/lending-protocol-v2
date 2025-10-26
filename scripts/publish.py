@@ -61,7 +61,7 @@ def get_abi_map(context, env: Environment, chain: str) -> dict:
         tracking_config = json.load(f)
     tracking_contracts = {f"tracking.{k}": v for k, v in tracking_config.items()}
     for config in tracking_contracts.values():
-        abi = load_abi(config["abi_file"])
+        abi = load_abi(config["abi_file"]) if "abi_file" in config else contract.contract_type.dict()["abi"]
         config["abi"] = abi
         config["abi_key"] = abi_key(abi)
 

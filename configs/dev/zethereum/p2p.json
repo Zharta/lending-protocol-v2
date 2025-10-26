@@ -24,7 +24,7 @@
         },
         "ext_arcade_mock": {
             "abi_key": "44ae17f01acc86a3b5fa1d625221455e2c1a1fb8",
-            "address": "0x733e5eCE38937EA44164D4d8b15447962B8A93A7",
+            "address": "0x6c61c29A2E75B996e533428Ec7D8b4fa19dD0aA1",
             "contract": "ArcadeMock",
             "properties": {},
             "properties_addresses": {}
@@ -157,8 +157,8 @@
     },
     "proxies": {
         "ext_refinance_arcade_usdc_nfts": {
-            "abi_key": "c91e89920f62b8c831decfc7590526f592c96c37",
-            "address": "0x9f66c19175615E64b00c06e57Bf0c1B9BAeD2194",
+            "abi_key": "5407a272556ea51959e4ff594c021dc8e2631359",
+            "address": "0xDf11b88014b2d70C78893c0d78793dcDd72a9657",
             "contract": "ArcadeProxy",
             "properties": {
                 "arcade_loan_core_contract_key": "common.ext_arcade_mock",
@@ -167,8 +167,8 @@
                 "p2p_contract_key": "p2p.usdc_nfts"
             },
             "properties_addresses": {
-                "arcade_loan_core_contract": "0x733e5eCE38937EA44164D4d8b15447962B8A93A7",
-                "arcade_repayment_contract": "0x733e5eCE38937EA44164D4d8b15447962B8A93A7",
+                "arcade_loan_core_contract": "0x6c61c29A2E75B996e533428Ec7D8b4fa19dD0aA1",
+                "arcade_repayment_contract": "0x6c61c29A2E75B996e533428Ec7D8b4fa19dD0aA1",
                 "flash_lender": "0x756E378f3126BE26DbeF73fB2b6bB336bE3F0eE2",
                 "p2p_contract": "0x6c21123b9D56f04515Bf048DDCda33C0C45F1F15"
             }
