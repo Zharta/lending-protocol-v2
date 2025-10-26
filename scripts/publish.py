@@ -19,6 +19,7 @@ ENV = Environment[os.environ.get("ENV", "local")]
 CHAIN = os.environ.get("CHAIN", "nochain")
 DYNAMODB = boto3.resource("dynamodb")
 P2P_CONFIGS = DYNAMODB.Table(f"p2p-configs-{ENV.name}")
+P2P_PROXIES = DYNAMODB.Table(f"p2p-proxies-{ENV.name}")
 COLLECTIONS = DYNAMODB.Table(f"collections-{ENV.name}")
 TRACKED_CONTRACTS = DYNAMODB.Table(f"tracked-contracts-{ENV.name}")
 ABI = DYNAMODB.Table(f"abis-{ENV.name}")
@@ -44,10 +45,15 @@ def get_abi_map(context, env: Environment, chain: str) -> dict:
         config = json.load(f)
 
     contracts = {
-        f"{prefix}.{k}": v for prefix, contracts in config.items() for k, v in contracts.items() if prefix in {"common", "p2p"}
+        f"{prefix}.{k}": v
+        for prefix, contracts in config.items()
+        for k, v in contracts.items()
+        if prefix in {"common", "p2p", "proxies"} and context[f"{prefix}.{k}"].contract is not None  # FIXME
     }
     for k, config in contracts.items():
         contract = context[k].contract
+        if not contract:
+            continue
         config["abi"] = contract.contract_type.dict()["abi"]
         config["abi_key"] = abi_key(contract.contract_type.dict()["abi"])
 
@@ -55,7 +61,7 @@ def get_abi_map(context, env: Environment, chain: str) -> dict:
         tracking_config = json.load(f)
     tracking_contracts = {f"tracking.{k}": v for k, v in tracking_config.items()}
     for config in tracking_contracts.values():
-        abi = load_abi(config["abi_file"])
+        abi = load_abi(config["abi_file"]) if "abi_file" in config else contract.contract_type.dict()["abi"]
         config["abi"] = abi
         config["abi_key"] = abi_key(abi)
 
@@ -74,6 +80,20 @@ def get_p2p_configs(context, env: Environment, chain: str) -> dict:
             config["abi_key"] = abi_key(contract.contract_type.dict()["abi"])
 
     return p2p_configs
+
+
+def get_p2p_proxies(context, env: Environment, chain: str) -> dict:
+    config_file = f"{Path.cwd()}/configs/{env.name}/{chain}/p2p.json"
+    with open(config_file, "r") as f:
+        config = json.load(f)
+
+    p2p_proxies = config["proxies"]
+    for k, config in p2p_proxies.items():
+        contract = context[f"proxies.{k}"].contract
+        if "abi_key" not in config:
+            config["abi_key"] = abi_key(contract.contract_type.dict()["abi"])
+
+    return p2p_proxies
 
 
 def get_traits_roots(context, env: Environment, chain: str) -> dict:  # noqa: ARG001
@@ -104,6 +124,16 @@ def update_p2p_config(p2p_config_key: str, p2p_config: dict):
     values = {f":v{i}": v for i, (k, v) in indexed_attrs if k not in KEY_ATTRIBUTES}
     P2P_CONFIGS.update_item(
         Key={"p2p_config_key": p2p_config_key}, UpdateExpression=f"SET {update_expr}", ExpressionAttributeValues=values
+    )
+
+
+def update_p2p_proxy(p2p_proxy_key: str, p2p_proxy: dict):
+    indexed_attrs = list(enumerate(p2p_proxy.items()))
+    p2p_proxy["p2p_proxy_key"] = p2p_proxy_key
+    update_expr = ", ".join(f"{k}=:v{i}" for i, (k, v) in indexed_attrs if k not in KEY_ATTRIBUTES)
+    values = {f":v{i}": v for i, (k, v) in indexed_attrs if k not in KEY_ATTRIBUTES}
+    P2P_PROXIES.update_item(
+        Key={"p2p_proxy_key": p2p_proxy_key}, UpdateExpression=f"SET {update_expr}", ExpressionAttributeValues=values
     )
 
 
@@ -153,29 +183,40 @@ def cli():  # noqa: C901
         update_abi(abi_key, config["abi"])
 
     p2p_configs = get_p2p_configs(dm.context, dm.env, dm.chain)
-    for data in p2p_configs.values():
-        data["chain"] = CHAIN
-
-    tracking_configs = get_tracking_configs(dm.context, dm.env, dm.chain)
-    for data in tracking_configs.values():
-        data["chain"] = CHAIN
-
-    for k, v in tracking_configs.items():
-        print(f"updating tracking config {k} {v['name']}")
-        update_tracking_config(k, v)
-
-    for k, v in p2p_configs.items():
+    for k, config in p2p_configs.items():
+        config["chain"] = CHAIN
         properties_abis = {}
-        for prop, prop_val in v.get("properties", {}).items():
+        for prop, prop_val in config.get("properties", {}).items():
             if prop_val in abis:
                 properties_abis[prop] = abis[prop_val]["abi_key"]
             elif prop_val in dm.context and dm.context[prop_val].abi_key:
                 properties_abis[prop] = dm.context[prop_val].abi_key
-        v["properties_abis"] = properties_abis
+        config["properties_abis"] = properties_abis
 
-        abi_key = v["abi_key"]
+        abi_key = config["abi_key"]
         print(f"updating p2p config {k} {abi_key=}")
-        update_p2p_config(k, v)
+        update_p2p_config(k, config)
+
+    tracking_configs = get_tracking_configs(dm.context, dm.env, dm.chain)
+    for k, config in tracking_configs.items():
+        config["chain"] = CHAIN
+        print(f"updating tracking config {k} {config['name']}")
+        update_tracking_config(k, config)
+
+    p2p_proxies = get_p2p_proxies(dm.context, dm.env, dm.chain)
+    for k, config in p2p_proxies.items():
+        config["chain"] = CHAIN
+        properties_abis = {}
+        for prop, prop_val in config.get("properties", {}).items():
+            if prop_val in abis:
+                properties_abis[prop] = abis[prop_val]["abi_key"]
+            elif prop_val in dm.context and dm.context[prop_val].abi_key:
+                properties_abis[prop] = dm.context[prop_val].abi_key
+        config["properties_abis"] = properties_abis
+
+        abi_key = config["abi_key"]
+        print(f"updating p2p proxy {k} {abi_key=}")
+        update_p2p_proxy(k, config)
 
     trait_roots = get_traits_roots(dm.context, dm.env, dm.chain)
     for collection, root in trait_roots.items():

@@ -113,8 +113,8 @@ struct Loan:
 PROOF_MAX_SIZE: constant(uint256) = 32
 
 struct CallbackData:
-    arcade_contract: address
-    approved: address
+    arcade_repayment_contract: address
+    arcade_loan_core: address
     payment_token: address
     loan_id: uint256
     amount: uint256
@@ -160,8 +160,8 @@ def receiveFlashLoan(
 
     assert (staticcall IERC20(payment_token).balanceOf(self)) >= amounts[0], "Insufficient balance"
 
-    extcall IERC20(payment_token).approve(callback_data.approved, amounts[0])
-    extcall Arcade(callback_data.arcade_contract).repay(callback_data.loan_id)
+    extcall IERC20(payment_token).approve(callback_data.arcade_loan_core, amounts[0])
+    extcall Arcade(callback_data.arcade_repayment_contract).repay(callback_data.loan_id)
 
     self._create_loan(
         callback_data.signed_offer,
@@ -201,8 +201,8 @@ def _create_loan(
 
 @external
 def refinance_loan(
-    arcade_contract: address,
-    approved: address,
+    arcade_repayment_contract: address,
+    arcade_loan_core: address,
     loan_id: uint256,
     amount: uint256,
     signed_offer: SignedOffer,
@@ -218,8 +218,8 @@ def refinance_loan(
 
     payment_token: address = staticcall P2PLendingNfts(p2p_lending_nfts).payment_token()
     callback_data: CallbackData = CallbackData(
-        arcade_contract = arcade_contract,
-        approved = approved,
+        arcade_repayment_contract = arcade_repayment_contract,
+        arcade_loan_core = arcade_loan_core,
         payment_token = payment_token,
         loan_id = loan_id,
         amount = amount,

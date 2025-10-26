@@ -37,7 +37,7 @@ def load_contracts(env: Environment, chain: str) -> list[ContractConfig]:
         contracts_module.__dict__[c["contract"]](
             key=f"{scope}.{name}", address=c.get("address"), abi_key=c.get("abi_key"), **c.get("properties", {})
         )
-        for scope in ["common", "p2p"]
+        for scope in ["common", "p2p", "proxies"]
         for name, c in config[scope].items()
     ]
 
@@ -48,7 +48,7 @@ def store_contracts(env: Environment, chain: str, contracts: list[ContractConfig
         config = json.load(f)
 
     contracts_dict = {c.key: c for c in contracts}
-    for scope in ["common", "p2p"]:
+    for scope in ["common", "p2p", "proxies"]:
         for name, c in config[scope].items():
             key = f"{scope}.{name}"
             if key in contracts_dict:
