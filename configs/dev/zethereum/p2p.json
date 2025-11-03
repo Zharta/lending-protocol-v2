@@ -158,7 +158,7 @@
     "proxies": {
         "ext_refinance_arcade_usdc_nfts": {
             "abi_key": "5407a272556ea51959e4ff594c021dc8e2631359",
-            "address": "0xDf11b88014b2d70C78893c0d78793dcDd72a9657",
+            "address": "0xbDdddd87e9D136783Ce6a3F68a7995c9702813DF",
             "contract": "ArcadeProxy",
             "properties": {
                 "arcade_loan_core_contract_key": "common.ext_arcade_mock",
