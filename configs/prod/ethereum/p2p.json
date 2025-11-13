@@ -155,7 +155,7 @@
     "proxies": {
         "ext_refinance_arcade_usdc_nfts": {
             "abi_key": "5407a272556ea51959e4ff594c021dc8e2631359",
-            "address": "",
+            "address": "0x8445b94D840f370ac32C36aA3996A24B029a2CF5",
             "contract": "ArcadeProxy",
             "properties": {
                 "arcade_loan_core_contract_key": "common.ext_arcade_loan_core",
@@ -164,6 +164,10 @@
                 "p2p_contract_key": "p2p.usdc_nfts"
             },
             "properties_addresses": {
+                "arcade_loan_core_contract": "0x89bc08BA00f135d608bc335f6B33D7a9ABCC98aF",
+                "arcade_repayment_contract": "0x74241e1A9c021643289476426B9B70229Ab40D53",
+                "flash_lender": "0xBA12222222228d8Ba445958a75a0704d566BF2C8",
+                "p2p_contract": "0x5F19431BC8A3eb21222771c6C867a63a119DeDA7"
             }
         }
     }
