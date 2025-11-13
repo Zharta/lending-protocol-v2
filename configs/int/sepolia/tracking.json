@@ -1,2 +1,8 @@
 {
+    "arcade": {
+        "abi_file": "auxiliary/ArcadeLoanCore_abi.json",
+        "address": "0x7a45F7c14626e2Ef3a046143579bd4736503F290",
+        "contract": "Generic",
+        "name": "Arcade"
+    }
 }

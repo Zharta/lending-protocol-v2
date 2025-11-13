@@ -1,9 +1,42 @@
 {
     "common": {
+        "balancer": {
+            "abi_key": "ffa8b4d1cca0e4ac840a1dfd119882e8a38d5715",
+            "address": "0x756E378f3126BE26DbeF73fB2b6bB336bE3F0eE2",
+            "contract": "BalancerMock",
+            "properties_addresses": {}
+        },
         "delegation_registry": {
             "abi_key": "b81a1dc53243e33e00b85ff03e7df975f34f7975",
             "address": "0x2a2a72FB8dE724EdC665bF3791d063c20152bFfb",
             "contract": "DelegationRegistry",
+            "properties_addresses": {}
+        },
+        "ext_arcade_loan_core": {
+            "abi_key": "c056f5bb616a266f3a5eb8aaa80a428553b8cea7",
+            "address": "0x0000000000000000000000000000000000011111",
+            "contract": "GenericContract",
+            "properties": {
+                "abi_file": "contracts/auxiliary/ArcadeLoanCore_abi.json",
+                "name": "ExtArcadeMock"
+            },
+            "properties_addresses": {}
+        },
+        "ext_arcade_mock": {
+            "abi_key": "44ae17f01acc86a3b5fa1d625221455e2c1a1fb8",
+            "address": "0x6c61c29A2E75B996e533428Ec7D8b4fa19dD0aA1",
+            "contract": "ArcadeMock",
+            "properties": {},
+            "properties_addresses": {}
+        },
+        "ext_arcade_repayment": {
+            "abi_key": "08d89384876ff886d0fd3dda4fe1c221be1ccb5e",
+            "address": "0x0000000000000000000000000000000000011111",
+            "contract": "GenericContract",
+            "properties": {
+                "abi_file": "contracts/auxiliary/ArcadeRepaymentController_abi.json",
+                "name": "ExtArcadeMock"
+            },
             "properties_addresses": {}
         },
         "p2p_controller": {
@@ -120,6 +153,25 @@
             },
             "token_symbol": "USDC",
             "version": "1"
+        }
+    },
+    "proxies": {
+        "ext_refinance_arcade_usdc_nfts": {
+            "abi_key": "5407a272556ea51959e4ff594c021dc8e2631359",
+            "address": "0xbDdddd87e9D136783Ce6a3F68a7995c9702813DF",
+            "contract": "ArcadeProxy",
+            "properties": {
+                "arcade_loan_core_contract_key": "common.ext_arcade_mock",
+                "arcade_repayment_contract_key": "common.ext_arcade_mock",
+                "flash_lender_key": "common.balancer",
+                "p2p_contract_key": "p2p.usdc_nfts"
+            },
+            "properties_addresses": {
+                "arcade_loan_core_contract": "0x6c61c29A2E75B996e533428Ec7D8b4fa19dD0aA1",
+                "arcade_repayment_contract": "0x6c61c29A2E75B996e533428Ec7D8b4fa19dD0aA1",
+                "flash_lender": "0x756E378f3126BE26DbeF73fB2b6bB336bE3F0eE2",
+                "p2p_contract": "0x6c21123b9D56f04515Bf048DDCda33C0C45F1F15"
+            }
         }
     }
 }
