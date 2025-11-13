@@ -12,6 +12,13 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
+        "lender_claim": {
+            "abi_key": "33331c5f7a1841bfd4eb1887d617dcf6cd57be7e",
+            "address": "0x22A81a1626705b38Eb148ea5bEf2ee42Cf74D082",
+            "contract": "LenderClaim",
+            "properties": {},
+            "properties_addresses": {}
+        },
         "ext_arcade_mock": {
             "abi_key": "44ae17f01acc86a3b5fa1d625221455e2c1a1fb8",
             "address": "0x7a45F7c14626e2Ef3a046143579bd4736503F290",

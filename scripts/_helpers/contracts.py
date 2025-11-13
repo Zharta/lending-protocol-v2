@@ -43,6 +43,14 @@ class GenericContract(ContractConfig):
 
 
 @dataclass
+class LenderClaim(ContractConfig):
+    def __init__(self, *, key: str, abi_key: str, address: str | None = None):
+        super().__init__(key, None, project.LenderClaim, abi_key=abi_key)
+        if address:
+            self.load_contract(address)
+
+
+@dataclass
 class ERC721(ContractConfig):
     def __init__(self, *, key: str, abi_key: str, address: str | None = None):
         super().__init__(key, None, project.ERC721, abi_key=abi_key, nft=True)

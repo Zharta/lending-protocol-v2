@@ -12,6 +12,13 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
+        "lender_claim": {
+            "abi_key": "33331c5f7a1841bfd4eb1887d617dcf6cd57be7e",
+            "address": "0x017D4fB9DF9AAe92C18606cA9c38eac3710cbA7e",
+            "contract": "LenderClaim",
+            "properties": {},
+            "properties_addresses": {}
+        },
         "ext_arcade_loan_core": {
             "abi_key": "c056f5bb616a266f3a5eb8aaa80a428553b8cea7",
             "address": "0x89bc08BA00f135d608bc335f6B33D7a9ABCC98aF",
@@ -87,7 +94,7 @@
             "theharvest": "489315720c1f024015b5becf57e5c6899a3ffb191f65d143b7a5ded7edda5e1a",
             "thepotatoz": "4c38f0ce826c85071c6001fe95fddc1028dbb120af7f4b3d14cec714702dca9f",
             "thewrapture": "f31d1a7e782e60074b3c4feae74c107f5a3d09c6fc2a9401cde30cd4576bc272",
-            "tiamonds": "0000000000000000000000000000000000000000000000000000000000000001",
+            "tiamonds": "0000000000000000000000000000000000000000000000000000000000000000",
             "univ3pos": "0000000000000000000000000000000000000000000000000000000000000001",
             "vft": "493d33a5bc0940b96506b383e7584a73433fd3337fbc3979eaeef4b0d004ce07",
             "wgame": "0000000000000000000000000000000000000000000000000000000000000000",
