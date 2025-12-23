@@ -12,13 +12,6 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
-        "lender_claim": {
-            "abi_key": "33331c5f7a1841bfd4eb1887d617dcf6cd57be7e",
-            "address": "0x017D4fB9DF9AAe92C18606cA9c38eac3710cbA7e",
-            "contract": "LenderClaim",
-            "properties": {},
-            "properties_addresses": {}
-        },
         "ext_arcade_loan_core": {
             "abi_key": "c056f5bb616a266f3a5eb8aaa80a428553b8cea7",
             "address": "0x89bc08BA00f135d608bc335f6B33D7a9ABCC98aF",
@@ -37,6 +30,13 @@
                 "abi_file": "contracts/auxiliary/ArcadeRepaymentController_abi.json",
                 "name": "ExtArcadeMock"
             },
+            "properties_addresses": {}
+        },
+        "lender_claim": {
+            "abi_key": "33331c5f7a1841bfd4eb1887d617dcf6cd57be7e",
+            "address": "0x017D4fB9DF9AAe92C18606cA9c38eac3710cbA7e",
+            "contract": "LenderClaim",
+            "properties": {},
             "properties_addresses": {}
         },
         "p2p_controller": {
@@ -83,6 +83,7 @@
             "othersidekodamara": "8e6650a114db54f3f7a8da8f225d00c1e396af52104ad80d28fbbf2f975aaf66",
             "ppg": "648218426e1865e29411676e9f968fc72d1a3690277c2a419eee11876cb0f932",
             "punk": "792c52c25ac145e5a06fba6d006c420fc149589b55a068b4141c14d93dae2398",
+            "punk721": "a03d5c17dd39e784dade59be2714de968520b534bf04a862f1a64ca585d9476e",
             "quirkies": "0000000000000000000000000000000000000000000000000000000000000000",
             "rektguy": "9171391728a56e0054bb460d466421dfa2fec8bbfc63b91886884e53d093b8d3",
             "renga": "30ca0b1492ef140893ea1129a4e619218b6755e654b42b3c0c510f3feae7e16b",
