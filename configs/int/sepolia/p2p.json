@@ -48,6 +48,7 @@
             "othersidekodamara": "d6bbd3db07c31d641c56b874b33b3882b42aafce5ebf8d8bdd4a544bc3959ef5",
             "ppg": "290622562d967f9c401dce10ce96bc9742a2d8a4a8cedb285c1b3cb530d1b829",
             "punk": "098779f13be10519ced3ac6d42e129afc1299eabe2c12ee2c39c41282f488f46",
+            "punk721": "292eba1b560084a40cfb994f4a538179672273d38bc7244650243c20cdf2c86a",
             "quirkies": "0000000000000000000000000000000000000000000000000000000000000000",
             "rektguy": "c1f3db64a822a3c2e4b581d03d2cc7bd27b71b99a738c0bac1c8eaaf0c65aa60",
             "renga": "e677a47bac680935cd28085320a1a81b2df4baa9009214dde726413669e6a0bf",
@@ -71,11 +72,11 @@
     "p2p": {
         "ape_test": {
             "abi_key": "0bb673432ab9115908cf9db48173c7d48c892b4a",
-            "address": "0x6Adf17dEF7fB76cba5a5ce0EceB6FC38b12e7a66",
+            "address": "0x9C875159E5571A652c070851242A59b5676C2043",
             "contract": "P2PLendingExternal",
             "properties": {
                 "cryptopunks_key": "",
-                "escrow_address": "0xF00C9AF0B4c9C7636e12c80E4f22D7d6FF219475",
+                "escrow_address": "0x832D9056AF4E611c53ed1d783eA4eC0e5c6fBce4",
                 "max_borrower_broker_settlement_fee": 0,
                 "max_lender_broker_settlement_fee": 0,
                 "max_protocol_settlement_fee": 0,
