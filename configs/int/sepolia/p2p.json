@@ -12,17 +12,17 @@
             "contract": "DelegationRegistry",
             "properties_addresses": {}
         },
-        "lender_claim": {
-            "abi_key": "33331c5f7a1841bfd4eb1887d617dcf6cd57be7e",
-            "address": "0x22A81a1626705b38Eb148ea5bEf2ee42Cf74D082",
-            "contract": "LenderClaim",
-            "properties": {},
-            "properties_addresses": {}
-        },
         "ext_arcade_mock": {
             "abi_key": "44ae17f01acc86a3b5fa1d625221455e2c1a1fb8",
             "address": "0x7a45F7c14626e2Ef3a046143579bd4736503F290",
             "contract": "ArcadeMock",
+            "properties": {},
+            "properties_addresses": {}
+        },
+        "lender_claim": {
+            "abi_key": "33331c5f7a1841bfd4eb1887d617dcf6cd57be7e",
+            "address": "0x22A81a1626705b38Eb148ea5bEf2ee42Cf74D082",
+            "contract": "LenderClaim",
             "properties": {},
             "properties_addresses": {}
         },
@@ -72,6 +72,7 @@
             "rektguy": "c1f3db64a822a3c2e4b581d03d2cc7bd27b71b99a738c0bac1c8eaaf0c65aa60",
             "renga": "e677a47bac680935cd28085320a1a81b2df4baa9009214dde726413669e6a0bf",
             "ringers": "c11a30fb164c279f87baca1c075c0021bd5083b30d394414c12a9ae1d8d399a6",
+            "tasset": "0000000000000000000000000000000000000000000000000000000000000001",
             "thecaptainz": "4b0cbfe3f34976940a951dc5eeeae118ee06877d878d6ed3eb7f7b420a248067",
             "thecurrency": "0000000000000000000000000000000000000000000000000000000000000000",
             "theeternalpump": "f4db98706e8f34c8a72f0636da8c1f00fe990c797bb93e426083c7477cb32e07",
