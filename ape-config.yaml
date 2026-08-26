@@ -6,3 +6,21 @@ plugins:
   - name: alchemy
   - name: arbitrum
   - name: base
+
+networks:
+  custom:
+    - name: mainnet
+      ecosystem: robinhood
+      chain_id: 4663
+      base_ecosystem_plugin: arbitrum
+    - name: testnet
+      ecosystem: robinhood
+      chain_id: 46630
+      base_ecosystem_plugin: arbitrum
+
+node:
+  robinhood:
+    mainnet:
+      uri: https://robinhood-mainnet.g.alchemy.com/v2/${WEB3_ALCHEMY_PROJECT_ID}
+    testnet:
+      uri: https://robinhood-testnet.g.alchemy.com/v2/${WEB3_ALCHEMY_PROJECT_ID}

@@ -614,6 +614,10 @@ def arcade_refinance(  # noqa: PLR0917
     )
 
 
+def get_collection_hash(collection: str) -> str:
+    return "0x" + keccak(collection.encode()).hexdigest()
+
+
 """
  draft = create_offer_draft(
      offer_type="TOKEN",
