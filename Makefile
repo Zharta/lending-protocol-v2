@@ -67,8 +67,8 @@ lint:
 %-prod: export ENV=prod
 
 %-zethereum %-zapechain: export ENV=dev
-%-sepolia %-curtis: export ENV=int
-%-ethereum %-apechain: export ENV=prod
+%-sepolia %-curtis %-robinhood-testnet: export ENV=int
+%-ethereum %-apechain %-robinhood: export ENV=prod
 
 %-local: export CHAIN=foundry
 %-zethereum: export CHAIN=zethereum
@@ -77,6 +77,8 @@ lint:
 %-curtis: export CHAIN=curtis
 %-ethereum: export CHAIN=ethereum
 %-apechain: export CHAIN=apechain
+%-robinhood-testnet: export CHAIN=robinhood-testnet
+%-robinhood: export CHAIN=robinhood
 
 %-local: export NETWORK=ethereum:local:foundry
 %-zethereum: export NETWORK=ethereum:local:https://network.dev.zharta.io/dev1/
@@ -85,6 +87,8 @@ lint:
 %-curtis: export NETWORK=apechain:curtis:https://curtis.rpc.caldera.xyz/http
 %-ethereum: export NETWORK=ethereum:mainnet:alchemy
 %-apechain: export NETWORK=apechain:mainnet:alchemy
+%-robinhood-testnet: export NETWORK=robinhood:testnet:node
+%-robinhood: export NETWORK=robinhood:mainnet:node
 
 add-account:
 	${VENV}/bin/ape accounts import $(alias)
@@ -93,15 +97,15 @@ compile:
 	rm -rf .build/*
 	${VENV}/bin/ape compile
 
-console-local console-zethereum console-zapechain console-sepolia console-curtis console-ethereum console-apechain:
+console-local console-zethereum console-zapechain console-sepolia console-curtis console-robinhood-testnet console-ethereum console-apechain console-robinhood:
 	${VENV}/bin/ape console --network ${NETWORK} # --verbosity DEBUG
 
-deploy-local deploy-zethereum deploy-zapechain deploy-sepolia deploy-curtis deploy-ethereum deploy-apechain:
+deploy-local deploy-zethereum deploy-zapechain deploy-sepolia deploy-curtis deploy-robinhood-testnet deploy-ethereum deploy-apechain deploy-robinhood:
 	${VENV}/bin/ape run -I deployment --network ${NETWORK}
 
-publish-zethereum publish-zapechain publish-sepolia publish-curtis publish-ethereum publish-apechain:
+publish-zethereum publish-zapechain publish-sepolia publish-curtis publish-robinhood-testnet publish-ethereum publish-apechain publish-robinhood:
 	${VENV}/bin/ape run publish
 
-get-metadata-zethereum get-metadata-zapechain get-metadata-sepolia get-metadata-curtis get-metadata-ethereum get-metadata-apechain:
+get-metadata-zethereum get-metadata-zapechain get-metadata-sepolia get-metadata-curtis get-metadata-robinhood-testnet get-metadata-ethereum get-metadata-apechain get-metadata-robinhood:
 	${VENV}/bin/ape run get_collections
 	${VENV}/bin/ape run get_tokens
