@@ -18,6 +18,8 @@
     },
     "configs": {
         "trait_roots": {
+            "chainmancers": "cbe38afd33c7e9c8e57724856e4d21fa4a3e5bd8927b0a6b7835c6073bff4907",
+            "quotrons404": "d244abb6d2bfe78f1c14890dcf0b9cb7f3f48a83e0630a4c249278fc3cceecb1",
             "stonkbrokers": "9d36492badefe1dc0cdc43b6b07b65001b830790a1ac8b64a61259367838ab63"
         }
     },
