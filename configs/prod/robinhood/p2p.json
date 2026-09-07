@@ -48,6 +48,25 @@
             },
             "token_symbol": "USDG",
             "version": "1"
+        },
+        "weth_nfts": {
+            "contract": "P2PLendingNfts",
+            "properties": {
+                "cryptopunks_key": "",
+                "delegation_registry_key": "common.delegation_registry",
+                "max_borrower_broker_settlement_fee": 5000,
+                "max_lender_broker_settlement_fee": 5000,
+                "max_protocol_settlement_fee": 5000,
+                "max_protocol_upfront_fee": 5000,
+                "p2p_controller_key": "common.p2p_controller",
+                "payment_token_key": "common.weth",
+                "protocol_settlement_fee": 1000,
+                "protocol_upfront_fee": 0,
+                "protocol_wallet": "0x5723759D679662cf931d686f129E3296D9545190"
+            },
+            "properties_addresses": {},
+            "token_symbol": "WETH",
+            "version": "1"
         }
     },
     "proxies": {}
