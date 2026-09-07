@@ -48,6 +48,31 @@
             },
             "token_symbol": "USDG",
             "version": "1"
+        },
+        "weth_nfts": {
+            "abi_key": "10303d3fbb028dacb97d9fbfe3717a62bd73a126",
+            "address": "0x5351a6bab5395122C07b04e5339E0F435d7E2cF6",
+            "contract": "P2PLendingNfts",
+            "properties": {
+                "cryptopunks_key": "",
+                "delegation_registry_key": "common.delegation_registry",
+                "max_borrower_broker_settlement_fee": 1000,
+                "max_lender_broker_settlement_fee": 1000,
+                "max_protocol_settlement_fee": 1000,
+                "max_protocol_upfront_fee": 1000,
+                "p2p_controller_key": "common.p2p_controller",
+                "payment_token_key": "common.weth",
+                "protocol_settlement_fee": 0,
+                "protocol_upfront_fee": 0,
+                "protocol_wallet": "0x313e7bF4D508087295f092Bb9fadcE3b7b4dc89e"
+            },
+            "properties_addresses": {
+                "delegation_registry": "0x6d53e3969428D982Fc0Cb7bD76082D25a0e9B9c6",
+                "p2p_controller": "0x72780e28AF054DFbE60cb817b05e35Fd718B723a",
+                "payment_token": "0x9917771853d4aB45e2132E4942E570d4A1d84cCb"
+            },
+            "token_symbol": "WETH",
+            "version": "1"
         }
     },
     "proxies": {}
