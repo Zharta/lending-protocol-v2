@@ -50,6 +50,8 @@
             "version": "1"
         },
         "weth_nfts": {
+            "abi_key": "10303d3fbb028dacb97d9fbfe3717a62bd73a126",
+            "address": "0x71B5EBf9c632581e9a959612fF013DBFEaf9dc0F",
             "contract": "P2PLendingNfts",
             "properties": {
                 "cryptopunks_key": "",
@@ -64,7 +66,11 @@
                 "protocol_upfront_fee": 0,
                 "protocol_wallet": "0x5723759D679662cf931d686f129E3296D9545190"
             },
-            "properties_addresses": {},
+            "properties_addresses": {
+                "delegation_registry": "0x323aeb15c6507f060191f6af1eCd4497506a5348",
+                "p2p_controller": "0x9a99Ea6AC47592F00E646be131b3075ca9AAe644",
+                "payment_token": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
+            },
             "token_symbol": "WETH",
             "version": "1"
         }
