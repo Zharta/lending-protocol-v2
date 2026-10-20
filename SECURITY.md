@@ -25,12 +25,14 @@ Deployed instances of the contracts below, at the addresses in
 |---|---|---|
 | P2PLendingNfts | `contracts/P2PLendingNfts.vy` | Ethereum, ApeChain, Robinhood Chain |
 | P2PLendingControl | `contracts/P2PLendingControl.vy` | Ethereum, ApeChain, Robinhood Chain |
-| LenderClaim | `contracts/LenderClaim.vy` | Ethereum |
 
-Anything else is out of scope. That includes `ArcadeProxy`, whose deployed
-instances are not authorized on the lending contracts, and contracts with no
-production entry in `configs/prod/` (`BendDAOProxy`, `NftfiProxy`,
-`GondiProxy`, `AaveFlash`, `EIP3156Flash`).
+Anything else is out of scope. That includes:
+
+- `LenderClaim`, which is no longer in use;
+- `ArcadeProxy`, whose deployed instances are not authorized on the lending
+  contracts;
+- contracts with no production entry in `configs/prod/` (`BendDAOProxy`,
+  `NftfiProxy`, `GondiProxy`, `AaveFlash`, `EIP3156Flash`).
 
 ## Severity
 
