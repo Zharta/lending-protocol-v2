@@ -6,11 +6,13 @@ PYTHON=${VENV}/bin/python3
 CONTRACTS := $(shell find contracts -depth 1 -name '*.vy')
 NATSPEC := $(patsubst contracts/%, natspec/%, $(CONTRACTS:%.vy=%.json))
 PATH := ${VENV}/bin:${PATH}
+# botocore bundles its own cacert.pem (still trusts the eMudhra-compromised roots); use certifi instead
+export AWS_CA_BUNDLE = $(shell ${PYTHON} -c "import certifi; print(certifi.where())" 2>/dev/null)
 
 vpath %.vy ./contracts
 
 $(VENV):
-	if ! command -v uv > /dev/null; then python -m pip install -U uv; fi
+	if ! command -v uv > /dev/null; then python -m pip install -U "uv>=0.13.4"; fi
 	uv venv $(VENV)
 
 install: ${VENV} requirements.txt

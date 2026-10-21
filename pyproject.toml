@@ -12,6 +12,7 @@ dependencies = [
     "ape-arbitrum",
     "ape-base",
     "web3",
+    "certifi>=2026.10.19",
 ]
 
 
